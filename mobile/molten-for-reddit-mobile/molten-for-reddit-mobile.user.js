@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.2.0
+// @version      1.2.1
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -22,10 +22,10 @@
 // @connect      a.thumbs.redditmedia.com
 // @connect      b.thumbs.redditmedia.com
 // @connect      packaged-media.redd.it
-// @homepageURL  https://github.com/JigglyPug/userscripts/tree/main/mobile/molten-for-reddit-mobile
-// @supportURL   https://github.com/JigglyPug/userscripts/issues
-// @updateURL    https://raw.githubusercontent.com/JigglyPug/userscripts/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js
-// @downloadURL  https://raw.githubusercontent.com/JigglyPug/userscripts/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js
+// @homepageURL  https://github.com/JigglyPug/glassware/tree/main/mobile/molten-for-reddit-mobile
+// @supportURL   https://github.com/JigglyPug/glassware/issues
+// @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js
+// @downloadURL  https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js
 // ==/UserScript==
 
 /* Molten for Reddit Mobile: the phone build of Molten for Reddit (lighter lava, bottom-sheet settings, no app nagging).

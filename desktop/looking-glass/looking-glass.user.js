@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.0.2
+// @version      1.0.3
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -18,10 +18,10 @@
 // @noframes
 // @author       jigglypug
 // @license      MIT
-// @homepageURL  https://github.com/JigglyPug/userscripts/tree/main/desktop/looking-glass
-// @supportURL   https://github.com/JigglyPug/userscripts/issues
-// @updateURL    https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/looking-glass/looking-glass.user.js
-// @downloadURL  https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/looking-glass/looking-glass.user.js
+// @homepageURL  https://github.com/JigglyPug/glassware/tree/main/desktop/looking-glass
+// @supportURL   https://github.com/JigglyPug/glassware/issues
+// @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js
+// @downloadURL  https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js
 // ==/UserScript==
 
 (function () {

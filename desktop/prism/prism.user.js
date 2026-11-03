@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.0.8
+// @version      2.0.9
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -16,10 +16,10 @@
 // @noframes
 // @author       jigglypug
 // @license      MIT
-// @homepageURL  https://github.com/JigglyPug/userscripts/tree/main/desktop/prism
-// @supportURL   https://github.com/JigglyPug/userscripts/issues
-// @updateURL    https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/prism/prism.user.js
-// @downloadURL  https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/prism/prism.user.js
+// @homepageURL  https://github.com/JigglyPug/glassware/tree/main/desktop/prism
+// @supportURL   https://github.com/JigglyPug/glassware/issues
+// @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js
+// @downloadURL  https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js
 // ==/UserScript==
 
 (function () {

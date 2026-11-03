@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.2.8
+// @version      2.2.9
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -22,10 +22,10 @@
 // @connect      a.thumbs.redditmedia.com
 // @connect      b.thumbs.redditmedia.com
 // @connect      packaged-media.redd.it
-// @homepageURL  https://github.com/JigglyPug/userscripts/tree/main/desktop/molten-for-reddit
-// @supportURL   https://github.com/JigglyPug/userscripts/issues
-// @updateURL    https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/molten-for-reddit/molten-for-reddit.user.js
-// @downloadURL  https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/molten-for-reddit/molten-for-reddit.user.js
+// @homepageURL  https://github.com/JigglyPug/glassware/tree/main/desktop/molten-for-reddit
+// @supportURL   https://github.com/JigglyPug/glassware/issues
+// @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js
+// @downloadURL  https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js
 // ==/UserScript==
 
 /* Molten for Reddit: the Molten Tools engine, rebuilt for new Reddit.

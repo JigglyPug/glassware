@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.1.1
+// @version      1.1.2
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -13,10 +13,10 @@
 // @noframes
 // @author       jigglypug
 // @license      MIT
-// @homepageURL  https://github.com/JigglyPug/userscripts/tree/main/desktop/hourglass
-// @supportURL   https://github.com/JigglyPug/userscripts/issues
-// @updateURL    https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/hourglass/hourglass.user.js
-// @downloadURL  https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/hourglass/hourglass.user.js
+// @homepageURL  https://github.com/JigglyPug/glassware/tree/main/desktop/hourglass
+// @supportURL   https://github.com/JigglyPug/glassware/issues
+// @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js
+// @downloadURL  https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js
 // ==/UserScript==
 
 (function () {

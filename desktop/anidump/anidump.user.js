@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AniDump
 // @namespace    jigglypug.anime.clipboard
-// @version      2.7.5
+// @version      2.7.6
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and AniDump has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @author       JigglyPug
 // @match        https://anilist.co/*
@@ -18,10 +18,10 @@
 // @grant        GM_registerMenuCommand
 // @grant        window.close
 // @connect      claude.ai
-// @homepageURL  https://github.com/JigglyPug/userscripts/tree/main/desktop/anidump
-// @supportURL   https://github.com/JigglyPug/userscripts/issues
-// @updateURL    https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/anidump/anidump.user.js
-// @downloadURL  https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/anidump/anidump.user.js
+// @homepageURL  https://github.com/JigglyPug/glassware/tree/main/desktop/anidump
+// @supportURL   https://github.com/JigglyPug/glassware/issues
+// @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/anidump/anidump.user.js
+// @downloadURL  https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/anidump/anidump.user.js
 // ==/UserScript==
 
 /* AniDump: AniList -> Claude recommendations
