@@ -29,7 +29,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = '1.0.2';
+    const VERSION = '1.0.4';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;

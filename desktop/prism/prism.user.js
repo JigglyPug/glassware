@@ -27,7 +27,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = '2.0.8';
+    const VERSION = '2.0.10';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
