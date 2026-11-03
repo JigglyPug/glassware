@@ -1,8 +1,8 @@
 <div align="center">
 
-# userscripts
+<img src="assets/banner.svg" alt="userscripts: glass for the web, by JigglyPug" width="100%">
 
-**Frosted-glass tools for the web, by JigglyPug.**
+[![Visit the site](https://img.shields.io/badge/Visit%20the%20site-jigglypug.github.io-ff8a3d?style=for-the-badge)](https://jigglypug.github.io/userscripts/)
 
 Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates itself from this repo.
 

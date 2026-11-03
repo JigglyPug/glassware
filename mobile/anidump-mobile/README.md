@@ -1,10 +1,8 @@
 <div align="center">
 
-# AniDump Mobile
+<img src="images/banner.svg" alt="AniDump Mobile: Phone-friendly AniDump prompt builder." width="100%">
 
-**Phone-friendly AniDump prompt builder.**
-
-[![Install](https://img.shields.io/badge/Install-v1.0.1-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/mobile/anidump-mobile/anidump-mobile.user.js)
+[![Install](https://img.shields.io/badge/Install-v1.0.1-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/mobile/anidump-mobile/anidump-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/userscripts/mobile/anidump-mobile/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-mobile-555?style=flat-square)
 
@@ -16,13 +14,12 @@ This is the phone version of AniDump, built for Edge on Android. It uses the sam
 
 ## Features
 
-- **The same five modes and the same prompt logic** as desktop AniDump, for anime and manga.
-- **Copy / Save / Share** the prompt.
-- **Update** builds a "what changed since last time" prompt from your list.
-- **Changes since last prompt** list.
-- **Sequel finder** (AniList data, no AI).
-- Opens from the Tampermonkey menu or a small ✦ button (bottom left, bottom right, or hidden).
-- Remembers your AniList username for pages that don't show it.
+- **The same five modes**: Identical prompts to desktop AniDump, for anime and manga.
+- **Copy, Save or Share**: Send the prompt to whatever AI app you use on your phone.
+- **Update prompts**: Builds a "what changed since last time" prompt from your list.
+- **Change tracking**: See what's new on your list since your last prompt.
+- **Sequel finder**: Sequels you haven't started, straight from AniList.
+- **Made for thumbs**: A bottom sheet that opens from a small ✦ button or the Tampermonkey menu.
 
 ## A closer look
 

@@ -1,10 +1,8 @@
 <div align="center">
 
-# Looking-Glass
+<img src="images/banner.svg" alt="Looking-Glass: Open any video on its own." width="100%">
 
-**Open any video on its own.**
-
-[![Install](https://img.shields.io/badge/Install-v1.0.2-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/looking-glass/looking-glass.user.js)
+[![Install](https://img.shields.io/badge/Install-v1.0.2-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/userscripts/desktop/looking-glass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site%3B%20phone%20and%20PC-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
 
@@ -16,11 +14,10 @@ Looking-Glass puts a small circle in the corner of every video, in the site's ow
 
 ## Features
 
-- **One tap** opens the direct video file in a new tab, in the background or switching to it.
-- **Site-colored badge**: corner, size and resting opacity are adjustable; show it on every video or just the main one, always or only on hover.
-- **Skips small videos** such as thumbnails and previews (size threshold adjustable).
-- **Ducks under headers** when a site bar would cover the corner.
-- **Best quality or data saver.**
-- **When there is no direct file**: open the post instead or hide the badge. "Look harder" quietly loads the post page to find the file.
-- **Right-click a badge** to copy the link, open the post, hide it or open settings.
-- Per-site on/off and corner, an optional recent list, and a status bar showing what it is watching.
+- **One tap to the source**: Opens the video file itself in a new tab, in the background or right in front of you.
+- **Works almost anywhere**: Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video.
+- **A badge in the site's color**: Pick the corner, size and resting opacity. Show it on every video or the main one, always or on hover.
+- **Stays out of the way**: Skips thumbnails and tiny previews, and slides under headers that would cover it.
+- **Best or data saver**: Choose the sharpest file or the lighter one.
+- **Looks harder**: When the feed hides the file, it quietly checks the post page, or opens the post instead.
+- **Right-click for more**: Copy the link, open the post, hide the badge or jump to settings.

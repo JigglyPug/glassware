@@ -1,10 +1,8 @@
 <div align="center">
 
-# Hourglass
+<img src="images/banner.svg" alt="Hourglass: Screen time and lockdown for every site." width="100%">
 
-**Screen time and lockdown for every site.**
-
-[![Install](https://img.shields.io/badge/Install-v1.1.1-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/hourglass/hourglass.user.js)
+[![Install](https://img.shields.io/badge/Install-v1.1.1-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/userscripts/desktop/hourglass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
 
@@ -16,16 +14,15 @@ Hourglass tracks how long you spend on every site and blocks the distracting one
 
 ## Features
 
-- **Dashboard**: screen time today vs your average, a by-hour chart with lockdown hours shaded, week/month view, a "time online" ring, per-category trends, blocked attempts, passes used, top sites, visits, busiest hour, first visit and days under your goal.
-- **Suggestions**: sites not on your list that average 30m+ a day get suggested for a category (or ignored).
-- **Schedule**: per-day lockdown blocks with drag handles in 30-minute steps, quick presets (9–5, 7–6, evenings, overnight, 24h), and copy-to-weekdays / every day.
-- **Passes**: a set number of daily passes that open only the site you are on, with a pass length and a think-it-over wait.
-- **Sites**: Socials, Shopping, Music and Custom lists; set each site to follow the schedule or always block.
-- **Lockdown protection**: an "Is this important?" screen with a delay before Continue appears; loosening changes only take effect after lockdown ends.
-- **Music mode** lets music sites through, plus listening time counted separately from screen time.
-- **Late-night nudge**: a friendly take-a-break reminder after bedtime, even outside lockdown.
-- Idle timeout, video/music counts as active, history length, daily goal and week start day.
-- Private: data stays in Tampermonkey on that device, and only site names are stored, never full addresses or page titles.
+- **A real dashboard**: Today against your average, an hour-by-hour chart with lockdown shaded, week and month views, category trends, top sites and streaks.
+- **A schedule you draw**: Drag lockdown blocks onto each day in 30-minute steps, or start from presets like 9–5, evenings or overnight.
+- **Passes, not loopholes**: A few daily passes that open only the site you're on, with a timer and a wait to think it over.
+- **Lockdown that holds**: An "Is this important?" screen with a delay, and looser settings only kick in after lockdown ends.
+- **Your lists**: Socials, Shopping, Music and Custom. Each site can follow the schedule or stay blocked.
+- **Smart suggestions**: Sites you spend 30+ minutes a day on get suggested for a list, or you can ignore them.
+- **Music mode**: Let music through during lockdown, with listening time tracked apart from screen time.
+- **Late-night nudge**: A friendly reminder to take a break when you're still browsing past bedtime.
+- **Private by design**: Everything stays on your device, and only site names are kept, never full addresses or page titles.
 
 ## A closer look
 

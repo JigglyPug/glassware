@@ -1,10 +1,8 @@
 <div align="center">
 
-# Molten for Reddit
+<img src="images/banner.svg" alt="Molten for Reddit: Molten glass for new Reddit." width="100%">
 
-**Molten glass for new Reddit.**
-
-[![Install](https://img.shields.io/badge/Install-v2.2.8-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/molten-for-reddit/molten-for-reddit.user.js)
+[![Install](https://img.shields.io/badge/Install-v2.2.8-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/userscripts/desktop/molten-for-reddit/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com%20%28new%20Reddit%29-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
 
@@ -16,13 +14,13 @@ Molten for Reddit puts a lava-lamp background made from the image or video you a
 
 ## Features
 
-- **Lava background** from the post in the middle of the screen (falls back to the subreddit banner or icon), with Calm / User / Crazy profiles.
-- **Glass controls**: frost, blur, roundness, outline and text shadow.
-- **Title bar and video seek bar** colored from the art.
-- **Best video quality** for Reddit MP4 videos; glass instead of black bars around narrow videos; a playing video can take over the lava.
-- **Reddit tweaks**: default comment sort, auto-expand "more replies", hide the right sidebar and the legal links.
-- **Arctic Shift lookup**: search any user's posts or comments, plus a 🔍 next to names on profiles.
-- Master on/off switch and a layout report for troubleshooting.
+- **Lava from what you're looking at**: The background comes from the image or video in the middle of the screen, or the subreddit's banner when there isn't one.
+- **Clear-glass posts**: Frost, blur, roundness and outline you can tune, so the lava shows through without hurting readability.
+- **Calm, User or Crazy**: Three profiles, each with its own blur, brightness, color and motion.
+- **Video, done right**: The best MP4 quality, glass instead of black bars, and playing videos that take over the lava.
+- **Colors from the art**: The title bar and seek bar match the post.
+- **Reddit, tidied up**: Your default comment sort, replies that expand themselves, and an optional cleaner layout.
+- **Look anyone up**: Search a user's posts and comments on Arctic Shift, with a 🔍 next to names on profiles.
 
 ## A closer look
 

@@ -1,10 +1,8 @@
 <div align="center">
 
-# Molten Tools
+<img src="images/banner.svg" alt="Molten Tools: Molten glass and quality-of-life fixes for YouTube." width="100%">
 
-**Molten glass and quality-of-life fixes for YouTube.**
-
-[![Install](https://img.shields.io/badge/Install-v3.5.3-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/molten-tools/molten-tools.user.js)
+[![Install](https://img.shields.io/badge/Install-v3.5.3-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/molten-tools/molten-tools.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/userscripts/desktop/molten-tools/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-YouTube%2C%20YouTube%20Music-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
 
@@ -16,14 +14,13 @@ Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plu
 
 ## Features
 
-- **Lava background** taken from the video or album art, with Calm / User / Crazy profiles. Each profile remembers its own blur, brightness, saturation, zoom, glass blur, motion and blobs.
-- **Performance controls**: frame rate, sample size and GPU-saving switches.
-- **Auto-dismiss** for "Continue watching?" and "Video paused" prompts.
-- **Title bar and seek bar** colored from the current thumbnail, with a tone choice.
-- **Automatic video quality**: a separate choice for high-frame-rate videos and YouTube Music video mode, Premium 1080p when offered, theater mode and custom player height.
-- **Screenshot safe**: hides your account and channel names, handles and email everywhere on the site.
-- **Default account switcher**: save which account or channel YouTube should open on.
-- Master on/off switch; settings shared between YouTube and YouTube Music; open tabs update live.
+- **A lava lamp behind every video**: A living background taken from the video or album art, with Calm, User and Crazy profiles that each keep their own look.
+- **Never "Still watching?" again**: Answers "Continue watching?" and "Video paused" prompts so playback keeps going.
+- **Colors from the art**: The title bar and seek bar take their color from what's playing.
+- **Your quality, every time**: Pick a resolution once, with separate choices for high-frame-rate videos and YouTube Music, plus theater mode.
+- **Screenshot safe**: Hides your account and channel names, handles and email everywhere on the site.
+- **Default account**: Opens YouTube on the account or channel you choose.
+- **Tuned for your GPU**: Frame rate, sample size and blob switches keep the lava light on any machine.
 
 ## A closer look
 

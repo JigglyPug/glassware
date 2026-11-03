@@ -1,10 +1,8 @@
 <div align="center">
 
-# AniDump
+<img src="images/banner.svg" alt="AniDump: AI recommendations from your AniList list." width="100%">
 
-**AI recommendations from your AniList list.**
-
-[![Install](https://img.shields.io/badge/Install-v2.7.5-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/anidump/anidump.user.js)
+[![Install](https://img.shields.io/badge/Install-v2.7.5-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/anidump/anidump.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/userscripts/desktop/anidump/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co%2C%20claude.ai-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
 
@@ -16,12 +14,11 @@ Click the ✦ button on AniList and pick a mode. AniDump has Claude build a reco
 
 ## Features
 
-- **Five modes**: more like my recent, more like my top rated, wildcard, what's airing now, clear my backlog. Works for anime and manga.
-- **Optional mood** ("short", "no isekai", "dark and gritty").
-- **Send to Claude** (board only, paste only, or paste and send), or copy the prompt to the clipboard.
-- **Sequel finder**: sequels to things you have completed but not started, straight from AniList data with no AI.
-- **Standing preferences** added to every prompt.
-- Button in the top bar or the bottom corner.
+- **Five ways to find your next show**: More like my recent, more like my top rated, wildcard, what's airing now and clear my backlog. For anime and manga.
+- **Built from your actual list**: Your AniList history drives every recommendation, with an optional mood like "short" or "no isekai".
+- **Hands it to Claude**: Claude builds a recommendation board in the background and AniDump opens it for you. Or just copy the prompt.
+- **Sequel finder**: Finds sequels to things you've finished but haven't started, straight from AniList.
+- **Your standing preferences**: Taste notes added to every prompt, if you want them.
 
 **Requires:** a claude.ai account, signed in in the same browser, for the Claude features. Clipboard mode works without one.
 

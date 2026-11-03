@@ -1,0 +1,94 @@
+:root{--acc:#ff8a3d;--fg:#f4f1ee;--sub:rgba(244,241,238,.66);--glass:rgba(22,18,20,.48);--edge:rgba(255,255,255,.12);--hi:rgba(255,255,255,.07);
+--bg:#0c0a0d;--b1:#ff6a1f;--b2:#ff2d6f;--b3:#ffb23d;--b4:#7a2cff;--chip:rgba(255,255,255,.08);--shadow:0 30px 80px -30px rgba(0,0,0,.7)}
+[data-theme=frost]{--fg:#1d1d26;--sub:rgba(29,29,38,.62);--glass:rgba(255,255,255,.52);--edge:rgba(255,255,255,.75);--hi:rgba(255,255,255,.6);
+--bg:#e9ebf5;--b1:#b9a7ff;--b2:#ffb3d1;--b3:#9fe7d3;--b4:#9cc8ff;--chip:rgba(255,255,255,.6);--shadow:0 30px 70px -30px rgba(60,60,120,.35)}
+[data-theme=midnight]{--fg:#e8f1f8;--sub:rgba(232,241,248,.64);--glass:rgba(16,26,38,.55);--edge:rgba(255,255,255,.1);--hi:rgba(255,255,255,.06);
+--bg:#0b1622;--b1:#3db4f2;--b2:#7a5cff;--b3:#1f6f9f;--b4:#c063ff;--chip:rgba(255,255,255,.07)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+/* lava lamp */
+.lava{position:fixed;inset:-10vmax;z-index:-1;filter:blur(70px) saturate(1.25);overflow:hidden}
+.lava i{position:absolute;border-radius:50%;opacity:.85;mix-blend-mode:normal;animation:drift 26s ease-in-out infinite alternate}
+.lava i:nth-child(1){width:52vmax;height:52vmax;left:-6%;top:-8%;background:var(--b1)}
+.lava i:nth-child(2){width:46vmax;height:46vmax;right:-8%;top:8%;background:var(--b2);animation-duration:32s;animation-delay:-8s}
+.lava i:nth-child(3){width:40vmax;height:40vmax;left:22%;bottom:-18%;background:var(--b3);animation-duration:29s;animation-delay:-14s}
+.lava i:nth-child(4){width:34vmax;height:34vmax;right:14%;bottom:-6%;background:var(--b4);animation-duration:35s;animation-delay:-4s}
+.lava::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,transparent 0,var(--bg) 85%);opacity:.55}
+[data-theme=frost] .lava::after{opacity:.25}
+@keyframes drift{0%{transform:translate(0,0) scale(1) rotate(0)}33%{transform:translate(9vmax,6vmax) scale(1.12) rotate(40deg)}66%{transform:translate(-6vmax,10vmax) scale(.9) rotate(-30deg)}100%{transform:translate(4vmax,-7vmax) scale(1.06) rotate(20deg)}}
+@media (prefers-reduced-motion:reduce){.lava i{animation:none}}
+.grain{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.06;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+/* glass */
+.glass{background:var(--glass);border:1px solid var(--edge);border-radius:26px;backdrop-filter:blur(26px) saturate(1.7);-webkit-backdrop-filter:blur(26px) saturate(1.7);box-shadow:inset 0 1px 0 var(--hi),var(--shadow)}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:14px;z-index:5;margin:14px auto 0;max-width:1160px;padding:0 24px}
+nav .bar{display:flex;align-items:center;gap:14px;padding:10px 12px 10px 18px;border-radius:999px}
+nav .brand{font-weight:700;letter-spacing:-.01em;text-decoration:none;display:flex;align-items:center;gap:10px}
+nav .dot{width:22px;height:22px;border-radius:50%;background:conic-gradient(from 200deg,#ff8a3d,#ff2d6f,#7a2cff,#3db4f2,#9fe7d3,#ff8a3d);box-shadow:0 0 18px rgba(255,138,61,.6)}
+nav .sp{flex:1}
+nav a.link{font-size:14px;color:var(--sub);text-decoration:none;padding:8px 12px;border-radius:999px}
+nav a.link:hover{color:var(--fg);background:var(--chip)}
+.label{font:600 12px/1 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--acc);display:flex;align-items:center;gap:8px;margin:0 0 18px}
+.label::before{content:"";width:7px;height:7px;background:var(--acc);transform:rotate(45deg);border-radius:1px}
+.label .r{margin-left:auto;color:var(--sub);letter-spacing:.08em;text-transform:none;font-weight:500}
+/* hero */
+.hero{padding:96px 0 56px;text-align:center}
+.hero h1{font-size:clamp(44px,8vw,96px);line-height:.95;letter-spacing:-.045em;margin:0 0 18px;font-weight:800}
+.hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:8px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--edge);color:var(--sub)}
+/* grid */
+section{margin:0 0 64px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px}
+.card{padding:14px;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.card:hover{transform:translateY(-6px)}
+.card .shot{border-radius:16px;overflow:hidden;aspect-ratio:5/4;background:#000;position:relative}
+.card .shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .6s}
+.card:hover .shot img{transform:scale(1.035)}
+.card .shot::after{content:"";position:absolute;inset:0;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.card .body{padding:16px 8px 6px;display:flex;flex-direction:column;flex:1}
+.card h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em}
+.card h3 a{text-decoration:none}
+.card p{margin:0 0 14px;color:var(--sub)}
+.card .meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.card .meta .chip{font-size:10.5px;padding:6px 9px}
+.acts{display:flex;gap:8px;margin-top:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:650;font-size:14.5px;padding:11px 18px;border-radius:999px;text-decoration:none;border:1px solid transparent;transition:filter .2s,transform .2s}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.pri{background:var(--acc);color:#fff;box-shadow:0 10px 30px -10px var(--acc)}
+.btn.sec{background:var(--chip);border-color:var(--edge)}
+.btn.big{font-size:16px;padding:14px 24px}
+.card .acts .btn{flex:1}
+/* product page */
+.phero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:72px 0 56px}
+.phero h1{font-size:clamp(40px,6vw,68px);line-height:1;letter-spacing:-.04em;margin:0 0 14px}
+.phero .tag{font-size:clamp(18px,2vw,22px);color:var(--sub);margin:0 0 22px}
+.phero .intro{margin:0 0 26px;max-width:520px}
+.phero .chips{justify-content:flex-start;margin-bottom:28px}
+.phero .acts{gap:10px}
+.phero figure{margin:0;padding:12px}
+.phero figure img{width:100%;display:block;border-radius:16px;max-height:640px;object-fit:cover;object-position:top}
+.phero.phone figure img{max-height:none}
+.phero.phone figure{max-width:340px;justify-self:center}
+.feats{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.feat{padding:22px 22px 20px;border-radius:22px}
+.feat h4{margin:0 0 6px;font-size:16.5px;letter-spacing:-.01em;display:flex;gap:10px;align-items:baseline}
+.feat h4::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc);transform:translateY(-1px)}
+.feat p{margin:0;color:var(--sub);font-size:15px}
+.feat code{font-size:.9em;background:var(--chip);padding:1px 6px;border-radius:6px}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}
+.gal.phone{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.gal figure{margin:0;padding:12px}
+.gal img{width:100%;display:block;border-radius:14px}
+.gal figcaption{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);padding:14px 6px 4px;text-align:center}
+.note{padding:18px 22px;border-radius:20px;color:var(--sub)}
+.note b{color:var(--fg)}
+.more{display:flex;gap:12px;flex-wrap:wrap}
+.more a{flex:1;min-width:200px;padding:16px 18px;border-radius:20px;text-decoration:none}
+.more a small{display:block;color:var(--sub)}
+footer{padding:30px 0 60px;text-align:center;color:var(--sub);font-size:14px}
+footer a{color:var(--fg)}
+@media (max-width:560px){nav a.link.sec{display:none}.label .r{display:none}nav{top:10px}}
+@media (max-width:860px){.phero{grid-template-columns:1fr;padding-top:48px}.gal{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero{padding-top:64px}}
