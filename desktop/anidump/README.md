@@ -1,8 +1,16 @@
+<div align="center">
+
 # AniDump
 
-> AI recommendations from your AniList list.
+**AI recommendations from your AniList list.**
 
-**[Install](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/anidump/anidump.user.js)** · v2.7.5 · Runs on: anilist.co, claude.ai
+[![Install](https://img.shields.io/badge/Install-v2.7.5-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/anidump/anidump.user.js)
+
+![Runs on](https://img.shields.io/badge/runs%20on-anilist.co%2C%20claude.ai-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
+
+<img src="images/main.webp" width="620">
+
+</div>
 
 Click the ✦ button on AniList and pick a mode. AniDump has Claude build a recommendation board from your list in the background, then opens it for you.
 
@@ -15,19 +23,10 @@ Click the ✦ button on AniList and pick a mode. AniDump has Claude build a reco
 - **Standing preferences** added to every prompt.
 - Button in the top bar or the bottom corner.
 
-## Screenshots
+**Requires:** a claude.ai account, signed in in the same browser, for the Claude features. Clipboard mode works without one.
 
-**Recommend**
+## A closer look
 
-<img src="images/main.webp" width="560">
-
-**Sequels**
-
-<img src="images/sequels.webp" width="560">
-
-**Settings**
-
-<img src="images/settings.webp" width="560">
-
-
-_Needs you to be signed in to claude.ai in the same browser for the Claude features._
+<table>
+<tr><td align="center" valign="top"><img src="images/sequels.webp" width="400"><br><sub><b>Sequels</b></sub></td><td align="center" valign="top"><img src="images/settings.webp" width="400"><br><sub><b>Settings</b></sub></td></tr>
+</table>

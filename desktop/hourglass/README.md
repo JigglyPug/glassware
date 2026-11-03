@@ -1,8 +1,16 @@
+<div align="center">
+
 # Hourglass
 
-> Screen time and lockdown for every site.
+**Screen time and lockdown for every site.**
 
-**[Install](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/hourglass/hourglass.user.js)** · v1.1.1 · Runs on: Every site
+[![Install](https://img.shields.io/badge/Install-v1.1.1-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/hourglass/hourglass.user.js)
+
+![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
+
+<img src="images/main.webp" width="620">
+
+</div>
 
 Hourglass tracks how long you spend on every site and blocks the distracting ones on a schedule. During lockdown the settings lock too, so you cannot talk yourself out of it in the moment.
 
@@ -19,23 +27,9 @@ Hourglass tracks how long you spend on every site and blocks the distracting one
 - Idle timeout, video/music counts as active, history length, daily goal and week start day.
 - Private: data stays in Tampermonkey on that device, and only site names are stored, never full addresses or page titles.
 
-## Screenshots
+## A closer look
 
-**Dashboard**
-
-<img src="images/main.webp" width="560">
-
-**Schedule**
-
-<img src="images/schedule.webp" width="560">
-
-**Sites**
-
-<img src="images/sites.webp" width="560">
-
-**Settings**
-
-<img src="images/settings.webp" width="560">
-
-
-_Screenshots use made-up demo data._
+<table>
+<tr><td align="center" valign="top"><img src="images/schedule.webp" width="400"><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><img src="images/sites.webp" width="400"><br><sub><b>Sites</b></sub></td></tr>
+<tr><td align="center" valign="top"><img src="images/settings.webp" width="400"><br><sub><b>Settings</b></sub></td></tr>
+</table>
