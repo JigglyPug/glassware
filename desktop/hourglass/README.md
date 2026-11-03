@@ -31,3 +31,11 @@ Hourglass tracks how long you spend on every site and blocks the distracting one
 <tr><td align="center" valign="top"><img src="images/schedule.webp" width="400"><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><img src="images/sites.webp" width="400"><br><sub><b>Sites</b></sub></td></tr>
 <tr><td align="center" valign="top"><img src="images/settings.webp" width="400"><br><sub><b>Settings</b></sub></td></tr>
 </table>
+
+## On your phone
+
+The same script switches to a phone layout on its own: a bottom-sheet menu, a trimmed dashboard you can tap for details, and bigger touch targets. Open it from the Tampermonkey menu, or from the Open Hourglass link on any block screen.
+
+<table>
+<tr><td align="center" valign="top"><img src="images/phone-dashboard.webp" width="200"><br><sub><b>Dashboard</b></sub></td><td align="center" valign="top"><img src="images/phone-schedule.webp" width="200"><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><img src="images/phone-block.webp" width="200"><br><sub><b>Block screen</b></sub></td><td align="center" valign="top"><img src="images/phone-nudge.webp" width="200"><br><sub><b>Late-night nudge</b></sub></td></tr>
+</table>
