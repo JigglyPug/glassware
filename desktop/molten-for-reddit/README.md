@@ -6,7 +6,7 @@
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com%20%28new%20Reddit%29-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
 
-<img src="images/lava.webp" width="620">
+<img src="images/general.webp" width="620">
 
 </div>
 
@@ -25,6 +25,6 @@ Molten for Reddit puts a lava-lamp background made from the image or video you a
 ## A closer look
 
 <table>
-<tr><td align="center" valign="top"><img src="images/general.webp" width="400"><br><sub><b>General</b></sub></td><td align="center" valign="top"><img src="images/video.webp" width="400"><br><sub><b>Video</b></sub></td></tr>
+<tr><td align="center" valign="top"><img src="images/lava.webp" width="400"><br><sub><b>Lava</b></sub></td><td align="center" valign="top"><img src="images/video.webp" width="400"><br><sub><b>Video</b></sub></td></tr>
 <tr><td align="center" valign="top"><img src="images/reddit.webp" width="400"><br><sub><b>Reddit</b></sub></td><td align="center" valign="top"><img src="images/search.webp" width="400"><br><sub><b>Search</b></sub></td></tr>
 </table>

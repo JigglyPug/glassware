@@ -6,7 +6,7 @@
 
 ![Runs on](https://img.shields.io/badge/runs%20on-YouTube%2C%20YouTube%20Music-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
 
-<img src="images/lava.webp" width="620">
+<img src="images/general.webp" width="620">
 
 </div>
 
@@ -25,6 +25,6 @@ Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plu
 ## A closer look
 
 <table>
-<tr><td align="center" valign="top"><img src="images/general.webp" width="400"><br><sub><b>General</b></sub></td><td align="center" valign="top"><img src="images/account.webp" width="400"><br><sub><b>Account</b></sub></td></tr>
-<tr><td align="center" valign="top"><img src="images/quality.webp" width="400"><br><sub><b>Quality</b></sub></td></tr>
+<tr><td align="center" valign="top"><img src="images/account.webp" width="400"><br><sub><b>Account</b></sub></td><td align="center" valign="top"><img src="images/quality.webp" width="400"><br><sub><b>Quality</b></sub></td></tr>
+<tr><td align="center" valign="top"><img src="images/lava.webp" width="400"><br><sub><b>Lava</b></sub></td></tr>
 </table>
