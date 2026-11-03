@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.2.3
+// @version      1.2.4
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.3';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.4';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -825,9 +825,11 @@ h1 span{color:var(--ink)}
         const listed = k => !!(S.sites.find(s => s.d === k) || matchSite(k, S.sites));
         const otherToday = Object.entries(o.s || {}).filter(([k]) => !listed(k)).sort((a, b) => b[1] - a[1]);
         const agg = {};
-        for (const x of last7) for (const [k, v] of Object.entries(x.o?.s || {})) agg[k] = (agg[k] || 0) + v;
-        const sugs = Object.entries(agg).filter(([k, v]) => !listed(k) && !S.ignored.some(g => g.d === k) && v / 7 >= SUGGEST_MIN)
-            .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => ({ k, avg: v / 7, cat: guessCat(k) }));
+        // average over the days Hourglass has been installed (up to 7), so a new install doesn't divide by days it never saw
+        const sugDays = Math.max(1, last7.filter(x => x.k >= installK).length);
+        for (const x of last7) if (x.k >= installK) for (const [k, v] of Object.entries(x.o?.s || {})) agg[k] = (agg[k] || 0) + v;
+        const sugs = Object.entries(agg).filter(([k, v]) => !listed(k) && !S.ignored.some(g => g.d === k) && v / sugDays >= SUGGEST_MIN)
+            .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => ({ k, avg: v / sugDays, cat: guessCat(k) }));
 
         // hourly
         const hours = Array.from({ length: 24 }, (_, i) => (o.h || [])[i] || [0, 0, 0, 0, 0]);
