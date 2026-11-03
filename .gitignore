@@ -1,4 +1,6 @@
-.DS_Store
-*.storage.json
 *.options.json
+*.pyc
+*.storage.json
+.DS_Store
+__pycache__/
 _preview.html

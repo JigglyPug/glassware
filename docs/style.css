@@ -85,6 +85,7 @@ section{margin:0 0 64px}
 .gal figcaption{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);padding:14px 6px 4px;text-align:center}
 .note{padding:18px 22px;border-radius:20px;color:var(--sub)}
 .note b{color:var(--fg)}
+.lede{color:var(--sub);max-width:720px;margin:-4px 0 18px}
 .more{display:flex;gap:12px;flex-wrap:wrap}
 .more a{flex:1;min-width:200px;padding:16px 18px;border-radius:20px;text-decoration:none}
 .more a small{display:block;color:var(--sub)}

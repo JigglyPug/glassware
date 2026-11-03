@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.2.10
+// @version      2.2.11
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -22,6 +22,9 @@
 // @connect      a.thumbs.redditmedia.com
 // @connect      b.thumbs.redditmedia.com
 // @connect      packaged-media.redd.it
+// @author       JigglyPug
+// @license      MIT
+// @icon         https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/molten-for-reddit.png
 // @homepageURL  https://jigglypug.github.io/glassware/desktop/molten-for-reddit/
 // @supportURL   https://github.com/JigglyPug/glassware/issues
 // @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js

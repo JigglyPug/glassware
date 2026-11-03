@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.5.5
+// @version      3.5.6
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -20,6 +20,9 @@
 // @connect      lh3.googleusercontent.com
 // @connect      yt3.googleusercontent.com
 // @connect      yt3.ggpht.com
+// @author       JigglyPug
+// @license      MIT
+// @icon         https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/molten-tools.png
 // @homepageURL  https://jigglypug.github.io/glassware/desktop/molten-tools/
 // @supportURL   https://github.com/JigglyPug/glassware/issues
 // @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-tools/molten-tools.user.js

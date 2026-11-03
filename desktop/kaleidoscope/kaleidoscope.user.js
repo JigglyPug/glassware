@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.8.1
+// @version      2.8.2
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
-// @author       JigglyPug
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
 // @noframes
@@ -18,6 +17,9 @@
 // @grant        GM_registerMenuCommand
 // @grant        window.close
 // @connect      claude.ai
+// @author       JigglyPug
+// @license      MIT
+// @icon         https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/kaleidoscope.png
 // @homepageURL  https://jigglypug.github.io/glassware/desktop/kaleidoscope/
 // @supportURL   https://github.com/JigglyPug/glassware/issues
 // @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/kaleidoscope/kaleidoscope.user.js
