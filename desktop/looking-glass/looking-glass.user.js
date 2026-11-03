@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.0.5
+// @version      1.0.6
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -11,6 +11,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
 // @grant        GM_addValueChangeListener
+// @grant        GM_addElement
 // @grant        unsafeWindow
 // @connect      *
 // @sandbox      JavaScript
@@ -93,7 +94,7 @@
     const SD_KEYS = ['browser_native_sd_url', 'playable_url', 'sd_src', 'sdSrc', 'sd_src_no_ratelimit', 'sdPlaybackUrl', 'video_url', 'videoUrl', 'playAddr', 'downloadAddr', 'playbackUrl'];
     const ID_KEYS = ['videoId', 'video_id', 'videoID', 'videoFBID', 'id', 'pk', 'id_str', 'rest_id', 'aweme_id', 'media_id', 'mediaId'];
     const CODE_KEYS = ['code', 'shortcode'];
-    const MARK = /browser_native|playable_url|video_versions|"video_url"|playAddr|video_info|hd_src|hdSrc/;
+    const MARK = /browser_native|playable_url|progressive_url|video_versions|"video_url"|playAddr|video_info|hd_src|hdSrc/;
 
     const isUrl = v => typeof v === 'string' && /^https?:\/\//.test(v) && !/\.(jpe?g|png|webp|gif|heic)(\?|$)/i.test(v);
     const okId = v => (typeof v === 'string' || typeof v === 'number') && /^\d{6,}(_\d+)?$/.test(String(v));
@@ -107,6 +108,13 @@
         if (Array.isArray(vv) && vv.length) {
             const s = vv.filter(x => x && isUrl(x.url)).sort((a, b) => (b.width || 0) - (a.width || 0));
             if (s.length) { hd = hd || s[0].url; sd = sd || s[s.length - 1].url; }
+        }
+        // newer Facebook: progressive_urls: [{ progressive_url, metadata: { quality: 'HD' | 'SD' } }]
+        const pu = o.progressive_urls || o.progressiveUrls;
+        if (Array.isArray(pu)) for (const x of pu) {
+            const u = x && (x.progressive_url || x.progressiveUrl);
+            if (!isUrl(u)) continue;
+            if (/hd/i.test((x.metadata && x.metadata.quality) || '')) hd = hd || u; else sd = sd || u;
         }
         const vi = o.video_info && o.video_info.variants;
         if (Array.isArray(vi)) {
@@ -145,7 +153,7 @@
         }
     }
     const unesc = s => { try { return JSON.parse('"' + s + '"'); } catch { return s.replace(/\\\//g, '/').replace(/\\u0026/g, '&'); } };
-    const RX_URL = /"(browser_native_hd_url|browser_native_sd_url|playable_url_quality_hd|playable_url|hd_src|sd_src|video_url)"\s*:\s*"((?:[^"\\]|\\.)+)"/g;
+    const RX_URL = /"(browser_native_hd_url|browser_native_sd_url|playable_url_quality_hd|playable_url|progressive_url|hd_src|sd_src|video_url)"\s*:\s*"((?:[^"\\]|\\.)+)"/g;
     const RX_ID = /"(?:videoId|video_id|videoID|id)"\s*:\s*"?(\d{6,})/g;
     // for script text that isn't clean JSON: pair each URL with the last video ID written before it
     function harvestLoose(text) {
@@ -241,8 +249,12 @@
         if (card) { const a = card.querySelector('a[href*="watch?v="], a[href*="/shorts/"]'); id = a && ytId(a.href); }
         if (!id && el.closest('#movie_player, ytd-player, ytd-reel-video-renderer, ytd-shorts, #player-container-id')) id = ytId(location.href);
         if (!id) return null;
-        const u = 'https://www.youtube.com/embed/' + id + '?autoplay=1&rel=0';
-        return { hd: u, sd: u, how: 'clean player (embed)', q: 'Clean', post: null };
+        if (location.pathname === '/watch' && id === ytId(location.href)) return null; // already on that video's page
+        // YouTube's embed player shows "Error 153" when opened by itself in a tab, so open the
+        // normal watch page instead (Shorts come up in the regular player), picking up where you are
+        const t = el.tagName === 'VIDEO' && el.currentTime > 3 ? '&t=' + Math.floor(el.currentTime) + 's' : '';
+        const u = 'https://www.youtube.com/watch?v=' + id + t;
+        return { hd: u, sd: u, how: 'YouTube page', q: '', post: null };
     }
 
     /* ───────────────────────── network + page data ───────────────────────── */
@@ -289,7 +301,92 @@
             if (t && t.length > 40 && MARK.test(t)) feedText(t);
         }
     }
-    if (SITE && SITE.net) hookNet();
+    /* Page bridge. Some managers run this script walled off from the page's own JavaScript
+       (desktop Tampermonkey, for one). From there the React player data on each <video> and
+       the site's network replies are invisible. This tiny helper runs inside the page and
+       passes both back over DOM events. Where the script already shares the page, it's harmless. */
+    function bridge(PLAYER_SEL) {
+        if (window.__lgBridge) { document.dispatchEvent(new CustomEvent('lg:hello')); return; }
+        window.__lgBridge = 1;
+        const MARK = /browser_native|playable_url|progressive_url|video_versions|"video_url"|playAddr|video_info|hd_src|hdSrc/;
+        const send = t => { try { if (typeof t === 'string' && t.length > 30 && MARK.test(t)) document.dispatchEvent(new CustomEvent('lg:net', { detail: t })); } catch (e) {} };
+        try {
+            const X = XMLHttpRequest.prototype, xs = X.send;
+            X.send = function () {
+                try { this.addEventListener('load', function () { try { const t = this.responseType; if (t === '' || t === 'text') send(this.responseText); else if (t === 'json' && this.response) send(JSON.stringify(this.response)); } catch (e) {} }); } catch (e) {}
+                return xs.apply(this, arguments);
+            };
+        } catch (e) {}
+        try {
+            const F = window.fetch;
+            window.fetch = function () {
+                const p = F.apply(this, arguments);
+                try { p.then(r => { try { const ct = r.headers.get('content-type') || ''; if (!ct || /json|javascript|text/.test(ct)) r.clone().text().then(send, () => {}); } catch (e) {} }, () => {}); } catch (e) {}
+                return p;
+            };
+        } catch (e) {}
+        let budget = 0;
+        const prune = (o, d, seen) => {
+            if (o == null) return o;
+            const t = typeof o;
+            if (t === 'string') { if (o.length > 4000) return undefined; budget += o.length; return o; }
+            if (t === 'number' || t === 'boolean') return o;
+            if (t !== 'object' || d > 3 || budget > 400000 || seen.has(o) || o.$$typeof || o.nodeType) return undefined;
+            seen.add(o);
+            if (Array.isArray(o)) return o.slice(0, 12).map(x => prune(x, d + 1, seen)).filter(x => x !== undefined);
+            const r = {}; let n = 0;
+            for (const k in o) {
+                if (++n > 80) break;
+                if (k === 'children' || k[0] === '_') continue;
+                let v; try { v = o[k]; } catch (e) { continue; }
+                const q = prune(v, d + 1, seen);
+                if (q !== undefined) r[k] = q;
+            }
+            return r;
+        };
+        document.addEventListener('lg:ask', e => {
+            const out = [];
+            try {
+                const el = document.querySelector('[data-lg-ask="' + e.detail + '"]');
+                let f = null;
+                for (let n = el, i = 0; n && i < 6 && !f; n = n.parentElement, i++)
+                    for (const k of Object.keys(n)) if (k.indexOf('__reactFiber$') === 0 || k.indexOf('__reactInternalInstance$') === 0) { f = n[k]; break; }
+                if (!f) out.push({ __nofiber: 1 });
+                budget = 0;
+                for (let i = 0; f && i < 45; i++, f = f.return) {
+                    const sn = f.stateNode;
+                    if (i > 0 && sn && sn.nodeType === 1 && sn.querySelectorAll(PLAYER_SEL).length > 1) break;
+                    const p = f.memoizedProps;
+                    if (p && typeof p === 'object') { const q = prune(p, 0, new WeakSet()); if (q && Object.keys(q).length) out.push(q); }
+                }
+            } catch (x) {}
+            document.dispatchEvent(new CustomEvent('lg:ans', { detail: JSON.stringify(out) }));
+        });
+        document.dispatchEvent(new CustomEvent('lg:hello'));
+    }
+    let bridgeOn = false, bridgeAns = null, askN = 0;
+    function startBridge() {
+        document.addEventListener('lg:hello', () => { bridgeOn = true; });
+        document.addEventListener('lg:net', e => { if (typeof e.detail === 'string') feedText(e.detail); });
+        document.addEventListener('lg:ans', e => { bridgeAns = typeof e.detail === 'string' ? e.detail : null; });
+        const code = '(' + bridge.toString() + ')(' + JSON.stringify(PLAYER_SEL) + ');';
+        const inject = root => {
+            try { if (typeof GM_addElement === 'function') GM_addElement(root, 'script', { textContent: code }); } catch {}
+            if (!bridgeOn) try { const sc = document.createElement('script'); sc.textContent = code; root.append(sc); sc.remove(); } catch {}
+        };
+        // at document-start the <html> element may not exist yet; inject the moment it does
+        if (document.documentElement) inject(document.documentElement);
+        else new MutationObserver((_, o) => { if (document.documentElement) { o.disconnect(); inject(document.documentElement); } }).observe(document, { childList: true });
+    }
+    function askBridge(el) {
+        if (!bridgeOn) return null;
+        const n = String(++askN);
+        bridgeAns = null;
+        try { el.setAttribute('data-lg-ask', n); document.dispatchEvent(new CustomEvent('lg:ask', { detail: n })); } catch {} finally { el.removeAttribute('data-lg-ask'); }
+        try { return JSON.parse(bridgeAns || 'null'); } catch { return null; }
+    }
+    if (SITE && (SITE.net || SITE.fiber)) startBridge();
+    if (SITE && SITE.net && !bridgeOn) hookNet(); // bridge not up yet (or blocked): hook from here too; duplicates are ignored
 
     /* ───────────────────────── which video is this? ───────────────────────── */
 
@@ -301,36 +398,51 @@
         return null;
     }
     const FIBER_IDS = ['videoID', 'videoId', 'videoFBID', 'video_id', 'mediaId', 'media_id', 'pk'];
-    const FIBER_NEST = ['video', 'media', 'data', 'item', 'post', 'attachment', 'playable', 'videoData', 'reel', 'clip', 'node', 'implementation', 'playerData'];
     // strong = props that are explicitly a video/media ID; weak = a plain "id" on a nested object
-    function inspectProps(o, strong, weak, d) {
+    function walkProps(o, strong, weak, d) {
         let l = null; try { l = linksOf(o); } catch {}
         if (l) return l;
-        for (const k of FIBER_IDS) { const v = o[k]; if (okId(v)) { const s = String(v).split('_')[0]; if (!strong.includes(s)) strong.push(s); } }
-        for (const k of CODE_KEYS) { const v = o[k]; if (okCode(v) && !strong.includes(v)) strong.push(v); }
-        if (d >= 1 && okId(o.id)) { const s = String(o.id).split('_')[0]; if (!weak.includes(s)) weak.push(s); }
-        if (d < 2) for (const k of FIBER_NEST) {
-            let v; try { v = o[k]; } catch { continue; }
-            if (v && typeof v === 'object' && !Array.isArray(v) && !v.$$typeof) { const r = inspectProps(v, strong, weak, d + 1); if (r) return r; }
+        for (const k of FIBER_IDS) { let v; try { v = o[k]; } catch { continue; } if (okId(v)) { const x = String(v).split('_')[0]; if (!strong.includes(x)) strong.push(x); } }
+        for (const k of CODE_KEYS) { let v; try { v = o[k]; } catch { continue; } if (okCode(v) && !strong.includes(v)) strong.push(v); }
+        if (d >= 1) { let v; try { v = o.id; } catch {} if (okId(v)) { const x = String(v).split('_')[0]; if (!weak.includes(x)) weak.push(x); } }
+        if (d < 3) {
+            let keys = []; try { keys = Object.keys(o); } catch {}
+            for (const k of keys.slice(0, 80)) {
+                if (k === 'children' || k[0] === '_') continue;
+                let v; try { v = o[k]; } catch { continue; }
+                if (v && typeof v === 'object' && !Array.isArray(v) && !v.$$typeof && !v.nodeType) { const r = walkProps(v, strong, weak, d + 1); if (r) return r; }
+            }
         }
         return null;
     }
+    let lastFiber = '';
+    const fiberDirect = () => { const v = document.querySelector('video'); return !!(v && fiberOf(v)); };
     // React keeps each component's props on the DOM node. Walk up from the <video> until the
     // subtree holds a second video: whatever we find before then belongs to this video only.
     function fromFiber(el) {
-        let f = fiberOf(el);
-        if (!f) return null;
         const strong = [], weak = [];
         const ids = () => strong.concat(weak.filter(x => !strong.includes(x)));
-        try {
-            for (let i = 0; f && i < 45; i++, f = f.return) {
-                const sn = f.stateNode;
-                if (i > 0 && sn && sn.nodeType === 1 && sn.querySelectorAll && sn.querySelectorAll(PLAYER_SEL).length > 1) break;
-                const p = f.memoizedProps;
-                if (p && typeof p === 'object') { const l = inspectProps(p, strong, weak, 0); if (l) return { hd: l.hd, sd: l.sd, ids: ids() }; }
-            }
-        } catch {}
-        return strong.length || weak.length ? { ids: ids() } : null;
+        const finish = l => {
+            lastFiber = l ? 'file found' : strong.length || weak.length ? 'video ID only' : 'nothing useful';
+            return l ? { hd: l.hd, sd: l.sd, ids: ids() } : strong.length || weak.length ? { ids: ids() } : null;
+        };
+        let f = fiberOf(el);
+        if (f) {
+            try {
+                for (let i = 0; f && i < 45; i++, f = f.return) {
+                    const sn = f.stateNode;
+                    if (i > 0 && sn && sn.nodeType === 1 && sn.querySelectorAll && sn.querySelectorAll(PLAYER_SEL).length > 1) break;
+                    const p = f.memoizedProps;
+                    if (p && typeof p === 'object') { const l = walkProps(p, strong, weak, 0); if (l) return finish(l); }
+                }
+            } catch {}
+            return finish(null);
+        }
+        const snaps = askBridge(el);
+        if (!snaps) { lastFiber = bridgeOn ? 'no answer' : 'no page access'; return null; }
+        if (snaps.length === 1 && snaps[0].__nofiber) { lastFiber = 'no React data on this player'; return null; }
+        for (const p of snaps) { const l = walkProps(p, strong, weak, 0); if (l) return finish(l); }
+        return finish(null);
     }
     const countPlayers = n => n.querySelectorAll(PLAYER_SEL).length;
     function idsFromHref(href, out) {
@@ -822,7 +934,7 @@ button:disabled{cursor:not-allowed}
     const items = new Map();   // element -> { el, b, res, resAt, main, seen, hidden }
     const inView = new Set();
     const io = new IntersectionObserver(es => { for (const e of es) e.isIntersecting ? inView.add(e.target) : inView.delete(e.target); kick(); }, { threshold: [0, .2, .5] });
-    let shownCount = 0, readyCount = 0, lastHow = '';
+    let shownCount = 0, readyCount = 0, lastHow = '', lastMiss = '';
     function scan() {
         if (document.visibilityState === 'hidden') return;
         if (SITE && SITE.net) scanScripts();
@@ -935,7 +1047,9 @@ button:disabled{cursor:not-allowed}
         }
         if (!url) {
             if (res.post && S.cfg.noDirect === 'post') { openUrl(res.post, S.cfg.active); layer.flash(it); layer.toast('No direct file found, so the post opened instead'); }
-            else layer.toast("Couldn't find this video's file yet. Let it play a moment, then try again.");
+            else layer.toast(res.deepIds.length || res.post ? "Couldn't find this video's file yet. Let it play a moment, then try again."
+                : "Couldn't tell which video this is. Settings › Diagnostics shows what was found.");
+            lastMiss = (SITE ? SITE.name : 'site') + ': ' + (lastFiber || 'no player data') + ', ' + (res.deepIds.length ? res.deepIds.length + ' ID' + (res.deepIds.length > 1 ? 's' : '') : 'no ID');
             return;
         }
         lastHow = how;
@@ -1178,6 +1292,9 @@ button:disabled{cursor:not-allowed}
                     h('span', { text: 'Video links learned' }), h('b', { text: String(IDX.size) }),
                     h('span', { text: 'Videos tracked' }), h('b', { text: String(items.size) }),
                     h('span', { text: 'Last open came from' }), h('b', { text: lastHow || 'nothing yet' }),
+                    SITE && (SITE.fiber || SITE.net) ? [h('span', { text: 'Page access' }), h('b', { text: fiberDirect() ? 'Direct' : bridgeOn ? 'Through the bridge' : 'Blocked' })] : null,
+                    SITE && SITE.fiber ? [h('span', { text: 'Player data' }), h('b', { text: lastFiber || 'not checked yet' })] : null,
+                    lastMiss ? [h('span', { text: 'Last miss' }), h('b', { text: lastMiss, title: lastMiss })] : null,
                     h('span', { text: 'Device' }), h('b', { text: TOUCH ? 'Touch' : 'Mouse' }))));
             return out;
         },
