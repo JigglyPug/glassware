@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.1.0
+// @version      1.2.0
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -2340,46 +2340,115 @@ div.lava-blobs {
     '#ytt-toggle.lava-float{right:14px!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;width:46px!important;height:46px!important}'
   );
 
-  /* "Open in app" nagging. Reddit's app-promo pieces are custom elements named xpromo-..., plus buttons that
-     just say "Open app". Pop-ups get their "Continue" button tapped (so the page isn't left locked);
-     banners and buttons are hidden. Anything that hides content until you open the app (NSFW gates) is left alone. */
+  /* "Open in app" nagging. Reddit keeps renaming these (xpromo-..., app-upsell-..., #blocking-modal), and puts
+     their buttons inside sealed-off parts (shadow DOM), so they're found three ways: by name, by being a sheet /
+     dialog / full-screen overlay that talks about the app, and by buttons that only say "Open in app".
+     A pop-up gets its "Continue" / "Not now" / close tapped when it has one, then it's hidden and the page is
+     unlocked (scrolling, taps). Anything that hides content until you open the app is hidden too; NSFW / age gates
+     are left alone. */
   const APP = (() => {
-    const PROMO_TEXT = /^(open in app|open app|get app|get the app|use app|use the app|open reddit app|view in app|switch to the app)$/i;
-    const STAY_TEXT = /^(continue|not now|continue in browser|stay in browser|browser|no thanks|maybe later|keep using web)$/i;
-    const GATE = /nsfw|blocking|gate|age/i;
+    const BUTTON_TEXT = /^(open|view|continue|use|watch|read)( it)? in (the )?(reddit )?app$|^open in reddit( app)?$|^(open|get|use|download|try) (the )?(reddit )?app$|^switch to (the )?app$|^view in reddit app$/i;
+    const SHEET_TEXT = /reddit app|in the app|in app\b|get the app|open in reddit|keep using reddit|see reddit in|app to keep|use the app|download the app|better in the app/i;
+    const STAY_TEXT = /^(continue|not now|no thanks|maybe later|later|continue in (the )?browser|stay in (the )?browser|keep using (the )?(web|browser|mobile web|website)|use (the )?(browser|website|mobile web)|continue (on|in) (the )?(web|website|mobile web)|close|dismiss|[x×✕])$/i;
+    const NAME_HIT = /XPROMO|UPSELL|APP-SELECTOR|OPEN-IN-APP|INSTALL-APP|APP-BANNER|BLOCKING-BOTTOM-SHEET/;
+    const GATE = /NSFW|AGE-|MATURE|QUARANTIN/;
+    const SHEETS = '[role="dialog"], dialog, faceplate-dialog, faceplate-modal, faceplate-bottom-sheet, [class*="bottom-sheet"], ' +
+      '[class*="BottomSheet"], [id*="bottom-sheet"], #blocking-modal, shreddit-experience-tree';
     const clicked = new WeakSet();
     const hidden = new Set();
-    coreStyle('[data-molten-app-hide]{display:none!important}');
-    const hide = e => { if (!e.hasAttribute('data-molten-app-hide')) { e.setAttribute('data-molten-app-hide', ''); hidden.add(e); log('hid app prompt', e.tagName.toLowerCase()); } };
-    const textOf = e => (e.textContent || '').replace(/\s+/g, ' ').trim();
+    coreStyle('[data-molten-app-hide]{display:none!important}' +
+      'html[data-molten-unlock],html[data-molten-unlock] body{overflow-y:auto!important;touch-action:auto!important}');
+    const clean = s => (s || '').replace(/\s+/g, ' ').trim();
+    // text including what's inside sealed-off parts (a few levels deep)
+    function deepText(e, depth = 0) {
+      let s = e.textContent || '';
+      if (depth < 3) {
+        if (e.shadowRoot) s += ' ' + deepText(e.shadowRoot, depth + 1);
+        for (const c of e.querySelectorAll ? e.querySelectorAll('*') : []) if (c.shadowRoot) s += ' ' + deepText(c.shadowRoot, depth + 1);
+      }
+      return s.length > 4000 ? s.slice(0, 4000) : s;
+    }
+    function deepButtons(e, depth = 0, out = []) {
+      const root = e.shadowRoot && depth === 0 ? [e, e.shadowRoot] : [e];
+      for (const r of root) {
+        for (const b of r.querySelectorAll('button, a, [role="button"], faceplate-tracker')) out.push(b);
+        if (depth < 3) for (const c of r.querySelectorAll('*')) if (c.shadowRoot) deepButtons(c.shadowRoot, depth + 1, out);
+      }
+      return out;
+    }
+    const label = b => clean(b.getAttribute && (b.getAttribute('aria-label') || '')) || clean(b.textContent);
+    const hide = (e, why) => {
+      if (e.hasAttribute('data-molten-app-hide')) return;
+      e.setAttribute('data-molten-app-hide', '');
+      hidden.add(e);
+      log('hid app prompt (' + why + '):', e.tagName.toLowerCase() + (e.id ? '#' + e.id : ''));
+    };
+    function dismiss(e, why) {
+      const stay = deepButtons(e).find(b => STAY_TEXT.test(label(b)) && !BUTTON_TEXT.test(label(b)));
+      if (stay && !clicked.has(stay)) { clicked.add(stay); try { stay.click(); } catch (x) { /* ignore */ } log('tapped "' + label(stay) + '" on an app prompt'); }
+      hide(e, why);
+    }
+    function unlock() {
+      const html = document.documentElement, body = document.body;
+      html.setAttribute('data-molten-unlock', '');
+      for (const el of [html, body]) {
+        if (!el) continue;
+        if (el.style.overflow === 'hidden' || el.style.overflowY === 'hidden') { el.style.overflow = ''; el.style.overflowY = ''; }
+        if (el.style.pointerEvents === 'none') el.style.pointerEvents = '';
+        if (el.hasAttribute('inert')) el.removeAttribute('inert');
+      }
+      // "fixed body" scroll lock: put the page back where it was
+      if (body && body.style.position === 'fixed') {
+        const y = -parseInt(body.style.top || '0', 10) || 0;
+        body.style.position = ''; body.style.top = ''; body.style.width = '';
+        if (y) window.scrollTo(0, y);
+      }
+      for (const el of document.querySelectorAll('shreddit-app[inert], main[inert], #main-content[inert]')) el.removeAttribute('inert');
+      // the blurred backdrop a pop-up leaves behind
+      for (const el of document.querySelectorAll('div[style*="backdrop-filter"], div[style*="inset: 0"], div[style*="inset:0"]')) {
+        const st = el.getAttribute('style') || '';
+        if (/position:\s*fixed/.test(st) && /backdrop-filter|inset:\s*0/.test(st) && clean(el.textContent).length < 40 && !el.closest('#ytt-panel')) hide(el, 'backdrop');
+      }
+    }
     function run() {
       if (!ENABLED || !rd.hideAppPrompts) {
         for (const e of hidden) e.removeAttribute('data-molten-app-hide');
         hidden.clear();
+        document.documentElement.removeAttribute('data-molten-unlock');
         return;
       }
-      let unlocked = false;
+      const before = hidden.size;
+      // 1. by name
       for (const e of document.getElementsByTagName('*')) {
         const tag = e.tagName;
-        if (tag.length < 7 || tag.charCodeAt(0) !== 88 /* X */ || !tag.startsWith('XPROMO')) continue;
-        if (GATE.test(tag) || e.hasAttribute('data-molten-app-hide')) continue;
-        const stay = [...e.querySelectorAll('button, a, [role="button"]')].concat(e.shadowRoot ? [...e.shadowRoot.querySelectorAll('button, a, [role="button"]')] : [])
-          .find(x => STAY_TEXT.test(textOf(x)));
-        if (stay && !clicked.has(stay)) { clicked.add(stay); stay.click(); log('tapped', textOf(stay), 'on an app prompt'); }
-        hide(e);
-        unlocked = true;
+        if (tag.indexOf('-') < 0 || !NAME_HIT.test(tag) || GATE.test(tag) || e.hasAttribute('data-molten-app-hide')) continue;
+        dismiss(e, 'name');
       }
-      for (const e of document.querySelectorAll('a, button, faceplate-tracker')) {
-        if (e.hasAttribute('data-molten-app-hide') || e.closest('#ytt-panel')) continue;
-        const txt = textOf(e);
-        if (txt.length < 24 && PROMO_TEXT.test(txt)) hide(e.closest('faceplate-tracker') || e);
+      // 2. sheets, dialogs and full-screen overlays that talk about the app
+      const cands = new Set(document.querySelectorAll(SHEETS));
+      if (document.body) for (const el of document.body.children) {
+        if (el.id === 'ytt-panel' || el.id === 'ytt-toggle') continue;
+        const cs = getComputedStyle(el);
+        if (cs.position === 'fixed' && cs.display !== 'none') cands.add(el);
       }
-      // a pop-up we removed may have left the page unable to scroll
-      if (unlocked) for (const el of [document.documentElement, document.body]) if (el && el.style.overflow === 'hidden') el.style.overflow = '';
+      for (const e of cands) {
+        if (e.hasAttribute('data-molten-app-hide') || e.closest('#ytt-panel') || GATE.test(e.tagName)) continue;
+        const txt = deepText(e);
+        if (txt.length < 700 && SHEET_TEXT.test(txt) && !/nsfw|18\+|mature|age verification|verify your age/i.test(txt)) dismiss(e, 'sheet');
+      }
+      // 3. buttons and banners that only say "Open in app"
+      const roots = [document];
+      for (const h of document.querySelectorAll('reddit-header-large, reddit-header-small, shreddit-post, faceplate-banner')) if (h.shadowRoot) roots.push(h.shadowRoot);
+      for (const r of roots) for (const e of r.querySelectorAll('a, button, faceplate-tracker, [role="button"]')) {
+        if (e.hasAttribute('data-molten-app-hide') || (e.closest && e.closest('#ytt-panel'))) continue;
+        const t = label(e);
+        if (t.length < 30 && BUTTON_TEXT.test(t)) hide((e.closest && e.closest('faceplate-tracker')) || e, 'button');
+      }
+      if (hidden.size > before || (hidden.size && document.body && document.body.style.position === 'fixed')) unlock();
     }
     return { run };
   })();
   setInterval(() => { if (!document.hidden) APP.run(); }, 1500);
   document.addEventListener('DOMContentLoaded', () => APP.run(), { once: true });
-  log('Molten for Reddit Mobile 1.1.0 loaded');
+  log('Molten for Reddit Mobile 1.2.0 loaded');
 })();

@@ -4,7 +4,7 @@
 
 **Molten glass for Reddit, pocket size.**
 
-[![Install](https://img.shields.io/badge/Install-v1.1.0-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js)
+[![Install](https://img.shields.io/badge/Install-v1.2.0-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/userscripts/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com%20on%20your%20phone-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-mobile-555?style=flat-square)
 
