@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.8.0
+// @version      2.8.1
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @author       JigglyPug
 // @match        https://anilist.co/*
@@ -1433,7 +1433,7 @@
       return { at: Date.now(), e };
     }
     function boardPicks(html) {
-      const m = (html || '').match(/<script[^>]*id=["']kaleidoscope-picks["'][^>]*>([\s\S]*?)<\/script>/i);
+      const m = (html || '').match(/<script[^>]*id=["'][\w-]*picks["'][^>]*>([\s\S]*?)<\/script>/i);
       if (!m) return [];
       try { const j = JSON.parse(m[1]); return Array.isArray(j) ? j : []; } catch (e) { return []; }
     }
@@ -1551,12 +1551,14 @@
       if (note) parts.push('My feedback on the board: ' + note);
       parts.push(
         'Update the board for this: replace picks I\'ve since added, watched, dropped or said I didn\'t like (new picks follow the same rules and card layout as before), ' +
-        're-check predicted ratings, and update any stat tiles, charts, takeaways and the header date these changes affect. Leave everything else exactly as it is, including the design.\n\n' +
+        're-check predicted ratings, and update any stat tiles, charts, takeaways and the header date these changes affect. ' +
+        'If the header wordmark or the page <title> says anything other than "Kaleidoscope", change it to "Kaleidoscope" (Kaleido in white, scope in #3DB4F2). ' +
+        'Leave everything else exactly as it is, including the design.\n\n' +
         'Reply ONLY with an edit list for the HTML page you made, as one ```json code block and nothing else:\n' +
         '{"edits":[{"find":"exact text from the current page","replace":"new text"}]}\n' +
         '- Each "find" is copied exactly from the current page (spaces and punctuation included) and is long enough to appear only once.\n' +
         '- Edits are applied in order, so a later "find" must match the page after the earlier edits.\n' +
-        '- Keep the hidden kaleidoscope-picks list in sync with the picks.\n' +
+        '- Keep the hidden picks list in sync with the picks, as <script type="application/json" id="kaleidoscope-picks">.\n' +
         '- Don\'t rewrite or re-create the artifact.'
       );
       return parts.join('\n\n');
