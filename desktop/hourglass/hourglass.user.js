@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.2.2
+// @version      1.2.3
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.2';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.3';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -132,13 +132,19 @@
         return 'custom';
     }
     const HOST = normHost(location.hostname);
-    // phones and tablets: the mobile flag when the browser reports it, a mobile user agent, or a touch-only screen
-    // (that last one still catches Edge/Chrome in "Desktop site" mode, which hides the mobile user agent)
-    const MOBILE = (() => {
+    // Layout: Settings › General can force Desktop or Phone; Auto decides below.
+    const LAYOUT = (() => { try { const v = GM_getValue('layout'); return v === 'desktop' || v === 'phone' ? v : 'auto'; } catch { return 'auto'; } })();
+    // Phones: the browser's own mobile flag, a mobile user agent, or an iPad (iPadOS reports itself as a Mac).
+    // "Desktop site" mode on a phone hides both, so a touch screen also counts, but only when the screen is phone-sized:
+    // touchscreen laptops often report their touchpad as a coarse pointer, and they should keep the desktop panel.
+    const MOBILE = LAYOUT === 'phone' ? true : LAYOUT === 'desktop' ? false : (() => {
         try {
+            const ua = navigator.userAgent;
             if (navigator.userAgentData?.mobile === true) return true;
-            if (/Android|iPhone|iPod|iPad|Mobile|Silk|Kindle|Opera Mini/i.test(navigator.userAgent)) return true;
-            return navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches;
+            if (/Android|iPhone|iPod|iPad|Mobile|Silk|Kindle|Opera Mini/i.test(ua)) return true;
+            if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return true;
+            const phoneSized = Math.min(screen.width, screen.height) <= 600;
+            return phoneSized && navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches;
         } catch { return false; }
     })();
 
@@ -1680,7 +1686,15 @@ h1 span{color:var(--ink)}
                     h('div', { class: 'd', text: (inBedtime() ? 'Tonight so far: ' : 'Last night: ') + fmtDur(nightTotal(inBedtime() ? nightId() : lastNightId(), nudge.scope())) }),
                     h('button', { class: 'btn', onclick: () => nudge.show(nudge.tonight(), 1) }, icon(ICONS.moon, 13), 'Preview')));
             const general = h('div', { class: 'tile full' }, this.label('General'),
-                h('div', { class: 'row' }, h('div', { class: 't', text: 'Week starts on' }), this.seg([['mon', 'Monday'], ['sun', 'Sunday']], c.weekStart, v => upd('weekStart', v), true, { style: 'width:170px' })));
+                h('div', { class: 'row' }, h('div', { class: 't', text: 'Week starts on' }), this.seg([['mon', 'Monday'], ['sun', 'Sunday']], c.weekStart, v => upd('weekStart', v), true, { style: 'width:170px' })),
+                (() => {
+                    const want = get('layout', 'auto'), pending = want !== LAYOUT;
+                    return h('div', { class: 'row' },
+                        h('div', null, h('div', { class: 't', text: 'Layout' }),
+                            h('div', { class: 'd' }, pending ? ['Reload the page to switch. ', h('button', { class: 'link', text: 'Reload now', onclick: () => location.reload() })]
+                                : 'Auto uses the phone layout on phones. Showing the ' + (MOBILE ? 'phone' : 'desktop') + ' layout.')),
+                        this.seg([['auto', 'Auto'], ['desktop', 'Desktop'], ['phone', 'Phone']], want, v => { set('layout', v); this.render(); }, true, { style: 'width:230px' }));
+                })());
             const armed = Date.now() - this.resetArm < 4000;
             const data = h('div', { class: 'tile full', style: 'margin-bottom:14px' }, this.label('Your data'),
                 h('div', { class: 'd', style: 'margin:-4px 0 12px', text: 'Saved only in Tampermonkey on this PC. Only site names are kept, never full addresses or page titles.' }),
