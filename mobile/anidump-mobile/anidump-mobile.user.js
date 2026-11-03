@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AniDump Mobile
 // @namespace    jigglypug.anime.anidump-mobile
-// @version      1.0.2
+// @version      1.0.3
 // @description  Phone-friendly AniDump prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @author       JigglyPug
 // @match        https://anilist.co/*
@@ -11,7 +11,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
-// @homepageURL  https://github.com/JigglyPug/glassware/tree/main/mobile/anidump-mobile
+// @homepageURL  https://jigglypug.github.io/glassware/mobile/anidump-mobile/
 // @supportURL   https://github.com/JigglyPug/glassware/issues
 // @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/anidump-mobile/anidump-mobile.user.js
 // @downloadURL  https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/anidump-mobile/anidump-mobile.user.js

@@ -2,7 +2,7 @@
 
 <img src="images/banner.svg" alt="AniDump: AI recommendations from your AniList list." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.7.6-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/anidump/anidump.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/anidump/)
+[![Install](https://img.shields.io/badge/Install-v2.7.7-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/anidump/anidump.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/anidump/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co%2C%20claude.ai-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-desktop-555?style=flat-square)
 
