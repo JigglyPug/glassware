@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/banner.svg" alt="Glassware: glass for the web, by JigglyPug" width="100%">
+<img src="assets/glassware-banner.svg" alt="Glassware: glass for the web, by JigglyPug" width="100%">
 
 [![Visit the site](https://img.shields.io/badge/Visit%20the%20site-jigglypug.github.io-ff8a3d?style=for-the-badge)](https://jigglypug.github.io/glassware/)
 
