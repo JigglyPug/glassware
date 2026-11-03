@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.2.0
+// @version      1.2.1
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -24,7 +24,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = '1.2.0';
+    const VERSION = '1.2.1';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -146,7 +146,11 @@
     const S = {};
     function freshPasses() { return { day: dayKey(), used: [], open: {} }; }
     function load() {
-        S.cfg = Object.assign(clone(DEFAULTS), get('settings', {}));
+        const saved = get('settings');
+        S.cfg = Object.assign(clone(DEFAULTS), saved || {});
+        // setup mode: a brand-new install counts screen time but blocks nothing until you tap Start lockdown.
+        // Installs from before 1.2.1 already have saved settings, so they stay armed.
+        if (typeof S.cfg.armed !== 'boolean') S.cfg.armed = !!saved;
         S.sched = get('schedule', DEFAULT_SCHED());
         S.schedPend = get('schedPending', {});
         S.sites = get('sites', DEFAULT_SITES);
@@ -178,7 +182,9 @@
         }
         return { s: hit.s, e: end };
     }
-    const inLockdown = () => S.cfg.enabled && !!currentBlock();
+    // armAt: "start at the next lockdown" skips the block you were in when you tapped Start
+    const isArmed = () => S.cfg.armed === true && !(S.cfg.armAt && Date.now() < S.cfg.armAt);
+    const inLockdown = () => S.cfg.enabled && isArmed() && !!currentBlock();
     function lockWindow(i) {
         const d = S.sched[i];
         if (!d || !d.on || !d.blocks.length) return null;
@@ -652,7 +658,7 @@ h1 span{color:var(--ink)}
     const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
 
     function blockReason() {
-        if (!S.cfg.enabled || !HOST) return null;
+        if (!S.cfg.enabled || !isArmed() || !HOST) return null;
         const s = matchSite(HOST, S.sites);
         if (!s || !s.on) return null;
         if (S.music && s.cat === 'music') return null;
@@ -718,7 +724,7 @@ h1 span{color:var(--ink)}
         scope() { return S.cfg.nudgeScope === 'all' ? 'all' : 'list'; },
         tonight() { return nightTotal(nightId(), this.scope()); },
         check(now) {
-            if (this.el || !S.cfg.enabled || !S.cfg.nudge || !HOST || !inBedtime() || blocker.up || !document.hasFocus() || !isActive(now)) return;
+            if (this.el || !S.cfg.enabled || !isArmed() || !S.cfg.nudge || !HOST || !inBedtime() || blocker.up || !document.hasFocus() || !isActive(now)) return;
             if (this.scope() === 'list' && catOf(statKey(HOST)) === 'other') return;
             const s = this.state();
             if (s.muted) return;
@@ -970,6 +976,8 @@ h1 span{color:var(--ink)}
 .disc.open svg{transform:rotate(180deg)}
 .ign{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:6px 0 6px 26px;font-size:12px;color:var(--sub)}
 .empty{padding:14px 16px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--sub)}
+.welcome .wbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.welcome .btn.on{border-color:var(--fill);color:var(--ink)}
 .banner{margin:0 14px 10px;padding:12px 14px;border-radius:14px;background:rgba(var(--a-rgb),.16);border:1px solid rgba(var(--a-rgb),.4);display:flex;gap:10px;align-items:flex-start}
 .banner .bt{flex:1}
 .banner .bt>b{display:block;font-weight:600;margin-bottom:2px}
@@ -1161,13 +1169,14 @@ h1 span{color:var(--ink)}
                 h('b', { text: HOST || location.href }),
                 h('span', { class: 'pill', text: m ? CAT[m.cat].n + ' · ' + (m.on ? (m.rule === 'always' ? 'Always' : 'Schedule') : 'Counted only') : 'Not on your list' }),
                 h('span', { style: 'margin-left:auto' }),
-                h('span', { class: 'pill ' + (lock ? 'warn' : 'acc'), text: !S.cfg.enabled ? 'Paused' : lock ? 'Lockdown' : 'Free time' }));
+                h('span', { class: 'pill ' + (lock ? 'warn' : 'acc'), text: !S.cfg.enabled ? 'Paused' : !S.cfg.armed ? 'Setup' : lock ? 'Lockdown' : 'Free time' }));
             const tabBar = h('div', { class: 'tabs' }, h('div', { class: 'seg', role: 'tablist' }, tabs.map(([k, label]) => {
                 const dim = locked && k !== 'dash';
                 return h('button', { role: 'tab', 'aria-selected': String(this.tab === k), class: (this.tab === k ? 'on' : '') + (dim ? ' dim' : ''), onclick: () => this.go(k) },
                     dim ? icon(ICONS.lock, 12, 2.2) : null, label);
             })));
             this.scroll = h('div', { class: 'scroll' });
+            if (S.cfg.enabled && (!S.cfg.armed || (S.cfg.armAt && !isArmed()))) this.scroll.append(this.welcome());
             if (lock && this.unlocked && this.tab !== 'dash') this.scroll.append(this.banner());
             const body = this.tab === 'sched' ? this.vSchedule() : this.tab === 'sites' ? this.vSites() : this.tab === 'set' ? this.vSettings() : this.vDash();
             this.scroll.append(...[].concat(body));
@@ -1181,8 +1190,10 @@ h1 span{color:var(--ink)}
         renderFoot() {
             if (!this.footEl) return;
             const lock = inLockdown();
-            const head = !S.cfg.enabled ? 'Paused' : lock ? 'Lockdown' : 'Free time';
-            const tail = !S.cfg.enabled ? 'nothing is tracked or blocked' : lock ? fmtDur(lockLeftSec()) + ' left, until ' + shortU(currentBlock().e) : nextLockdownText();
+            const pendingStart = S.cfg.armed && !isArmed();
+            const head = !S.cfg.enabled ? 'Paused' : !S.cfg.armed ? 'Setup' : pendingStart ? 'Starting soon' : lock ? 'Lockdown' : 'Free time';
+            const tail = !S.cfg.enabled ? 'nothing is tracked or blocked' : !S.cfg.armed ? 'counting screen time, nothing is blocked yet'
+                : pendingStart ? 'lockdown starts after ' + new Date(S.cfg.armAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : lock ? fmtDur(lockLeftSec()) + ' left, until ' + shortU(currentBlock().e) : nextLockdownText();
             this.footEl.replaceChildren(
                 h('div', { class: 'status', role: 'status' }, h('div', { class: 'dot' }), h('div', { class: 'stxt' }, h('b', { text: head }), ' · ' + tail),
                     S.cfg.listen && !MOBILE ? h('span', { class: 'listen', title: 'Listening time today: sound playing in any tab, even while you are tabbed out' }, icon(ICONS.headphones, 13), h('b', { text: fmtDur(listenToday()) }), ' today') : null,
@@ -1222,6 +1233,36 @@ h1 span{color:var(--ink)}
                 h('div', { class: 'gbtns' }, h('button', { class: 'btn', text: 'Never mind', onclick: () => this.closeGate() }), this.el_gc)));
             setTimeout(() => g.querySelector('.btn')?.focus({ preventScroll: true }), 0);
             return g;
+        },
+        arm(at) {
+            S.cfg.armed = true; S.cfg.armAt = at || 0; this.startAsk = false;
+            saveCfg(); evaluate(); this.render();
+        },
+        welcome() {
+            const b = currentBlock();
+            const card = h('div', { class: 'card welcome' });
+            if (S.cfg.armed && S.cfg.armAt) {
+                const t = new Date(S.cfg.armAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                card.append(h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Lockdown starts after ' + t }), h('div', { class: 'd', text: 'Today\'s current block is skipped. Your schedule is in charge after that.' })),
+                    h('button', { class: 'btn', text: 'Start now instead', onclick: () => this.arm(0) })));
+                return card;
+            }
+            card.append(h('div', { class: 'label' }, 'Welcome to Hourglass', h('i', { text: 'Setup' })),
+                h('div', { class: 'd', style: 'margin:-4px 0 12px;font-size:12.5px;line-height:1.5', text: "Hourglass is counting your screen time, but nothing is blocked yet. Check your sites and schedule, then start lockdown when you're ready. Settings only lock once lockdown is running." }));
+            if (this.startAsk && b) {
+                const end = shortU(b.e);
+                card.append(h('div', { class: 'd', style: 'margin-bottom:10px', text: "You're inside your scheduled hours right now (until " + end + '). Start now and your sites lock immediately, with settings locked until ' + end + '.' }),
+                    h('div', { class: 'wbtns' },
+                        h('button', { class: 'btn primary', text: 'Start at ' + end, onclick: () => { const d = new Date(), u = unitsNow(d); this.arm(Date.now() + Math.max(0, (b.e - u) * 1800000)); } }),
+                        h('button', { class: 'btn', text: 'Start now', onclick: () => this.arm(0) }),
+                        h('button', { class: 'link', text: 'Not yet', onclick: () => { this.startAsk = false; this.render(); } })));
+            } else {
+                card.append(h('div', { class: 'wbtns' },
+                    h('button', { class: 'btn' + (this.tab === 'sites' ? ' on' : ''), text: 'Review sites', onclick: () => this.go('sites') }),
+                    h('button', { class: 'btn' + (this.tab === 'sched' ? ' on' : ''), text: 'Review schedule', onclick: () => this.go('sched') }),
+                    h('button', { class: 'btn primary', style: 'margin-left:auto', onclick: () => { if (currentBlock()) { this.startAsk = true; this.render(); } else this.arm(0); } }, icon(ICONS.lock, 13, 2.2), 'Start lockdown')));
+            }
+            return card;
         },
         banner() {
             const end = shortU(currentBlock()?.e ?? 0);
@@ -1679,7 +1720,7 @@ h1 span{color:var(--ink)}
         inp.addEventListener('change', async () => {
             try {
                 const j = JSON.parse(await inp.files[0].text());
-                if (j.settings) { S.cfg = Object.assign(clone(DEFAULTS), j.settings); saveCfg(); }
+                if (j.settings) { S.cfg = Object.assign(clone(DEFAULTS), j.settings); if (typeof j.settings.armed !== 'boolean') S.cfg.armed = true; S.cfg.armAt = 0; saveCfg(); }
                 if (Array.isArray(j.schedule) && j.schedule.length === 7) { S.sched = j.schedule; set('schedule', S.sched); }
                 if (Array.isArray(j.sites)) { S.sites = j.sites.filter(s => s && cleanDomain(s.d)); set('sites', S.sites); }
                 if (Array.isArray(j.ignored)) { S.ignored = j.ignored; set('ignored', S.ignored); }
