@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.1.3
-// @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge.
+// @version      1.2.0
+// @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -24,7 +24,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = '1.1.1';
+    const VERSION = '1.2.0';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -131,6 +131,15 @@
         return 'custom';
     }
     const HOST = normHost(location.hostname);
+    // phones and tablets: the mobile flag when the browser reports it, a mobile user agent, or a touch-only screen
+    // (that last one still catches Edge/Chrome in "Desktop site" mode, which hides the mobile user agent)
+    const MOBILE = (() => {
+        try {
+            if (navigator.userAgentData?.mobile === true) return true;
+            if (/Android|iPhone|iPod|iPad|Mobile|Silk|Kindle|Opera Mini/i.test(navigator.userAgent)) return true;
+            return navigator.maxTouchPoints > 0 && matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches;
+        } catch { return false; }
+    })();
 
     /* ───────────────────────── state ───────────────────────── */
 
@@ -280,7 +289,7 @@
 
     let lastInput = Date.now(), lastTick = Date.now(), session = null;
     const bump = () => { lastInput = Date.now(); };
-    for (const ev of ['mousemove', 'mousedown', 'keydown', 'wheel', 'touchstart', 'scroll', 'pointerdown']) addEventListener(ev, bump, { capture: true, passive: true });
+    for (const ev of ['mousemove', 'mousedown', 'keydown', 'wheel', 'touchstart', 'touchmove', 'scroll', 'pointerdown']) addEventListener(ev, bump, { capture: true, passive: true });
     function mediaPlaying() {
         for (const m of document.querySelectorAll('video,audio')) if (!m.paused && !m.ended && m.readyState > 2) return true;
         return false;
@@ -318,7 +327,7 @@
     function trackListen(now) {
         let dt = (now - lastListen) / 1000; lastListen = now;
         if (dt > 70) dt = 0; // hidden tabs can tick slowly; anything longer means the PC slept
-        if (dt <= 0 || !S.cfg.enabled || !S.cfg.listen || !HOST || blocker.up || !audible()) return;
+        if (MOBILE || dt <= 0 || !S.cfg.enabled || !S.cfg.listen || !HOST || blocker.up || !audible()) return;
         const o = get('listenOwner', null);
         if (o && o.id !== TAB_ID && now - o.at < 5000) return;
         const held = !!o && o.id === TAB_ID && now - o.at < 5000;
@@ -388,6 +397,22 @@
         host.style.cssText = 'all:initial;position:fixed;inset:auto;z-index:2147483647;';
         return host;
     }
+    const frames = new Set();
+    function fitFrame(el) {
+        const v = window.visualViewport;
+        const st = el.style, k = (MOBILE && v && v.scale) || 1; // set one by one so the theme variables on the frame survive
+        st.position = 'fixed'; st.transformOrigin = '0 0';
+        if (!MOBILE || !v) { st.left = st.top = '0'; st.width = st.height = '100%'; st.transform = ''; return; }
+        st.left = v.offsetLeft + 'px'; st.top = v.offsetTop + 'px'; st.width = v.width * k + 'px'; st.height = v.height * k + 'px'; st.transform = k === 1 ? '' : `scale(${1 / k})`;
+    }
+    function frame(cls) {
+        const el = h('div', { class: 'frame ' + (cls || '') + (MOBILE ? ' m' : '') });
+        fitFrame(el); frames.add(el);
+        return el;
+    }
+    const refit = () => { for (const el of frames) if (el.isConnected) fitFrame(el); else frames.delete(el); };
+    try { visualViewport.addEventListener('resize', refit); visualViewport.addEventListener('scroll', refit); } catch {}
+    addEventListener('resize', refit);
     function mount(host) {
         const t = document.body || document.documentElement;
         if (t) { t.append(host); return; }
@@ -425,7 +450,9 @@ button:disabled{cursor:not-allowed}
     /* ───────────────────────── blocker ───────────────────────── */
 
     const BLOCK_CSS = BASE_CSS + `
-.veil{position:fixed;inset:0;display:grid;place-items:center;padding:20px;
+.frame{pointer-events:none}
+.frame>*{pointer-events:auto}
+.veil{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;overflow:auto;padding:20px;
   background:radial-gradient(70% 60% at 50% 45%,rgba(var(--a-rgb),.22),rgba(255,248,238,.6) 70%);
   backdrop-filter:blur(16px) saturate(80%);-webkit-backdrop-filter:blur(16px) saturate(80%);animation:vin .35s ease-out}
 @keyframes vin{from{opacity:0}}
@@ -436,6 +463,7 @@ button:disabled{cursor:not-allowed}
 .logo svg{animation:flip 6s ease-in-out infinite}
 @keyframes flip{0%,82%{transform:rotate(0)}100%{transform:rotate(180deg)}}
 h1{margin:14px 0 4px;font-size:26px;letter-spacing:-.025em;font-weight:650;line-height:1.2}
+
 h1 span{color:var(--ink)}
 .cd{font:600 54px/1 var(--mono);letter-spacing:-.02em;margin:16px 0 4px;font-variant-numeric:tabular-nums}
 .cdl{font-size:12.5px;color:var(--sub)}
@@ -450,7 +478,7 @@ h1 span{color:var(--ink)}
 .ring svg{transform:rotate(-90deg)}
 .ring .n{position:absolute;inset:0;display:grid;place-items:center;font:600 40px/1 var(--mono)}
 .ring circle.p{transition:stroke-dashoffset 1s linear}
-.passpill{position:fixed;right:22px;bottom:22px;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:16px;background:rgba(255,252,247,.86);
+.passpill{position:absolute;right:22px;bottom:22px;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;border-radius:16px;background:rgba(255,252,247,.86);
   backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border:1px solid #fff;
   box-shadow:0 0 0 .5px rgba(var(--a-rgb),.5),0 18px 40px -16px rgba(0,0,0,.4),0 0 30px -10px rgba(var(--a-rgb),.9);animation:vin .3s ease-out;transition:transform .3s}
 .passpill .dot{width:10px;height:10px;border-radius:50%;background:var(--fill);box-shadow:0 0 0 3px rgba(var(--a-rgb),.2),0 0 10px rgba(var(--a-rgb),.9)}
@@ -459,6 +487,26 @@ h1 span{color:var(--ink)}
 .passpill.warn{background:rgba(255,236,206,.95);transform:scale(1.04);box-shadow:0 0 0 1.5px var(--fill),0 18px 40px -16px rgba(0,0,0,.4),0 0 40px -6px rgba(var(--a-rgb),1)}
 .passpill.warn .dot{animation:pulse 1s ease-in-out infinite}
 @keyframes pulse{50%{transform:scale(1.5)}}
+@media (max-width:560px){
+  .veil{padding:14px}
+  .card{padding:26px 20px 20px;border-radius:24px}
+  .logo{width:54px;height:54px;border-radius:16px;margin-bottom:12px}
+  h1{font-size:21px}
+  .cd{font-size:44px;margin-top:12px}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:18px 0}
+  .stat{padding:10px 4px}.stat b{font-size:15px}
+  .btns .btn{flex:1;min-width:0;padding:0 10px}
+  .passpill{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));justify-content:space-between}
+}
+.m .veil{padding:14px}
+.m .card{padding:26px 20px 20px;border-radius:24px}
+.m .logo{width:54px;height:54px;border-radius:16px;margin-bottom:12px}
+.m h1{font-size:21px}
+.m .cd{font-size:44px;margin-top:12px}
+.m .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:18px 0}
+.m .stat{padding:10px 4px}.m .stat b{font-size:15px}
+.m .btns .btn{flex:1;min-width:0;padding:0 10px}
+.m .passpill{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));justify-content:space-between}
 `;
     const blocker = {
         host: null, root: null, wrap: null, el: {}, up: false, state: null, reason: null, waitLeft: 0, waitTimer: null, prevOverflow: null, expired: false,
@@ -469,7 +517,8 @@ h1 span{color:var(--ink)}
             const root = this.root = this.host.attachShadow({ mode: 'closed' });
             root.append(h('style', { text: BLOCK_CSS }));
             const T = THEMES.lock;
-            this.wrap = h('div', { class: 'vars', style: `--a-rgb:${T.rgb};--fill:${T.fill};--fill-hi:${T.hi};--ink:${T.ink};--on:${T.on}` });
+            this.wrap = frame('vars');
+            for (const [k, v] of Object.entries({ '--a-rgb': T.rgb, '--fill': T.fill, '--fill-hi': T.hi, '--ink': T.ink, '--on': T.on })) this.wrap.style.setProperty(k, v);
             root.append(this.wrap);
             mount(this.host);
         },
@@ -641,7 +690,7 @@ h1 span{color:var(--ink)}
     /* ───────────────────────── late-night nudge ───────────────────────── */
 
     const NUDGE_CSS = `
-.nudge{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);width:440px;max-width:calc(100vw - 32px);display:flex;gap:14px;padding:16px 16px 14px;border-radius:20px;color:#f4f4ff;
+.nudge{position:absolute;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);width:440px;max-width:calc(100vw - 32px);display:flex;gap:14px;padding:16px 16px 14px;border-radius:20px;color:#f4f4ff;
   background:radial-gradient(120% 90% at 0% 0%,rgba(147,145,247,.35),transparent 60%),rgba(26,26,52,.9);backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%);
   border:1px solid rgba(255,255,255,.14);box-shadow:0 0 0 .5px rgba(94,92,230,.6),0 24px 60px -20px rgba(0,0,0,.6),0 0 40px -12px rgba(94,92,230,.9);animation:nin .45s cubic-bezier(.2,.8,.2,1)}
 @keyframes nin{from{opacity:0;transform:translate(-50%,14px)}}
@@ -1012,6 +1061,34 @@ h1 span{color:var(--ink)}
 .gwait{font:11px var(--mono);color:var(--sub);height:16px}
 .gbtns{display:flex;gap:8px;justify-content:center;margin-top:14px}
 .gbtns .btn{height:40px;min-width:130px;font-size:13px}
+.frame{pointer-events:none}.frame>*{pointer-events:auto}
+.scrim{position:absolute;inset:0;background:rgba(12,12,24,.3);animation:gin .2s ease-out}
+.panel.m{position:absolute;top:auto;left:0;right:0;bottom:0;width:100%;max-width:none;max-height:calc(100% - 28px);border-radius:24px 24px 0 0;
+  border-bottom:0;padding-bottom:env(safe-area-inset-bottom);animation:sheet .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheet{from{opacity:0;transform:translateY(48px)}}
+.grab{width:42px;height:5px;border-radius:3px;background:rgba(0,0,0,.18);margin:9px auto 0;flex:none}
+.m .head{padding-top:8px}
+.m .x{width:34px;height:34px}
+.m .tabs .seg button{min-height:40px;font-size:13px}
+.m .seg.sm button{min-height:34px}
+.m .sw{width:46px;height:28px;border-radius:14px}.m .sw::after{width:24px;height:24px}.m .sw[aria-checked=true]::after{transform:translateX(18px)}
+.m .r1{height:40px}
+.m .r1::-webkit-slider-thumb{width:26px;height:26px;margin-top:-10px}
+.m .rng::-webkit-slider-thumb{width:28px;height:28px;margin-top:8px}
+.m .rng::-moz-range-thumb{width:28px;height:28px}
+.m .dual .rail{left:14px;right:14px}
+.m .ibtn{width:36px;height:36px}
+.m .btn.sm{height:34px}
+.m .keys{display:none}
+.m .row{flex-wrap:wrap}.m .seg.sm button{white-space:nowrap}.m .row>.seg[style*="width"]{width:auto!important}
+.m .foot{padding-bottom:4px}
+.m .srow{grid-template-columns:30px minmax(0,1fr) 64px}.m .srow .tbar,.m .srow svg{display:none}
+.m .site{grid-template-columns:30px minmax(0,1fr) 46px 36px}.m .site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
+.m .slr{grid-template-columns:minmax(0,1fr) 66px}.m .slr>div:first-child{grid-column:1/-1}
+.m .chart .col{cursor:pointer}
+.tapped .stack,.hc.tapped{outline:2px solid var(--text);outline-offset:1px}
+.readout{margin-top:10px;font:500 11.5px var(--mono);color:var(--sub);min-height:16px}
+.readout.on{color:var(--text)}
 @media (max-width:620px){
   .srow{grid-template-columns:30px minmax(0,1fr) 64px}.srow .tbar,.srow svg{display:none}
   .sug{grid-template-columns:30px minmax(0,1fr) auto auto}.sug .tbar{display:none}
@@ -1035,8 +1112,14 @@ h1 span{color:var(--ink)}
             const host = this.host = hostEl('hourglass-panel');
             const root = this.root = host.attachShadow({ mode: 'closed' });
             root.append(h('style', { text: PANEL_CSS }));
-            this.panel = h('div', { class: 'panel vars', role: 'dialog', 'aria-label': 'Hourglass' });
-            root.append(this.panel);
+            this.panel = h('div', { class: 'panel vars' + (MOBILE ? ' m' : ''), role: 'dialog', 'aria-label': 'Hourglass' });
+            if (MOBILE) {
+                const f = frame();
+                f.append(h('div', { class: 'scrim', onclick: () => this.close() }), this.panel);
+                root.append(f);
+                this.prevOverflow = document.documentElement.style.overflow;
+                document.documentElement.style.overflow = 'hidden';
+            } else root.append(this.panel);
             mount(host);
             this.onKey = e => {
                 if (!e.composedPath().includes(host)) return;
@@ -1052,6 +1135,7 @@ h1 span{color:var(--ink)}
             clearInterval(this.timer); clearInterval(this.gateTimer);
             removeEventListener('keydown', this.onKey, true);
             this.host.remove(); this.host = this.root = this.panel = this.scroll = null; this.gateOpen = false;
+            if (MOBILE && !blocker.up) document.documentElement.style.overflow = this.prevOverflow || '';
         },
         locked() { return inLockdown() && !this.unlocked; },
 
@@ -1088,7 +1172,7 @@ h1 span{color:var(--ink)}
             const body = this.tab === 'sched' ? this.vSchedule() : this.tab === 'sites' ? this.vSites() : this.tab === 'set' ? this.vSettings() : this.vDash();
             this.scroll.append(...[].concat(body));
             this.footEl = h('div', { class: 'foot' });
-            const kids = [head, siteline, tabBar, this.scroll, this.footEl];
+            const kids = [MOBILE ? h('div', { class: 'grab', 'aria-hidden': 'true' }) : null, head, siteline, tabBar, this.scroll, this.footEl].filter(Boolean);
             if (this.gateOpen) kids.push(this.gateEl());
             this.panel.replaceChildren(...kids);
             this.renderFoot();
@@ -1101,7 +1185,7 @@ h1 span{color:var(--ink)}
             const tail = !S.cfg.enabled ? 'nothing is tracked or blocked' : lock ? fmtDur(lockLeftSec()) + ' left, until ' + shortU(currentBlock().e) : nextLockdownText();
             this.footEl.replaceChildren(
                 h('div', { class: 'status', role: 'status' }, h('div', { class: 'dot' }), h('div', { class: 'stxt' }, h('b', { text: head }), ' · ' + tail),
-                    S.cfg.listen ? h('span', { class: 'listen', title: 'Listening time today: sound playing in any tab, even while you are tabbed out' }, icon(ICONS.headphones, 13), h('b', { text: fmtDur(listenToday()) }), ' today') : null,
+                    S.cfg.listen && !MOBILE ? h('span', { class: 'listen', title: 'Listening time today: sound playing in any tab, even while you are tabbed out' }, icon(ICONS.headphones, 13), h('b', { text: fmtDur(listenToday()) }), ' today') : null,
                     S.music ? h('span', { class: 'mlabel', text: 'Music mode' }) : null,
                     h('button', { class: 'ibtn music' + (S.music ? ' on' : ''), 'aria-pressed': String(S.music), 'aria-label': 'Music mode', title: 'Music mode: let your Music sites play during lockdown',
                         onclick: () => { S.music = !S.music; set('music', S.music); evaluate(); this.render(); } }, icon(ICONS.music, 17))),
@@ -1149,6 +1233,17 @@ h1 span{color:var(--ink)}
                     h('div', { class: 'd', text: "Stricter changes apply right away. Anything that loosens your rules waits until lockdown ends. Passes and the master switch can't change until then." }),
                     items.length ? h('div', { class: 'pend' }, items.map(it => h('span', null, it.text + ' · ', h('b', { style: 'font-weight:600', text: 'at ' + end }),
                         h('button', { 'aria-label': 'Cancel this change', onclick: it.cancel }, icon(ICONS.close, 10, 3))))) : null));
+        },
+
+        tapTips(tile) {
+            const read = h('div', { class: 'readout', text: 'Tap a bar or day for details' });
+            tile.append(read);
+            tile.addEventListener('click', e => {
+                const t = e.target.closest('[data-tip]');
+                if (!t || !tile.contains(t)) return;
+                tile.querySelectorAll('.tapped').forEach(x => x.classList.remove('tapped'));
+                t.classList.add('tapped'); read.textContent = t.dataset.tip; read.classList.add('on');
+            });
         },
 
         /* ── small builders */
@@ -1200,7 +1295,7 @@ h1 span{color:var(--ink)}
             // today by hour
             const hourCols = D.hours.map((hr, i) => {
                 const tot = sum(hr);
-                return h('div', { class: 'col', title: hourName(i) + ' · ' + fmtDur(tot) },
+                return h('div', { class: 'col', title: hourName(i) + ' · ' + fmtDur(tot), 'data-tip': hourName(i) + ' · ' + fmtDur(tot) },
                     h('div', { class: 'stack', style: 'height:' + Math.min(100, tot / 3600 * 100) + '%' }, hr.map((v, k) => v > 0 ? h('i', { style: `flex-grow:${v};background:${colorOf(HCOL[k])}` }) : null)));
             });
             out.push(h('div', { class: 'tile full' }, this.label('Today by hour', 'Lockdown hours are shaded'),
@@ -1233,7 +1328,7 @@ h1 span{color:var(--ink)}
                     h('div', { class: 'gl', style: 'bottom:100%' }, h('b', { text: fmtDur(rmax) })),
                     avgV ? h('div', { class: 'avg', style: 'bottom:' + (avgV / rmax * 100) + '%' }, h('b', { text: 'avg ' + fmtDur(avgV) })) : null,
                     h('div', { class: 'cols', style: `height:150px;grid-template-columns:repeat(${cols.length},minmax(0,1fr));gap:${gap}px` },
-                        cols.map(c => h('div', { class: 'col', title: c.tip }, h('div', { class: 'stack', style: 'height:' + (c.tot / rmax * 100) + '%' }, c.segs.map(s => s.v > 0 ? h('i', { style: `flex-grow:${s.v};background:${s.c}` }) : null)))))),
+                        cols.map(c => h('div', { class: 'col', title: c.tip, 'data-tip': c.tip }, h('div', { class: 'stack', style: 'height:' + (c.tot / rmax * 100) + '%' }, c.segs.map(s => s.v > 0 ? h('i', { style: `flex-grow:${s.v};background:${s.c}` }) : null)))))),
                 h('div', { class: 'base' }),
                 h('div', { class: 'xl', style: `grid-template-columns:repeat(${cols.length},minmax(0,1fr));gap:${gap}px` }, labels.map(l => h('span', { style: 'text-align:center', text: l })))));
 
@@ -1287,7 +1382,7 @@ h1 span{color:var(--ink)}
 
             // top sites
             const topMax = D.top[0]?.v || 1;
-            out.push(h('div', { class: 'tile full' }, this.label('Top sites today', 'Last 7 days on the right'),
+            out.push(h('div', { class: 'tile full' }, this.label('Top sites today', MOBILE ? null : 'Last 7 days on the right'),
                 D.top.length ? D.top.map(s => {
                     const c = colorOf(s.cat), mx = Math.max(...s.spark, 1), W = 54, H = 22, p = 2;
                     const pts = s.spark.map((v, i) => [p + i * (W - 2 * p) / 6, H - p - v / mx * (H - 2 * p)]);
@@ -1323,6 +1418,7 @@ h1 span{color:var(--ink)}
                     const has = c.v > 0;
                     return h('div', { class: 'hc' + (c.future ? ' future' : '') + (c.today ? ' today' : '') + (has && c.v > D.goal ? ' over' : ''),
                         title: c.dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + (c.future ? '' : ' · ' + fmtDur(c.v)),
+                        'data-tip': c.dt.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) + (c.future ? '' : ' · ' + fmtDur(c.v)),
                         style: 'background:' + (has ? `rgba(${T.rgb},${(0.12 + Math.min(c.v / (D.goal * 1.6), 1) * 0.75).toFixed(2)})` : 'rgba(0,0,0,.04)') });
                 })),
                 h('div', { class: 'scale' }, 'Less', ...[.15, .4, .65, .87].map(a => h('i', { style: `background:rgba(${T.rgb},${a})` })), 'More',
@@ -1343,6 +1439,14 @@ h1 span{color:var(--ink)}
                 this.ignOpen ? (S.ignored.length ? S.ignored.map(g => h('div', { class: 'ign' }, h('span', { class: 'mono', style: 'color:var(--text)', text: g.d }), h('span', { class: 'mono', text: fmtDur(g.avg) + ' a day when ignored' }),
                     h('button', { class: 'link', text: 'Stop ignoring', onclick: () => { S.ignored = S.ignored.filter(x => x.d !== g.d); set('ignored', S.ignored); this.render(); } })))
                     : h('div', { class: 'ign', text: 'Nothing ignored.' })) : null));
+            if (MOBILE) {
+                const week = g1.children[0], streak = g2.children[1];
+                week.classList.add('full'); streak.classList.add('full');
+                streak.style.marginBottom = '14px';
+                const pick = [out[0], out[1], week, out[3], streak];
+                for (const tile of [out[1], week, streak]) this.tapTips(tile);
+                return pick;
+            }
             return out;
         },
 
@@ -1423,7 +1527,8 @@ h1 span{color:var(--ink)}
             const cur = { s: b.s, e: b.e };
             const paint = () => {
                 st.textContent = fmtU(cur.s); et.textContent = cur.e >= 48 ? '12:00 AM' : fmtU(cur.e); dur.textContent = fmtDur((cur.e - cur.s) * 1800);
-                fr.style.left = `calc(11px + (100% - 22px) * ${cur.s / 48})`; fr.style.width = `calc((100% - 22px) * ${(cur.e - cur.s) / 48})`;
+                const th = MOBILE ? 28 : 22;
+                fr.style.left = `calc(${th / 2}px + (100% - ${th}px) * ${cur.s / 48})`; fr.style.width = `calc((100% - ${th}px) * ${(cur.e - cur.s) / 48})`;
             };
             a.addEventListener('input', () => { this.dragging = true; cur.s = Math.min(+a.value, cur.e - 1); a.value = cur.s; paint(); });
             z.addEventListener('input', () => { this.dragging = true; cur.e = Math.max(+z.value, cur.s + 1); z.value = cur.e; paint(); });
@@ -1519,7 +1624,7 @@ h1 span{color:var(--ink)}
                 this.slr('Think-it-over delay', 'Seconds before Continue appears on "Is this important?"', this.slider({ min: 3, max: 15, value: c.gateDelay, disabled: lock, label: 'Think-it-over delay in seconds', fmt: v => v + ' s', commit: v => { if (!inLockdown()) upd('gateDelay', v); } })),
                 h('div', { class: 'row', style: 'margin-top:12px' }, h('div', null, h('div', { class: 't', text: 'Show attempts on the block screen' }), h('div', { class: 'd', text: '"7th try today" can be a useful nudge' })), toggle(c.showAttempts, () => upd('showAttempts', !c.showAttempts), 'Show attempts')),
                 h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Looser changes wait until lockdown ends' }), h('div', { class: 'd', text: "Always on. That's the whole point." })), h('span', { class: 'pill acc' }, icon(ICONS.lock, 10, 2.6), 'Built in')));
-            tracking.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('div', null, h('div', { class: 't', text: 'Count listening time' }), h('div', { class: 'd', text: 'Sound playing in any tab, even tabbed out into a game. Shown next to Music mode, kept apart from screen time.' })), toggle(c.listen, () => upd('listen', !c.listen), 'Count listening time')));
+            if (!MOBILE) tracking.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('div', null, h('div', { class: 't', text: 'Count listening time' }), h('div', { class: 'd', text: 'Sound playing in any tab, even tabbed out into a game. Shown next to Music mode, kept apart from screen time.' })), toggle(c.listen, () => upd('listen', !c.listen), 'Count listening time')));
             const off = !c.nudge;
             const bed = h('div', { class: 'tile full' }, this.label('Late-night nudge', inBedtime() ? 'Bedtime now' : null),
                 h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Take-a-break reminder' }), h('div', { class: 'd', text: "A friendly nudge when you're still browsing past bedtime, even outside lockdown." })), toggle(c.nudge, () => upd('nudge', !c.nudge), 'Late-night nudge')),
