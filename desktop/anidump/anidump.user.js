@@ -1,0 +1,2182 @@
+// ==UserScript==
+// @name         AniDump
+// @namespace    jigglypug.anime.clipboard
+// @version      2.7.5
+// @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and AniDump has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
+// @author       JigglyPug
+// @match        https://anilist.co/*
+// @match        https://claude.ai/*
+// @noframes
+// @run-at       document-start
+// @grant        GM_setClipboard
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_deleteValue
+// @grant        GM_openInTab
+// @grant        GM_addValueChangeListener
+// @grant        GM_xmlhttpRequest
+// @grant        GM_registerMenuCommand
+// @grant        window.close
+// @connect      claude.ai
+// @homepageURL  https://github.com/JigglyPug/userscripts/tree/main/desktop/anidump
+// @supportURL   https://github.com/JigglyPug/userscripts/issues
+// @updateURL    https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/anidump/anidump.user.js
+// @downloadURL  https://raw.githubusercontent.com/JigglyPug/userscripts/main/desktop/anidump/anidump.user.js
+// ==/UserScript==
+
+/* AniDump: AniList -> Claude recommendations
+     - Recommend tab: five modes. Each builds a prompt from your live AniList list.
+     - Sequels tab: finds sequels to shows you finished that aren't on your list (no AI needed).
+     - Settings tab: what happens in Claude, standing preferences added to every prompt.
+   The hand-off: on AniList the prompt is saved to Tampermonkey storage and claude.ai/new is opened;
+   this same script (running on claude.ai) pastes it in. In "Board only" mode Claude runs in a
+   background tab: once the reply is finished, the board's HTML is read from the chat, the Claude
+   tab closes, and the board opens at anilist.co/anidump/board. The prompt is always copied to your
+   clipboard too, so Ctrl+V works if anything goes wrong.
+*/
+
+(function () {
+  'use strict';
+
+  const HANDOFF_KEY = 'anidump.handoff';
+  const HANDOFF_TTL = 10 * 60 * 1000; // a prompt older than this is ignored on claude.ai (long enough to sign in)
+  const RESULT_KEY = 'anidump.result';
+  const BOARDS_KEY = 'anidump.boards';
+  const TIMES_KEY = 'anidump.times';
+  // AniList redirects unknown pages to /404, but the #part survives, so boards are found by it on any page.
+  const BOARD_URL = id => 'https://anilist.co/home#anidump-board=' + id;
+  const GONE_TITLE = 'It looks like that board was deleted';
+  const GONE_TEXT = 'Its Claude chat is gone, so it can\'t be updated or followed up. You can still open and save this board, or make a new one.';
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const waitFor = async (fn, timeout = 10000, step = 200) => {
+    const end = Date.now() + timeout;
+    while (Date.now() < end) {
+      let v = null;
+      try { v = fn(); } catch (e) { /* keep waiting */ }
+      if (v) return v;
+      await sleep(step);
+    }
+    return null;
+  };
+  function rawStyle(css) {
+    const s = document.createElement('style');
+    s.textContent = css;
+    (document.head || document.documentElement).appendChild(s);
+    return s;
+  }
+  const onReady = fn => {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, { once: true });
+    else fn();
+  };
+
+  if (location.hostname === 'anilist.co') {
+    const m = location.hash.match(/^#anidump-board=([\w-]+)/);
+    // also opens links from 2.3.0-2.3.2, which landed on /404#id
+    const old = /^\/(404|anidump\/board)\/?$/.test(location.pathname) && /^#[a-z0-9]+$/.test(location.hash) &&
+      GM_getValue(BOARDS_KEY, []).some(b => '#' + b.id === location.hash);
+    if (m || old) return showBoard(m ? m[1] : location.hash.slice(1));
+  }
+  if (location.hostname === 'claude.ai') onReady(claudeSide);
+  else onReady(aniListSide);
+
+  // =====================================================================
+  //  BOARD PAGE: any anilist.co page with #anidump-board=id shows a captured board
+  // =====================================================================
+  function showBoard(id) {
+    // Wait until the page's <body> exists (stopping any earlier leaves Chrome unable to paint),
+    // then stop AniList's own app from loading and swap in the board.
+    if (!document.body) {
+      const mo = new MutationObserver(() => { if (document.body) { mo.disconnect(); showBoard(id); } });
+      mo.observe(document, { childList: true, subtree: true });
+      return;
+    }
+    try { window.stop(); } catch (e) { /* ignore */ }
+    const boards = GM_getValue(BOARDS_KEY, []);
+    console.log('[AniDump] showing board ' + id);
+    const b = boards.find(x => x.id === id) || (!id && boards[boards.length - 1]);
+    if (!b) return renderPage(
+      '<!DOCTYPE html><html><head><title>AniDump</title></head><body style="margin:0;background:#0B1622;color:#9FADBD;' +
+      'font:16px system-ui,sans-serif;display:grid;place-items:center;height:100vh"><div style="text-align:center">' +
+      '<div style="font-size:40px;font-weight:800;color:#fff">Ani<span style="color:#3DB4F2">Dump</span></div>' +
+      '<p>That board isn\'t saved anymore. AniDump only keeps your latest board, but this one is still in its Claude chat.</p><a href="https://anilist.co/" style="color:#3DB4F2">Back to AniList</a></div></body></html>');
+
+    // The board runs in a sealed-off frame: its own scripts (charts, covers) work, but it has no
+    // access to AniList's page, your AniList session or this script.
+    renderPage('<!DOCTYPE html><html><head><meta charset="utf-8"><title>AniDump</title><style>' +
+      'html,body{margin:0;height:100%;background:#0B1622;overflow:hidden}' +
+      'iframe{border:0;width:100%;height:100%;display:block;background:#0B1622}</style></head>' +
+      '<body><iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe></body></html>');
+    const frame = document.querySelector('iframe');
+    document.title = frame.title = new DOMParser().parseFromString(b.html, 'text/html').title || 'AniDump';
+    // The board opens right away; the Recent activity strip is handed to it whenever AniList answers.
+    let items = null;
+    let loaded = false;
+    const A = (b.type || 'ANIME') !== 'MANGA';
+    const deliver = () => { if (items && items.length && loaded) frame.contentWindow.postMessage({ adxRecent: items, A }, '*'); };
+    frame.addEventListener('load', () => { loaded = true; deliver(); });
+    frame.srcdoc = prepareBoard(b.html);
+    fetchRecent(b).then(x => { items = x; deliver(); }, e => console.log('[AniDump] recent strip skipped: ' + (e && e.message)));
+    {
+      // Save + follow-up buttons, bottom right
+      const pill = 'display:flex;align-items:center;gap:8px;background:#151F2E;color:#EDF1F5;font:600 14px/1 Overpass,system-ui,sans-serif;' +
+        'padding:12px 18px;border-radius:999px;text-decoration:none;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.45);border:1px solid rgba(61,180,242,.35)';
+      const bar = document.createElement('div');
+      bar.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2147483647;display:flex;gap:10px';
+      const save = document.createElement('button');
+      save.type = 'button';
+      save.style.cssText = pill;
+      save.title = 'Download this board as an HTML file to keep';
+      save.innerHTML = '<span style="color:#3DB4F2;font-size:15px">⤓</span>Save';
+      save.addEventListener('click', () => saveBoardFile(b));
+      bar.append(save);
+      if (b.conv && !b.chatGone) {
+        let state = null;
+        chatState(b).then(st => { state = st; });
+        const fu = document.createElement('a');
+        fu.href = b.conv;
+        fu.target = '_blank';
+        fu.rel = 'noopener';
+        fu.title = 'Opens the chat this board came from, so a follow-up doesn\'t rebuild everything';
+        fu.style.cssText = pill;
+        fu.innerHTML = '<span style="color:#3DB4F2;font-size:16px">✦</span>Ask a follow-up in Claude';
+        fu.addEventListener('click', e => {
+          if (state !== 'gone') return;
+          e.preventDefault();
+          markBoardGone(b.id);
+          fu.remove();
+          pageNotice(GONE_TITLE, GONE_TEXT);
+        });
+        bar.append(fu);
+      }
+      document.body.append(bar);
+    }
+  }
+
+  // Does a board's Claude chat still exist? Asked from AniList through Tampermonkey (with your Claude login).
+  function claudeGet(path) {
+    return new Promise(res => {
+      try {
+        GM_xmlhttpRequest({
+          method: 'GET', url: 'https://claude.ai' + path, headers: { Accept: 'application/json' }, timeout: 8000,
+          onload: r => res({ status: r.status, text: r.responseText || '' }),
+          onerror: () => res({ status: 0, text: '' }), ontimeout: () => res({ status: 0, text: '' }),
+        });
+      } catch (e) { res({ status: 0, text: '' }); }
+    });
+  }
+  async function chatState(board) {
+    const conv = ((board.conv || '').match(/\/chat\/([0-9a-f-]{36})/) || [])[1];
+    if (!conv) return 'gone';
+    let org = board.org;
+    if (!org) {
+      const r = await claudeGet('/api/organizations');
+      try {
+        const l = JSON.parse(r.text);
+        const o = Array.isArray(l) && (l.find(x => (x.capabilities || []).includes('chat')) || l[0]);
+        org = o && o.uuid;
+      } catch (e) { /* unknown */ }
+    }
+    if (!org) return 'unknown';
+    const r = await claudeGet('/api/organizations/' + org + '/chat_conversations/' + conv);
+    const json = /^\s*[{[]/.test(r.text);
+    if (r.status === 200 && json) return 'exists';
+    if (r.status === 404 || ((r.status === 403 || r.status === 410) && json)) return 'gone';
+    return 'unknown'; // offline, signed out, a challenge page… treat as "might exist"
+  }
+  function markBoardGone(id) {
+    const boards = GM_getValue(BOARDS_KEY, []);
+    let changed = false;
+    for (const x of boards) if (x.id === id && !x.chatGone) { x.chatGone = true; changed = true; }
+    if (changed) GM_setValue(BOARDS_KEY, boards);
+  }
+
+  // Simple OK dialog on the board page.
+  function pageNotice(title, text) {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(11,22,34,.72);display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.innerHTML = '<div style="max-width:380px;width:100%;background:#151F2E;border:1px solid rgba(61,180,242,.3);border-radius:14px;padding:18px;' +
+      'box-shadow:0 14px 40px rgba(0,0,0,.55);font:14px/1.5 Overpass,system-ui,sans-serif;color:#C9D7E3">' +
+      '<div style="color:#EDF1F5;font-weight:700;font-size:15px;margin-bottom:6px"></div><div></div>' +
+      '<div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" style="border:0;border-radius:8px;' +
+      'background:#3DB4F2;color:#fff;font:650 13px Overpass,system-ui,sans-serif;padding:8px 18px;cursor:pointer">OK</button></div></div>';
+    const [t, p] = ov.firstElementChild.children; // title, text
+    t.textContent = title;
+    p.textContent = text;
+    const done = () => ov.remove();
+    ov.querySelector('button').addEventListener('click', done);
+    ov.addEventListener('mousedown', e => { if (e.target === ov) done(); });
+    document.body.append(ov);
+    ov.querySelector('button').focus();
+  }
+
+  // Download a board as a standalone HTML file (AniDump itself only keeps the latest one).
+  function saveBoardFile(b) {
+    const d = new Date(b.ts || Date.now());
+    const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const name = ('AniDump - ' + (b.label || 'Board') + (b.updated ? ' (updated)' : '') + ' - ' + day + '.html').replace(/[\\/:*?"<>|]/g, '');
+    const url = URL.createObjectURL(new Blob([b.html], { type: 'text/html' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    (document.body || document.documentElement).append(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+  }
+
+  // Replace the whole page with the board. Scripts are re-created so they run (DOMParser leaves them inert).
+  function renderPage(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const root = document.importNode(doc.documentElement, true);
+    document.replaceChild(root, document.documentElement);
+    for (const old of [...root.querySelectorAll('script')]) {
+      const sc = document.createElement('script');
+      for (const at of old.attributes) sc.setAttribute(at.name, at.value);
+      sc.textContent = old.textContent;
+      old.replaceWith(sc);
+    }
+  }
+
+  // "Recent activity" strip above Taste profile: your 5 latest list changes, Cover Flow style.
+  // Drawn by AniDump when the board opens (no Claude usage), with live data and covers from AniList.
+  async function fetchRecent(b) {
+    const user = b.user || ((b.html.match(/User\s*<b>([^<]+)<\/b>/i) || [])[1] || '').trim();
+    if (!user) return null;
+    const type = b.type || 'ANIME';
+    const A = type !== 'MANGA';
+    const gql = async (query, variables) => {
+      const r = await fetch('https://graphql.anilist.co', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ query, variables }),
+      });
+      const j = await r.json();
+      if (j.errors) throw new Error(j.errors[0].message);
+      return j.data;
+    };
+    const title = m => (m.title && (m.title.english || m.title.romaji)) || 'Untitled';
+    const d = await gql(`query ($u: String, $t: MediaType) {
+      Page(perPage: 5) { mediaList(userName: $u, type: $t, sort: UPDATED_TIME_DESC) {
+        status progress media { id title { english romaji } coverImage { large } }
+      } } }`, { u: user, t: type });
+    const KIND = {
+      COMPLETED: ['Completed', '#68D639'], CURRENT: [A ? 'Watching' : 'Reading', '#3DB4F2'],
+      REPEATING: [A ? 'Rewatching' : 'Rereading', '#3DB4F2'], PLANNING: ['Added', '#9256F3'],
+      DROPPED: ['Dropped', '#E85D75'], PAUSED: ['Paused', '#F79A63'],
+    };
+    const items = d.Page.mediaList.map(x => {
+      const k = KIND[x.status] || [x.status, '#728AA1'];
+      const label = (x.status === 'CURRENT' || x.status === 'REPEATING') && x.progress ? k[0] + ' · ' + (A ? 'ep ' : 'ch ') + x.progress : k[0];
+      return { id: x.media.id, title: title(x.media), cover: x.media.coverImage && x.media.coverImage.large, label, color: k[1] };
+    });
+    return items;
+  }
+
+  // (a function, not a const: the board page stops the script before later consts are set up)
+  function recentCss() {
+    return (
+    '.adx-recent{margin:30px 0 4px;font-family:Overpass,system-ui,-apple-system,"Segoe UI",sans-serif}' +
+    '.adx-rh{display:flex;align-items:center;gap:10px;color:#EDF1F5;font-weight:800;font-size:1.25rem;margin:0 0 14px}' +
+    '.adx-rh::before{content:"";width:4px;height:20px;border-radius:2px;background:#3DB4F2}' +
+    '.adx-flow{display:flex;align-items:flex-end;perspective:1200px;padding:6px 6px 86px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}' +
+    '.adx-c{position:relative;flex:none;display:block;width:150px;aspect-ratio:2/3;border-radius:10px;background:#1A2638;' +
+    'box-shadow:0 14px 30px rgba(0,0,0,.5);transition:transform .35s ease,margin .35s ease;transform-origin:center;text-decoration:none;' +
+    '-webkit-box-reflect:below 8px linear-gradient(transparent 62%,rgba(255,255,255,.22))}' +
+    '.adx-c:first-child{width:180px;margin-right:6px}' +
+    '.adx-c:not(:first-child){transform:rotateY(-48deg);margin-left:-52px}' +
+    '.adx-c:not(:first-child):hover{transform:none;margin-left:-10px;margin-right:42px;z-index:9!important}' +
+    '.adx-c img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px}' +
+    '.adx-ph{position:absolute;inset:0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:rgba(255,255,255,.9)}' +
+    '.adx-t{position:absolute;left:0;right:0;bottom:0;padding:34px 10px 10px;border-radius:0 0 10px 10px;' +
+    'background:linear-gradient(transparent,rgba(11,22,34,.94));color:#fff;font-weight:700;font-size:13px;line-height:1.25}' +
+    '.adx-b{position:absolute;top:8px;left:8px;border-radius:999px;padding:3px 9px;font-size:10.5px;font-weight:800;color:#fff;' +
+    'box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}');
+  }
+
+  // Get the board ready for its sealed-off frame: links open in new tabs, plus the styles and a
+  // small receiver for the "Recent activity" strip, which arrives as plain data from AniDump.
+  function prepareBoard(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const base = doc.createElement('base');
+    base.target = '_blank';
+    doc.head.prepend(base);
+    const css = doc.createElement('style');
+    css.textContent = recentCss() + '@keyframes adx-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}';
+    doc.head.append(css);
+    const sc = doc.createElement('script');
+    sc.textContent = '(' + recentReceiver.toString() + ')();';
+    doc.body.append(sc);
+    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+  }
+
+  // Runs inside the board's frame (copied in as text, so it can't use anything from this script).
+  // Builds the strip from the data it's sent, using text only, and puts it above "Taste profile".
+  function recentReceiver() {
+    window.addEventListener('message', function (e) {
+      if (e.source !== window.parent || !e.data || !Array.isArray(e.data.adxRecent)) return;
+      if (document.querySelector('.adx-recent')) return;
+      var items = e.data.adxRecent;
+      var A = e.data.A !== false;
+      var mk = function (tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+      var sec = mk('section', 'adx-recent');
+      sec.style.animation = 'adx-in .4s ease';
+      var flow = mk('div', 'adx-flow');
+      items.slice(0, 5).forEach(function (it, i) {
+        var a = mk('a', 'adx-c');
+        a.href = 'https://anilist.co/' + (A ? 'anime' : 'manga') + '/' + Number(it.id);
+        a.rel = 'noopener';
+        a.target = '_blank';
+        a.style.zIndex = String(5 - i);
+        var title = String(it.title || '');
+        var ph = mk('div', 'adx-ph', title.split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0].toUpperCase(); }).join(''));
+        ph.style.background = 'linear-gradient(145deg,' + String(it.color) + ',#1A2638)';
+        a.appendChild(ph);
+        if (it.cover) {
+          var img = mk('img');
+          img.alt = '';
+          img.onerror = function () { img.remove(); };
+          img.src = String(it.cover);
+          a.appendChild(img);
+        }
+        var badge = mk('span', 'adx-b', String(it.label || ''));
+        badge.style.background = String(it.color);
+        a.appendChild(badge);
+        a.appendChild(mk('span', 'adx-t', title));
+        flow.appendChild(a);
+      });
+      sec.appendChild(mk('div', 'adx-rh', 'Recent activity'));
+      sec.appendChild(flow);
+      var anchor = Array.prototype.find.call(document.querySelectorAll('h1,h2,h3,h4,div,span,p'), function (n) {
+        return n.childElementCount === 0 && /^taste profile$/i.test(n.textContent.trim());
+      });
+      if (anchor) anchor.parentNode.insertBefore(sec, anchor);
+      else {
+        var head = document.querySelector('header');
+        if (head) head.parentNode.insertBefore(sec, head.nextSibling);
+        else document.body.insertBefore(sec, document.body.firstChild);
+      }
+    });
+  }
+
+  // =====================================================================
+  //  CLAUDE SIDE: paste the waiting prompt; in board mode, capture the result
+  // =====================================================================
+  function claudeSide() {
+    let data = GM_getValue(HANDOFF_KEY, null);
+    if (!data || !data.text || Date.now() - data.ts > HANDOFF_TTL) return;
+    const path = location.pathname;
+    // Signed out: tell AniList, and keep the prompt waiting so it continues once you sign in.
+    const tellSignedOut = () => {
+      if (!data.capture) return;
+      GM_setValue(HANDOFF_KEY, Object.assign({}, data, { ts: Date.now(), toldSignin: true }));
+      GM_setValue(RESULT_KEY, { job: data.job, ts: Date.now(), signin: true });
+      console.log('[AniDump] signed out of Claude; waiting for you to sign in.');
+    };
+    if (/^\/(login|logout|signin|sign-in|signup|sign-up|auth)(\/|$)/i.test(path)) {
+      if (!data.toldSignin) tellSignedOut();
+      return;
+    }
+    // The board's chat is gone: tell AniList (it shows an OK message) and don't send anything.
+    const tellChatGone = () => {
+      GM_deleteValue(HANDOFF_KEY);
+      GM_setValue(RESULT_KEY, { job: data.job, ts: Date.now(), ok: false, chatGone: true, closeTab: true });
+      console.log('[AniDump] the board\'s chat is gone, so nothing was sent.');
+      setTimeout(() => { try { window.close(); } catch (e) { /* the AniList tab closes it */ } }, 800);
+    };
+    if (data.update) {
+      const onChat = path.startsWith('/chat/' + data.convId);
+      if (!onChat && !path.startsWith('/new')) return;
+      if (!onChat && data.toldSignin && !data.backToChat && data.convId) {
+        // after signing in Claude lands on /new: go back to the board's chat first
+        GM_setValue(HANDOFF_KEY, Object.assign({}, data, { backToChat: true }));
+        location.href = location.origin + '/chat/' + data.convId;
+        return;
+      }
+      if (!onChat) return tellChatGone(); // Claude sent us to a new chat: the old one is gone
+    } else if (!path.startsWith('/new')) return; // some other page: leave it waiting
+    GM_deleteValue(HANDOFF_KEY); // one use only, so a refresh doesn't paste it again
+    const capture = !!data.capture;
+    const t0 = data.started || Date.now();
+
+    rawStyle(
+      '#anidump-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483647;' +
+      'background:#151F2E;color:#EDF1F5;border:1px solid rgba(61,180,242,.35);border-radius:12px;padding:10px 16px;' +
+      'font:13px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);' +
+      'transition:opacity .3s;max-width:calc(100vw - 40px)}' +
+      '#anidump-toast b{color:#3DB4F2}' +
+      '#anidump-toast.err{border-color:rgba(232,93,117,.5)}'
+    );
+    const toast = (msg, err, sticky) => {
+      let t = document.getElementById('anidump-toast');
+      if (!t) { t = document.createElement('div'); t.id = 'anidump-toast'; document.body.appendChild(t); }
+      t.className = err ? 'err' : '';
+      t.innerHTML = '<b>AniDump</b> · ';
+      t.append(msg);
+      t.style.opacity = '1';
+      clearTimeout(t._h);
+      if (!sticky) t._h = setTimeout(() => { t.style.opacity = '0'; }, err ? 9000 : 5000);
+    };
+    const report = r => GM_setValue(RESULT_KEY, Object.assign({ job: data.job, ts: Date.now(), fellBack: !!data.fellBack }, r));
+    const fail = (msg, conv) => {
+      toast(msg, true, true);
+      if (capture) report({ ok: false, error: msg, conv: conv || location.href });
+    };
+    const limitFail = line => {
+      console.log('[AniDump] Claude usage limit: ' + line);
+      toast('Claude usage limit reached: ' + line, true, true);
+      if (capture) report({ ok: false, limit: true, error: line, conv: location.href });
+    };
+    // handles the special results from pasteAndSend
+    const sendFailed = err => {
+      if (err === 'SIGNIN') { toast('You\'re signed out of Claude. Sign in and AniDump picks up from here.', true, true); return tellSignedOut(); }
+      if (err.startsWith('LIMIT:')) return limitFail(err.slice(6));
+      return fail(err);
+    };
+
+    const findComposer = () =>
+      document.querySelector('div.ProseMirror[contenteditable="true"]') ||
+      document.querySelector('[contenteditable="true"][role="textbox"]') ||
+      document.querySelector('fieldset [contenteditable="true"]');
+    const looksSignedOut = () => !findComposer() &&
+      [...document.querySelectorAll('a,button')].some(e => /^(log ?in|sign ?in|continue with (google|email|apple))/i.test((e.textContent || '').trim()));
+    // Claude's "out of messages / usage limit" notice, read only around the chat box (and alerts),
+    // so text inside the chat itself can't trigger it. Early warnings ("approaching…") are ignored.
+    function limitText() {
+      const box = findComposer();
+      const areas = [...document.querySelectorAll('[role="alert"],[role="status"]')];
+      const near = box && (box.closest('fieldset') || box.closest('form'));
+      if (near && near.parentElement) areas.push(near.parentElement.parentElement || near.parentElement);
+      const texts = areas.map(a => a.innerText || '');
+      if (!box && document.body) texts.push((document.body.innerText || '').slice(-1500));
+      for (const t of texts) {
+        for (const line of t.split('\n')) {
+          if (/out of (free )?messages|usage limit|reached (your|the) (message |usage )?limit|message limit/i.test(line) &&
+            !/approach|remaining|left this/i.test(line)) return line.trim().slice(0, 160);
+        }
+      }
+      return '';
+    }
+    const findSend = () => {
+      const b = document.querySelector('button[aria-label="Send message"]') ||
+        document.querySelector('button[aria-label*="Send" i]:not([aria-label*="feedback" i])');
+      return b && !b.disabled ? b : null;
+    };
+
+    // Paste text into the chat box and (optionally) send it. Returns an error message, or '' on success.
+    async function pasteAndSend(text, send) {
+      const box = await waitFor(findComposer, 20000, 250);
+      if (!box) {
+        if (looksSignedOut()) return 'SIGNIN';
+        const lim = limitText();
+        if (lim) return 'LIMIT:' + lim;
+        return 'Couldn\'t find the chat box. Your prompt is on the clipboard, so press Ctrl+V.';
+      }
+      await sleep(500); // let the page finish wiring up the editor
+      const lim0 = limitText();
+      if (lim0) return 'LIMIT:' + lim0;
+      if (!insertText(box, text)) return 'Couldn\'t paste automatically. Your prompt is on the clipboard, so press Ctrl+V.';
+      if (!send) return '';
+      const btn = await waitFor(findSend, 15000, 300);
+      if (!btn) {
+        const lim = limitText();
+        if (lim) return 'LIMIT:' + lim;
+        return 'Prompt added, but the send button never appeared. Press Enter to send.';
+      }
+      btn.click();
+      return '';
+    }
+
+    (async () => {
+      let org = null;
+      let before = 0;
+      if (data.update) {
+        // Make sure the old chat still exists, and count its replies so we know which one is new.
+        try {
+          org = await getOrg();
+          const r = await fetch(convApi(org, data.convId), { credentials: 'include', headers: { Accept: 'application/json' } });
+          if (r.status === 404 || r.status === 403 || r.status === 410) return tellChatGone();
+          before = replies(await r.json()).length;
+        } catch (e) {
+          return fail('Couldn\'t open the board\'s chat (' + (e && e.message) + ').');
+        }
+      }
+
+      const err = await pasteAndSend(data.text, data.autoSend);
+      if (err) return sendFailed(err);
+      if (!data.autoSend) return toast(data.label + ' prompt is ready. Press Enter to send.');
+      if (!capture) return toast(data.label + ' prompt sent.');
+
+      toast((data.update ? 'Updating' : 'Building') + ' your ' + data.label.toLowerCase() + ' board. This tab closes itself when it\'s done.');
+      try {
+        if (data.update) await captureUpdate(org, before);
+        else await captureBoard();
+      } catch (e) {
+        if (e && e.limit) return limitFail(e.message);
+        console.error('[AniDump]', e);
+        fail('Couldn\'t ' + (data.update ? 'update' : 'grab') + ' the board (' + (e && e.message) + '). It\'s still in this chat.');
+      }
+    })();
+
+    const convApi = (org, conv) => '/api/organizations/' + org + '/chat_conversations/' + conv +
+      '?tree=True&rendering_mode=messages&render_all_tools=true';
+    const replies = json => {
+      const msgs = json && Array.isArray(json.chat_messages) ? json.chat_messages : null;
+      return msgs ? msgs.filter(m => m && m.sender === 'assistant') : (json ? [json] : []);
+    };
+    async function getJson(url) {
+      try {
+        const r = await fetch(url, { credentials: 'include', headers: { Accept: 'application/json' } });
+        return r.ok ? await r.json() : null;
+      } catch (e) { return null; }
+    }
+
+    async function captureBoard() {
+      const conv = await waitFor(() => (location.pathname.match(/^\/chat\/([0-9a-f-]{36})/) || [])[1], 60000, 500);
+      if (!conv) throw new Error('the chat never started');
+      const org = await getOrg();
+      const url = convApi(org, conv);
+      let last = '';
+      let stable = 0;
+      const deadline = Date.now() + 12 * 60 * 1000;
+      while (Date.now() < deadline) {
+        await sleep(4000);
+        const rs = replies(await getJson(url));
+        if (!rs.length) {
+          const lim = limitText();
+          if (lim) throw Object.assign(new Error(lim), { limit: true });
+          continue;
+        }
+        const html = findHtml(rs[rs.length - 1]);
+        const done = html && /<\/html>\s*$/i.test(html);
+        if (done && html === last) stable++; // same text twice in a row = finished
+        else stable = 0;
+        last = html || last;
+        if (done && stable >= 1) return finish(html, conv, org);
+      }
+      throw new Error('no finished board after 12 minutes');
+    }
+
+    // Same chat: wait for the new reply, apply its edit list to the saved board.
+    // If the edits don't fit, ask once for the complete page.
+    async function captureUpdate(org, before) {
+      const conv = data.convId;
+      const url = convApi(org, conv);
+      let base = before;
+      let sig = '';
+      let stable = 0;
+      let retried = false;
+      const deadline = Date.now() + 12 * 60 * 1000;
+      while (Date.now() < deadline) {
+        await sleep(4000);
+        const rs = replies(await getJson(url));
+        if (rs.length <= base) {
+          const lim = limitText();
+          if (lim) throw Object.assign(new Error(lim), { limit: true });
+          continue;
+        }
+        const reply = rs[rs.length - 1];
+        const s = JSON.stringify(reply);
+        if (s === sig) stable++;
+        else { sig = s; stable = 0; }
+        if (stable < 1) continue; // wait until the reply stops growing
+
+        const full = findHtml(reply);
+        if (full && /<\/html>\s*$/i.test(full) && full.length > 2000) return finish(full, conv, org);
+        const edits = findEdits(reply);
+        const res = applyEdits(data.baseHtml, edits);
+        console.log('[AniDump] update reply: ' + edits.length + ' edits, ' + res.missed + ' didn\'t match exactly one spot');
+        if (edits.length && !res.missed) return finish(res.html, conv, org);
+        if (retried) throw new Error(edits.length ? res.missed + ' of ' + edits.length + ' edits didn\'t match the page' : 'Claude didn\'t send any edits');
+        retried = true;
+        base = rs.length;
+        sig = '';
+        stable = 0;
+        toast('Some edits didn\'t fit, so AniDump asked Claude for the full page.');
+        const err2 = await pasteAndSend(
+          'Some of those edits didn\'t match the page exactly' + (edits.length ? ' (' + res.missed + ' of ' + edits.length + ')' : '') +
+          '. Please send the complete updated page instead: one HTML document from <!DOCTYPE html> to </html>, ' +
+          'in a ```html code block, with no other text.', true);
+        if (err2 && err2.startsWith('LIMIT:')) throw Object.assign(new Error(err2.slice(6)), { limit: true });
+        if (err2) throw new Error(err2);
+      }
+      throw new Error('no updated board after 12 minutes');
+    }
+
+    async function finish(html, conv, org) {
+      const convUrl = location.origin + '/chat/' + conv;
+      const id = data.job;
+      GM_setValue(BOARDS_KEY, [{
+        id, label: data.label, mode: data.mode, html, conv: convUrl, ts: Date.now(),
+        user: data.user, type: data.type, snap: data.snap || null, updated: !!data.update, org: org || null,
+      }]); // only the latest board is kept
+      const times = GM_getValue(TIMES_KEY, {});
+      const key = data.timeKey || data.mode;
+      times[key] = (times[key] || []).concat(Date.now() - t0).slice(-5);
+      GM_setValue(TIMES_KEY, times);
+      // Only close if you're still on this chat; if you've moved to another one in this tab, leave it be.
+      const stillHere = location.pathname.startsWith('/chat/' + conv);
+      report({ ok: true, conv: convUrl, ms: Date.now() - t0, closeTab: stillHere, updated: !!data.update });
+      GM_openInTab(BOARD_URL(id), { active: true });
+      console.log('[AniDump] board ' + (data.update ? 'updated' : 'captured') + ' (' + html.length + ' chars). Still on its chat: ' + stillHere);
+      if (!stillHere) { toast('Board ready and opened on AniList.'); return; }
+      toast('Board ready. Closing this tab…', false, true);
+      await sleep(1200);
+      try { window.close(); } catch (e) { console.log('[AniDump] window.close threw: ' + (e && e.message)); }
+      await sleep(1500);
+      console.log('[AniDump] this tab is still open, so closing it was blocked here. The AniList tab will try too.');
+      toast('Board ready and opened on AniList. You can close this tab.', false, true);
+    }
+
+    async function getOrg() {
+      const m = document.cookie.match(/(?:^|;\s*)lastActiveOrg=([0-9a-f-]{36})/);
+      if (m) return m[1];
+      const r = await fetch('/api/organizations', { credentials: 'include', headers: { Accept: 'application/json' } });
+      const list = await r.json();
+      const o = (Array.isArray(list) && (list.find(x => (x.capabilities || []).includes('chat')) || list[0])) || null;
+      if (!o || !o.uuid) throw new Error('couldn\'t find your Claude account id');
+      return o.uuid;
+    }
+
+    // The board is the longest complete HTML document anywhere in the reply (artifact, file or code block).
+    function findHtml(obj) {
+      let best = '';
+      const visit = v => {
+        if (typeof v === 'string') {
+          const i = v.search(/<!DOCTYPE html|<html[\s>]/i);
+          if (i < 0) return;
+          const j = v.toLowerCase().lastIndexOf('</html>');
+          const h = j > i ? v.slice(i, j + 7) : v.slice(i);
+          if (h.length > best.length) best = h;
+        } else if (Array.isArray(v)) v.forEach(visit);
+        else if (v && typeof v === 'object') Object.values(v).forEach(visit);
+      };
+      visit(obj);
+      return best;
+    }
+
+    // Edits come back as {"edits":[{"find","replace"}]} in a json block. If Claude edited its
+    // artifact instead, its old_str/new_str pairs work the same way.
+    function findEdits(obj) {
+      const out = [];
+      let fromJson = false;
+      const visit = v => {
+        if (typeof v === 'string') {
+          if (fromJson || !v.includes('"edits"')) return;
+          const cands = [];
+          const re = /```(?:json)?\s*([\s\S]*?)```/g;
+          let m;
+          while ((m = re.exec(v))) cands.push(m[1]);
+          cands.push(v.slice(v.indexOf('{'), v.lastIndexOf('}') + 1));
+          for (const c of cands) {
+            try {
+              const j = JSON.parse(c);
+              if (j && Array.isArray(j.edits)) {
+                out.push(...j.edits.filter(e => e && typeof e.find === 'string' && e.find && typeof e.replace === 'string'));
+                fromJson = true;
+                return;
+              }
+            } catch (e) { /* not this one */ }
+          }
+        } else if (Array.isArray(v)) v.forEach(visit);
+        else if (v && typeof v === 'object') {
+          if (!fromJson && typeof v.old_str === 'string' && v.old_str && typeof v.new_str === 'string') out.push({ find: v.old_str, replace: v.new_str });
+          Object.values(v).forEach(visit);
+        }
+      };
+      visit(obj);
+      return out;
+    }
+    function applyEdits(html, edits) {
+      let missed = 0;
+      for (const e of edits) {
+        const i = html.indexOf(e.find);
+        // must match exactly one spot: none, or more than one, counts as a miss (then the full page is requested)
+        if (i < 0 || html.indexOf(e.find, i + 1) >= 0) { missed++; continue; }
+        html = html.slice(0, i) + e.replace + html.slice(i + e.find.length);
+      }
+      return { html, missed };
+    }
+
+    // A paste event lets Claude handle it like a real paste (long text becomes an attachment).
+    // If nothing handles it, fall back to typing it in.
+    function insertText(el, text) {
+      el.focus();
+      try {
+        const dt = new DataTransfer();
+        dt.setData('text/plain', text);
+        const ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
+        if (ev.clipboardData) {
+          el.dispatchEvent(ev);
+          if (ev.defaultPrevented) return true;
+        }
+      } catch (e) { /* fall through */ }
+      try { return document.execCommand('insertText', false, text); } catch (e) { return false; }
+    }
+  }
+
+  // =====================================================================
+  //  ANILIST SIDE
+  // =====================================================================
+  function aniListSide() {
+    const ACCENT = '#3DB4F2';
+    const DEFAULT_PREFS = '';
+    const DEFAULTS = { type: 'ANIME', dest: 'claude', claudeMode: 'board', prefs: DEFAULT_PREFS, tab: 'rec', btnPos: 'top', hidePlanned: true };
+    const cfg = Object.assign({}, DEFAULTS, GM_getValue('anidump.settings', {}));
+    const save = () => GM_setValue('anidump.settings', cfg);
+
+    // AniList genre-bar colors, one per mode
+    const MODES = [
+      { id: 'recent', color: '#3DB4F2', title: 'More like my recent', hint: 'Keeps your current streak going' },
+      { id: 'top', color: '#68D639', title: 'More like my top rated', hint: 'Built on what your favorites have in common' },
+      { id: 'wild', color: '#9256F3', title: 'Wildcard', hint: 'Outside your usual genres, still your taste' },
+      { id: 'airing', color: '#F779A4', title: 'What\'s airing now', hint: 'Picks from this season\'s real lineup', animeOnly: true },
+      { id: 'backlog', color: '#E85D75', title: 'Clear my backlog', hint: 'What to start next from Planning and Paused' },
+    ];
+
+    // ---------------- Data ----------------
+    async function gql(query, variables) {
+      const res = await fetch('https://graphql.anilist.co', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ query, variables }),
+      });
+      if (res.status === 429) throw new Error('AniList rate limit hit. Wait a minute and try again.');
+      const json = await res.json().catch(() => null);
+      if (!json) throw new Error('AniList returned an unreadable response.');
+      if (json.errors && json.errors.length) throw new Error('AniList: ' + json.errors.map(e => e.message).join('; '));
+      return json.data;
+    }
+
+    const titleOf = m => ((m.title && (m.title.english || m.title.romaji)) || 'Untitled').replace(/\|/g, '/');
+    const fmtDate = d => {
+      if (!d || !d.year) return '';
+      let s = String(d.year);
+      if (d.month) s += '-' + String(d.month).padStart(2, '0');
+      if (d.month && d.day) s += '-' + String(d.day).padStart(2, '0');
+      return s;
+    };
+
+    const LIST_Q = `query ($u: String, $t: MediaType) {
+      MediaListCollection(userName: $u, type: $t) {
+        lists { entries {
+          status progress updatedAt
+          score(format: POINT_10_DECIMAL)
+          startedAt { year month day }
+          completedAt { year month day }
+          media { id format episodes chapters genres title { english romaji } }
+        } }
+      }
+    }`;
+
+    async function fetchList(user, type) {
+      const data = await gql(LIST_Q, { u: user, t: type });
+      const lists = data && data.MediaListCollection && data.MediaListCollection.lists;
+      if (!lists) throw new Error('AniList didn\'t return a list for ' + user + '. Is it private?');
+      const seen = new Map(); // custom lists repeat entries, so keep each show once
+      for (const l of lists) {
+        for (const e of l.entries || []) {
+          if (!e || !e.media || seen.has(e.media.id)) continue;
+          const m = e.media;
+          seen.set(m.id, {
+            id: m.id,
+            title: titleOf(m),
+            status: e.status,
+            score: e.score || 0,
+            progress: e.progress || 0,
+            total: type === 'ANIME' ? m.episodes : m.chapters,
+            format: m.format || '',
+            genres: m.genres || [],
+            start: fmtDate(e.startedAt),
+            finish: fmtDate(e.completedAt),
+            updatedAt: e.updatedAt || 0,
+          });
+        }
+      }
+      return [...seen.values()].sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+
+    function currentSeason() {
+      const d = new Date();
+      const m = d.getMonth();
+      // AniList: Winter = Dec-Feb, Spring = Mar-May, Summer = Jun-Aug, Fall = Sep-Nov
+      if (m === 11) return { season: 'WINTER', year: d.getFullYear() + 1 };
+      return { season: ['WINTER', 'WINTER', 'SPRING', 'SPRING', 'SPRING', 'SUMMER', 'SUMMER', 'SUMMER', 'FALL', 'FALL', 'FALL'][m], year: d.getFullYear() };
+    }
+
+    const AIRING_Q = `query ($page: Int) {
+      Page(page: $page, perPage: 50) {
+        pageInfo { hasNextPage }
+        media(status: RELEASING, type: ANIME, isAdult: false, format_in: [TV, TV_SHORT, ONA], sort: POPULARITY_DESC) {
+          id format episodes genres averageScore season seasonYear
+          title { english romaji }
+          coverImage { large }
+          tags { name rank isMediaSpoiler isGeneralSpoiler }
+        }
+      }
+    }`;
+
+    async function fetchAiring() {
+      const out = [];
+      for (let page = 1; page <= 2; page++) {
+        const d = await gql(AIRING_Q, { page });
+        out.push(...d.Page.media);
+        if (!d.Page.pageInfo.hasNextPage) break;
+      }
+      return out;
+    }
+
+    const REL_Q = `query ($ids: [Int], $page: Int) {
+      Page(page: $page, perPage: 50) {
+        media(id_in: $ids) {
+          id
+          relations { edges { relationType node {
+            id type format status
+            title { english romaji }
+            coverImage { medium }
+            startDate { year }
+          } } }
+        }
+      }
+    }`;
+
+    async function findSequels(list, type) {
+      const byId = new Map(list.map(e => [e.id, e]));
+      const done = list.filter(e => e.status === 'COMPLETED' || e.status === 'REPEATING');
+      const out = new Map();
+      for (let i = 0; i < done.length; i += 50) {
+        const chunk = done.slice(i, i + 50);
+        const d = await gql(REL_Q, { ids: chunk.map(e => e.id), page: 1 });
+        for (const m of d.Page.media) {
+          for (const edge of (m.relations && m.relations.edges) || []) {
+            const n = edge.node;
+            if (edge.relationType !== 'SEQUEL' || !n || n.type !== type) continue;
+            if (n.format === 'MUSIC' || n.status === 'CANCELLED') continue;
+            const mine = byId.get(n.id);
+            if (mine && mine.status !== 'PLANNING') continue; // already watching/finished/dropped it
+            if (out.has(n.id)) continue;
+            out.set(n.id, {
+              id: n.id,
+              title: titleOf(n),
+              cover: n.coverImage && n.coverImage.medium,
+              year: n.startDate && n.startDate.year,
+              status: n.status,
+              format: n.format,
+              planned: !!mine,
+              after: byId.get(m.id) ? byId.get(m.id).title : '',
+            });
+          }
+        }
+      }
+      const order = { RELEASING: 0, FINISHED: 1, HIATUS: 2, NOT_YET_RELEASED: 3 };
+      return [...out.values()].sort((a, b) => (order[a.status] ?? 9) - (order[b.status] ?? 9) || (b.year || 0) - (a.year || 0));
+    }
+
+    // Cache so the prompt is ready the moment you click (the browser only allows opening a new
+    // tab right after a click, so the list is loaded when the panel opens, not when you pick a mode).
+    const cache = { lists: new Map(), airing: null };
+    function getList(user, type, force) {
+      const k = user.toLowerCase() + ':' + type;
+      const c = cache.lists.get(k);
+      if (c && !force && Date.now() - c.ts < 5 * 60 * 1000) return c;
+      const entry = { ts: Date.now(), data: null, err: null };
+      entry.p = fetchList(user, type).then(d => (entry.data = d), e => { entry.err = e; cache.lists.delete(k); throw e; });
+      cache.lists.set(k, entry);
+      return entry;
+    }
+    function getAiring() {
+      const c = cache.airing;
+      if (c && Date.now() - c.ts < 15 * 60 * 1000) return c;
+      const entry = { ts: Date.now(), data: null };
+      entry.p = fetchAiring().then(d => (entry.data = d), e => { cache.airing = null; throw e; });
+      cache.airing = entry;
+      return entry;
+    }
+
+    function getUsername() {
+      const m = location.pathname.match(/^\/user\/([^/]+)/);
+      if (m) return decodeURIComponent(m[1]);
+      const a = document.querySelector('.nav a[href^="/user/"], #nav a[href^="/user/"]') ||
+        document.querySelector('a[href^="/user/"]');
+      const mm = a && a.getAttribute('href').match(/^\/user\/([^/]+)/);
+      return mm ? decodeURIComponent(mm[1]) : null;
+    }
+
+    // ---------------- Prompt ----------------
+    const STATUS_CODE = { CURRENT: 'W', COMPLETED: 'C', REPEATING: 'R', PAUSED: 'P', DROPPED: 'D', PLANNING: 'L' };
+
+    function statsText(list, A) {
+      const NAMES = { CURRENT: A ? 'watching' : 'reading', COMPLETED: 'completed', REPEATING: A ? 'rewatching' : 'rereading', PAUSED: 'paused', DROPPED: 'dropped', PLANNING: 'planning' };
+      const by = {};
+      for (const e of list) by[e.status] = (by[e.status] || 0) + 1;
+      const scored = list.filter(e => e.score > 0);
+      const mean = scored.length ? (scored.reduce((a, e) => a + e.score, 0) / scored.length).toFixed(2) : '-';
+      const hist = Array(10).fill(0);
+      for (const e of scored) hist[Math.min(10, Math.max(1, Math.round(e.score))) - 1]++;
+      const g = {};
+      for (const e of list) {
+        if (e.status === 'PLANNING') continue;
+        for (const x of e.genres) {
+          const o = g[x] || (g[x] = { n: 0, sum: 0, c: 0 });
+          o.n++;
+          if (e.score) { o.sum += e.score; o.c++; }
+        }
+      }
+      const genres = Object.entries(g).sort((a, b) => b[1].n - a[1].n).slice(0, 12)
+        .map(([k, v]) => k + ' ' + v.n + (v.c ? ' (avg ' + (v.sum / v.c).toFixed(1) + ')' : ''));
+      const months = [];
+      const now = new Date();
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        months.push(key + ' ' + list.filter(e => e.finish && e.finish.startsWith(key)).length);
+      }
+      const units = list.reduce((a, e) => a + (e.status === 'PLANNING' ? 0 : e.progress), 0);
+      return [
+        'Entries by status: ' + Object.keys(NAMES).filter(k => by[k]).map(k => NAMES[k] + ' ' + by[k]).join(', '),
+        'Mean score: ' + mean + ' (' + scored.length + ' scored)',
+        'Score distribution 1-10: ' + hist.map((n, i) => (i + 1) + ':' + n).join(', '),
+        'Top genres, excluding planning (count, my avg score): ' + genres.join(', '),
+        'Finished per month, last 12: ' + months.join(', '),
+        'Total ' + (A ? 'episodes watched' : 'chapters read') + ': ' + units,
+      ].join('\n');
+    }
+
+    // The board design is fixed here so every result looks the same.
+    const BOARD_SPEC = (noun, A) =>
+      'OUTPUT: build a recommendation board\n' +
+      'Deliver your answer as a single self-contained HTML page (an artifact) with exactly this design, so every board looks the same:\n' +
+      '- Style: AniList dark theme. Page #0B1622, cards #151F2E, raised elements #1A2638, body text #9FADBD, headings #EDF1F5, accent #3DB4F2. ' +
+      'Font: Overpass, falling back to system-ui. Cards with 12px rounded corners and soft shadows, generous spacing, responsive grid that works on a phone.\n' +
+      '- Genre chips in AniList genre colors: Action #68D639, Adventure #E85D75, Comedy #F79A63, Drama #02A9FF, Fantasy #F779A4, Horror #A3412C, ' +
+      'Mystery #5C6BC0, Psychological #8E44AD, Romance #E6977A, Sci-Fi #3DB4F2, Slice of Life #7BD555, Sports #F7C948, Supernatural #9256F3, Thriller #D35454, others #728AA1.\n' +
+      '- Charts: plain inline SVG/CSS only, no external libraries, so nothing fails to load.\n' +
+      'Sections, in this order:\n' +
+      '1. Header: "AniDump" (Ani in white, Dump in #3DB4F2), the request name, my username, today\'s date, and my mood if I gave one.\n' +
+      '2. Taste profile: 4 stat tiles from <my_stats> (total, completed, mean score, ' + (A ? 'episodes watched' : 'chapters read') + '), ' +
+      'a horizontal bar chart of my top genres (count, labeled with my avg score), a score distribution chart, a small finished-per-month chart, ' +
+      'and 3-5 short takeaways from your analysis (what I love, what I drop, pacing, fights/powers/character dynamics).\n' +
+      '3. Recommendations: one card per pick, highest predicted rating first. Each card: cover image, title, format · ' + (A ? 'episodes' : 'chapters') +
+      ' · year · status, genre chips, a large predicted-rating badge, "Why you\'ll like it", "Similar to" (chips of titles from my list), ' +
+      '"Avoids" (what I disliked that it skips), and an "Open on AniList" button.\n' +
+      '4. At a glance: a comparison table of every pick (title, predicted rating, genres, length, year, similar to).\n' +
+      '5. Anything specific to this request (skips, prerequisites, drops) as its own small section at the end.\n' +
+      'Cover images: if a cover URL is given in a list below, use it directly. Otherwise load it in the page from AniList\'s public API ' +
+      '(POST https://graphql.anilist.co, query Media(id: ID) when you know the id, or Media(search: "TITLE", type: ' + (A ? 'ANIME' : 'MANGA') + '), ' +
+      'requesting coverImage { large } siteUrl). If a cover can\'t load, show a neat placeholder (a gradient in the first genre\'s color with the title\'s initials), never a broken image.\n' +
+      'Just before </body>, include a hidden list of your picks for AniDump, in exactly this form: ' +
+      '<script type="application/json" id="anidump-picks">[{"title":"English title","id":ANILIST_ID_OR_null,"predicted":8.5}]</script>\n' +
+      'Write the complete page in one go, from <!DOCTYPE html> to </html>, with no placeholders or "rest unchanged" shortcuts.\n' +
+      'In the chat itself, keep your reply to a short summary. The board is the deliverable.';
+
+    function buildPrompt(modeId, user, type, list, airing, note) {
+      const A = type === 'ANIME';
+      const noun = A ? 'anime' : 'manga';
+      const verb = A ? 'watch' : 'read';
+      const unit = A ? 'eps' : 'ch';
+      const fromMyList = modeId === 'backlog';
+
+      const lines = list.map(e => [
+        e.id,
+        e.title,
+        STATUS_CODE[e.status] || e.status,
+        e.score ? +e.score.toFixed(1) : '-',
+        e.progress + '/' + (e.total || '?') + ' ' + unit,
+        e.format,
+        e.genres.join(', '),
+        (e.start || e.finish) ? (e.start || '?') + ' → ' + (e.finish || '') : '',
+      ].join(' | '));
+
+      const parts = [];
+
+      // 1. Core: always the same, whatever the mode
+      parts.push(
+        'You are an expert ' + noun + ' recommender.\n' +
+        'Here is my FULL AniList ' + noun + ' list (user: ' + user + ', ' + list.length + ' entries) including scores and statuses.\n' +
+        'Format: id | title | status | my score /10 | progress | format | genres | started → finished\n' +
+        'Status: W=' + (A ? 'watching' : 'reading') + ', C=completed, R=' + (A ? 'rewatching' : 'rereading') +
+        ', P=paused, D=dropped, L=planning. "-" = unscored. Sorted by most recently updated first.\n\n' +
+        '<my_list>\n' + lines.join('\n') + '\n</my_list>\n\n' +
+        '<my_stats> (computed exactly from the list above; use these numbers for charts and tiles)\n' +
+        statsText(list, A) + '\n</my_stats>'
+      );
+      parts.push(
+        'First, deeply analyze my taste:\n' +
+        '- What I consistently rate highly\n' +
+        '- What I drop or rate poorly\n' +
+        '- Preferred pacing\n' +
+        '- Type of fights, power systems, and character dynamics I enjoy\n\n' +
+        'Then, for EACH recommendation, give:\n' +
+        '- Why I would like it (based on my actual behavior)\n' +
+        '- What it is similar to from my list\n' +
+        '- Why it avoids things I disliked\n' +
+        '- Predicted rating I would give it (1-10, same scale as my scores)\n' +
+        '- A link: https://anilist.co/' + noun + '/ID when the id is in a list I gave you, otherwise https://anilist.co/search/' + noun + '?search=TITLE (URL-encoded)\n\n' +
+        'Rules:\n' +
+        (fromMyList
+          ? '- This time, only pick from my own list (see the request below)\n'
+          : '- Do NOT recommend anything already in my list, in any status' +
+            (modeId === 'airing' ? ' (titles marked [P] below are fine: they\'re on my Planning list)' : '') + '\n') +
+        '- Use BOTH likes and dislikes to guide picks\n' +
+        '- Be specific and grounded in my data, but flexible if you think it\'s something I would enjoy\n' +
+        '- Only state years, episode/chapter counts and airing status you\'re confident about; leave a field out rather than guess'
+      );
+      parts.push(BOARD_SPEC(noun, A));
+
+      // 2. Standing preferences
+      if (cfg.prefs && cfg.prefs.trim()) parts.push('My standing preferences:\n' + cfg.prefs.trim());
+
+      // 3. Mood
+      const mood = moodText.trim();
+      if (mood) parts.push('Right now I\'m in the mood for: ' + mood + '\nWeigh this heavily.');
+      if (note) parts.push('Feedback on the last board you made for me: ' + note + '\nTake this into account.');
+
+      // 4. This request: what the mode adds on top of the core
+      let req = '';
+      if (modeId === 'recent') {
+        req =
+          'THIS REQUEST: More like my recent\n' +
+          'Give extra weight in your analysis to my ~15 most recently active entries (top of the list, ignoring L): what have I been into lately?\n' +
+          'Recommend 5 ' + noun + ' that keep that streak going. For each, also say which recent title(s) of mine it\'s closest to.';
+      } else if (modeId === 'top') {
+        req =
+          'THIS REQUEST: More like my top rated\n' +
+          'Anchor your analysis on everything I scored 8 or higher, and contrast it with what I dropped or scored 5 or lower. What do my favorites share that my low scores lack?\n' +
+          'Recommend 5 ' + noun + ' built on those shared traits. For each, also say which favorites it echoes.';
+      } else if (modeId === 'wild') {
+        req =
+          'THIS REQUEST: Wildcard\n' +
+          'Find the genres and formats I almost never touch.\n' +
+          'Recommend 3 ' + noun + ' from outside my comfort zone that still hit my underlying taste. Be bold, no safe picks. ' +
+          'For each, also explain why it\'s a stretch for me and why it still fits.';
+      } else if (modeId === 'backlog') {
+        req =
+          'THIS REQUEST: Clear my backlog\n' +
+          'Only pick from my Planning (L) and Paused (P) entries. No new titles this time.\n' +
+          'Rank the top 5 I should ' + verb + ' next. Also flag any that need a prior season or entry first, and any I should probably drop from my list.';
+      } else if (modeId === 'airing') {
+        const s = currentSeason();
+        const byId = new Map(list.map(e => [e.id, e]));
+        const cands = airing.filter(m => { const mine = byId.get(m.id); return !mine || mine.status === 'PLANNING'; });
+        const cl = cands.map(m => {
+          const isNew = m.season === s.season && m.seasonYear === s.year;
+          const planned = byId.has(m.id);
+          const tags = (m.tags || []).filter(t => !t.isMediaSpoiler && !t.isGeneralSpoiler && t.rank >= 60).slice(0, 4).map(t => t.name);
+          return [
+            m.id,
+            titleOf(m) + (isNew ? ' ★' : '') + (planned ? ' [P]' : ''),
+            m.format,
+            (m.episodes || '?') + ' eps',
+            (m.genres || []).join(', '),
+            tags.join(', ') || '-',
+            m.averageScore ? m.averageScore + '%' : '-',
+            (m.coverImage && m.coverImage.large) || '-',
+          ].join(' | ');
+        });
+        req =
+          'THIS REQUEST: What\'s airing now\n' +
+          'Below are the ' + cands.length + ' most popular anime airing right now, pulled live from AniList today. ' +
+          '★ = premiered this season (' + s.season.toLowerCase() + ' ' + s.year + '), [P] = already on my Planning list. ' +
+          'Shows already on my list in any other status were removed.\n' +
+          'Only choose from this list. Your own knowledge of recent anime may be out of date.\n' +
+          'Format: id | title | format | episodes | genres | top tags | community score | cover image URL\n\n' +
+          '<airing_now>\n' + cl.join('\n') + '\n</airing_now>\n\n' +
+          'Rank the top 6 for me. Then name 2-3 popular ones I should skip and why, and flag any that need an earlier season I haven\'t seen.';
+      }
+      parts.push(req);
+
+      return parts.join('\n\n');
+    }
+
+    // ---------------- Panel (Molten Tools layout, AniList colors) ----------------
+    // Everything lives inside a shadow root so AniList's own CSS and scripts can't touch it.
+    const PANEL_CSS = (
+      '#anidump-toggle{position:fixed;right:20px;bottom:20px;z-index:2147483000;width:40px;height:40px;padding:0;border:0;' +
+      'border-radius:50%;background:#151F2E;color:#EDF1F5;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;' +
+      'font-size:19px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.45);transition:color .15s,box-shadow .15s,background .15s}' +
+      '#anidump-toggle:hover{color:' + ACCENT + ';box-shadow:0 4px 18px rgba(61,180,242,.3)}' +
+      '#anidump-toggle.open{color:' + ACCENT + ';background:#0B1622}' +
+
+      '#anidump-panel{position:fixed;right:20px;bottom:72px;width:380px;max-width:calc(100vw - 32px);height:auto;min-height:0;' +
+      'display:flex;flex-direction:column;z-index:2147483647;background:rgba(21,31,46,.97);' +
+      '-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#C9D7E3;' +
+      'border:1px solid rgba(255,255,255,.07);border-radius:16px;box-shadow:0 14px 44px rgba(0,0,0,.6);' +
+      'font:13px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:left;opacity:1;visibility:visible}' +
+      '#anidump-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
+      '#anidump-panel .dmp-head{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 14px 10px 16px}' +
+      '#anidump-panel .dmp-title{font-weight:800;font-size:17px;color:#fff;line-height:1.2}' +
+      '#anidump-panel .dmp-title b{color:' + ACCENT + ';font-weight:800}' +
+      '#anidump-panel .dmp-tagline{font-size:12px;color:#7FC9F5;margin:1px 0 2px}' +
+      '#anidump-panel .dmp-sub{color:#728AA1;font-size:11.5px}' +
+      '#anidump-panel .dmp-sub b{color:#C9D7E3;font-weight:600}' +
+      '#anidump-panel .dmp-reload{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:5px;' +
+      'padding:0;border:0;border-radius:50%;background:transparent;color:#728AA1;font-size:13px;line-height:1;cursor:pointer;vertical-align:-3px}' +
+      '#anidump-panel .dmp-reload:hover{color:' + ACCENT + ';background:rgba(61,180,242,.12)}' +
+      '#anidump-panel .dmp-reload.spin{color:' + ACCENT + ';animation:dmp-spin .8s linear infinite}' +
+      '#anidump-panel .dmp-x{width:28px;height:28px;border:0;border-radius:50%;background:rgba(255,255,255,.06);color:#C9D7E3;' +
+      'cursor:pointer;font-size:16px;line-height:28px;padding:0;flex:none}' +
+      '#anidump-panel .dmp-x:hover{background:rgba(255,255,255,.14);color:#fff}' +
+      '#anidump-panel .dmp-tabs{display:flex;gap:4px;margin:0 12px 6px;padding:4px;background:#0B1622;border-radius:12px}' +
+      '#anidump-panel .dmp-tab{flex:1;padding:7px 4px;border:0;border-radius:9px;background:transparent;color:#9FADBD;' +
+      'cursor:pointer;font-size:12.5px;font-weight:600}' +
+      '#anidump-panel .dmp-tab:hover{color:#EDF1F5}' +
+      '#anidump-panel .dmp-tab.on{background:rgba(61,180,242,.16);color:' + ACCENT + '}' +
+      '#anidump-panel .dmp-body{overflow-y:auto;padding:2px 16px 16px;scrollbar-width:thin;scrollbar-color:#2B3A4F transparent}' +
+      '#anidump-panel .dmp-sec{margin:14px 0 6px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#728AA1}' +
+      '#anidump-panel .dmp-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}' +
+      '#anidump-panel label.dmp-row{cursor:pointer}' +
+      '#anidump-panel .dmp-label{flex:1;min-width:0;color:#EDF1F5}' +
+      '#anidump-panel .dmp-hint{display:block;color:#728AA1;font-size:11.5px;margin-top:1px}' +
+      '#anidump-panel input.dmp-switch{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:10px;' +
+      'background:#2B3A4F;position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0;border:0}' +
+      '#anidump-panel input.dmp-switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;' +
+      'background:#fff;transition:transform .15s}' +
+      '#anidump-panel input.dmp-switch:checked{background:' + ACCENT + '}' +
+      '#anidump-panel input.dmp-switch:checked::after{transform:translateX(16px)}' +
+      '#anidump-panel .dmp-seg{display:flex;gap:4px;padding:4px;background:#0B1622;border-radius:12px}' +
+      '#anidump-panel .dmp-segbtn{flex:1;padding:8px 4px;border:0;border-radius:9px;background:transparent;color:#9FADBD;' +
+      'cursor:pointer;font-size:12.5px;font-weight:600}' +
+      '#anidump-panel .dmp-segbtn:hover{color:#EDF1F5}' +
+      '#anidump-panel .dmp-segbtn.dmp-segicon{flex:0 0 44px;font-size:15px;padding:6px 0}' +
+      '#anidump-panel .dmp-segbtn.on{background:' + ACCENT + ';color:#fff}' +
+      '#anidump-panel input.dmp-text,#anidump-panel textarea.dmp-text{width:100%;background:#0B1622;color:#EDF1F5;' +
+      'border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 10px;font-size:12.5px;outline:none;margin:0}' +
+      '#anidump-panel textarea.dmp-text{min-height:74px;resize:vertical;line-height:1.45;margin-top:6px}' +
+      '#anidump-panel .dmp-text:focus{border-color:' + ACCENT + '}' +
+      '#anidump-panel .dmp-text::placeholder{color:#5F7186}' +
+      '#anidump-panel .dmp-modes{display:flex;flex-direction:column;gap:6px}' +
+      '#anidump-panel .dmp-mode{display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border:0;border-radius:10px;' +
+      'background:#0B1622;color:#EDF1F5;cursor:pointer;text-align:left;transition:background .12s,transform .08s}' +
+      '#anidump-panel .dmp-mode:hover{background:#1A2638}' +
+      '#anidump-panel .dmp-mode:active{transform:scale(.985)}' +
+      '#anidump-panel .dmp-mode .dmp-dot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 20%,transparent)}' +
+      '#anidump-panel .dmp-mode .dmp-label{font-weight:600;font-size:13px}' +
+      '#anidump-panel .dmp-mode .dmp-go{color:#5F7186;font-size:15px;flex:none;transition:color .12s,transform .12s}' +
+      '#anidump-panel .dmp-mode:hover .dmp-go{color:var(--c);transform:translateX(2px)}' +
+      '#anidump-panel .dmp-mode.busy .dmp-go{animation:dmp-spin .8s linear infinite;color:var(--c)}' +
+      '@keyframes dmp-spin{to{transform:rotate(360deg)}}' +
+      '#anidump-panel .dmp-mode[disabled]{opacity:.35;cursor:not-allowed}' +
+      '#anidump-panel .dmp-mode[disabled]:hover{background:#0B1622}' +
+      '#anidump-panel .dmp-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}' +
+      '#anidump-panel .dmp-btn{padding:7px 12px;border:0;border-radius:8px;background:rgba(255,255,255,.07);color:#EDF1F5;cursor:pointer;font-size:12.5px}' +
+      '#anidump-panel .dmp-btn:hover{background:rgba(255,255,255,.13)}' +
+      '#anidump-panel .dmp-btn.primary{background:' + ACCENT + ';color:#fff;font-weight:650}' +
+      '#anidump-panel .dmp-btn.primary:hover{background:#5CC2F5}' +
+      '#anidump-panel .dmp-btn[disabled]{opacity:.5;cursor:wait}' +
+      '#anidump-panel .dmp-status{min-height:16px;font-size:12px;color:#68D639;margin-top:10px}' +
+      '#anidump-panel .dmp-status.err{color:#E85D75}' +
+      '#anidump-panel .dmp-status.wait{color:#9FADBD}' +
+      '#anidump-panel .dmp-info{background:#0B1622;border-radius:10px;padding:9px 11px;margin:8px 0 4px;font-size:12px;color:#9FADBD}' +
+      '#anidump-panel .dmp-info b{color:#EDF1F5;font-weight:650}' +
+      '#anidump-panel .dmp-note{color:#5F7186;font-size:11.5px;margin-top:12px}' +
+      '#anidump-panel .dmp-off{opacity:.4;pointer-events:none}' +
+      '#anidump-panel .dmp-item{display:flex;align-items:center;gap:10px;padding:6px;margin-bottom:6px;background:#0B1622;' +
+      'border-radius:10px;text-decoration:none;color:inherit}' +
+      '#anidump-panel .dmp-item:hover{background:#1A2638}' +
+      '#anidump-panel .dmp-item img,#anidump-panel .dmp-item .dmp-ph{width:34px;height:48px;object-fit:cover;border-radius:5px;flex:none;background:#1A2638}' +
+      '#anidump-panel .dmp-item .dmp-it{color:#EDF1F5;font-size:12.5px;font-weight:600;line-height:1.3}' +
+      '#anidump-panel .dmp-item:hover .dmp-it{color:' + ACCENT + '}' +
+      '#anidump-panel .dmp-item .dmp-is{color:#728AA1;font-size:11px;margin-top:2px}' +
+      '#anidump-panel .dmp-modal{position:absolute;inset:0;z-index:5;border-radius:16px;background:rgba(11,22,34,.72);' +
+      '-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:18px;outline:none}' +
+      '#anidump-panel .dmp-mcard{width:100%;background:#151F2E;border:1px solid rgba(61,180,242,.3);border-radius:14px;padding:16px;' +
+      'box-shadow:0 14px 40px rgba(0,0,0,.55)}' +
+      '#anidump-panel .dmp-mt{color:#EDF1F5;font-weight:700;font-size:14.5px;margin-bottom:6px}' +
+      '#anidump-panel .dmp-mp{color:#C9D7E3;font-size:13px;line-height:1.5}' +
+      '#anidump-panel .dmp-mp b{color:#EDF1F5;font-weight:650}' +
+      '#anidump-panel .dmp-mh{color:#728AA1;font-size:11.5px;margin-top:8px}' +
+      '#anidump-panel .dmp-lastcard{background:#0B1622;border-radius:10px;padding:9px 10px 10px 12px}' +
+      '#anidump-panel .dmp-last{display:flex;align-items:center;justify-content:space-between;gap:10px}' +
+      '#anidump-panel .dmp-upd{border-top:1px solid rgba(255,255,255,.06);margin-top:10px;padding-top:10px}' +
+      '#anidump-panel .dmp-upd textarea.dmp-text{background:#151F2E;margin-top:8px}' +
+      '#anidump-panel .dmp-updt{color:#EDF1F5;font-weight:600;font-size:12.5px;margin-bottom:4px}' +
+      '#anidump-panel .dmp-chg{font-size:12px;line-height:1.65}' +
+      '#anidump-panel .dmp-sign{display:inline-block;width:14px;font-weight:700}' +
+      '#anidump-panel .dmp-ct{color:#EDF1F5}' +
+      '#anidump-panel .dmp-cd{color:#728AA1}' +
+      '#anidump-panel .dmp-more{display:inline-block;margin-top:3px;padding:2px 8px 2px 0;border:0;background:none;color:#728AA1;' +
+      'font-size:12px;cursor:pointer;border-radius:6px}' +
+      '#anidump-panel .dmp-more:hover{color:' + ACCENT + '}' +
+      '#anidump-panel .dmp-chg{max-height:260px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2B3A4F transparent}' +
+      '#anidump-panel .dmp-last .dmp-label{font-weight:600;font-size:12.5px}' +
+      '#anidump-panel .dmp-last .dmp-btn{padding:6px 10px;font-size:12px}' +
+      '#anidump-toggle.busy{color:' + ACCENT + ';animation:dmp-pulse 1.4s ease-in-out infinite}' +
+      '@keyframes dmp-pulse{50%{opacity:.45}}' +
+      '#anidump-job{position:fixed;right:20px;bottom:20px;z-index:2147483646;width:320px;max-width:calc(100vw - 40px);background:rgba(21,31,46,.97);' +
+      'border:1px solid rgba(61,180,242,.25);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.55);padding:12px 14px 14px;color:#C9D7E3;' +
+      'font:13px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}' +
+      '#anidump-job *{box-sizing:border-box;font-family:inherit}' +
+      '#anidump-job.ok{border-color:rgba(104,214,57,.35)}' +
+      '#anidump-job.err{border-color:rgba(232,93,117,.45)}' +
+      '#anidump-job .dmp-jh{display:flex;align-items:center;justify-content:space-between}' +
+      '#anidump-job .dmp-jt{color:#EDF1F5;font-weight:700;font-size:13.5px}' +
+      '#anidump-job .dmp-jx{width:24px;height:24px;border:0;border-radius:50%;background:rgba(255,255,255,.06);color:#9FADBD;cursor:pointer;font-size:14px;line-height:24px;padding:0}' +
+      '#anidump-job .dmp-jx:hover{background:rgba(255,255,255,.14);color:#fff}' +
+      '#anidump-job .dmp-js{color:#728AA1;font-size:12px;margin-top:1px}' +
+      '#anidump-job .dmp-jtrack{height:6px;background:#0B1622;border-radius:3px;margin:10px 0 6px;overflow:hidden}' +
+      '#anidump-job .dmp-jfill{height:100%;width:0;background:linear-gradient(90deg,#3DB4F2,#9256F3);border-radius:3px;transition:width 1s linear}' +
+      '#anidump-job .dmp-jeta{font-size:11.5px;color:#9FADBD}' +
+      '#anidump-job .dmp-jnote{margin-top:8px;font-size:12px;color:#F7C948}' +
+      '#anidump-job .dmp-btns{display:flex;gap:6px;margin-top:10px}' +
+      '#anidump-job .dmp-btn{padding:7px 12px;border:0;border-radius:8px;background:rgba(255,255,255,.07);color:#EDF1F5;cursor:pointer;font-size:12.5px}' +
+      '#anidump-job .dmp-btn:hover{background:rgba(255,255,255,.13)}' +
+      '#anidump-job .dmp-btn.primary{background:' + ACCENT + ';color:#fff;font-weight:650}' +
+      '#anidump-panel .dmp-badge{margin-left:auto;flex:none;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;color:#fff;white-space:nowrap}'
+    );
+
+    const host = document.createElement('anidump-root');
+    host.style.cssText = 'all:initial;position:fixed;top:0;left:0;width:0;height:0;overflow:visible;z-index:2147483647;display:block';
+    const root = host.attachShadow({ mode: 'open' });
+    const panelStyle = document.createElement('style');
+    panelStyle.textContent = PANEL_CSS;
+    root.append(panelStyle);
+    (document.body || document.documentElement).append(host);
+
+    // Small button for AniList's top bar, next to search and your avatar (like Molten's).
+    const navHost = document.createElement('anidump-nav');
+    navHost.style.cssText = 'all:initial;display:inline-flex;align-items:center;vertical-align:middle;margin:0 8px;flex:none';
+    const navRoot = navHost.attachShadow({ mode: 'open' });
+    const navStyle = document.createElement('style');
+    navStyle.textContent =
+      'button{width:34px;height:34px;padding:0;border:0;border-radius:50%;background:transparent;color:#9FADBD;cursor:pointer;' +
+      'display:inline-flex;align-items:center;justify-content:center;font:18px/1 system-ui,sans-serif;transition:color .15s,background .15s}' +
+      'button:hover{color:#EDF1F5;background:rgba(255,255,255,.08)}' +
+      'button.open{color:' + ACCENT + ';background:rgba(61,180,242,.14)}' +
+      'button.busy{color:' + ACCENT + ';animation:p 1.4s ease-in-out infinite}@keyframes p{50%{opacity:.4}}';
+    const navBtn = document.createElement('button');
+    navBtn.type = 'button';
+    navBtn.textContent = '✦';
+    navBtn.title = 'AniDump';
+    navBtn.setAttribute('aria-label', 'AniDump');
+    navRoot.append(navStyle, navBtn);
+
+    const el = (tag, cls, text) => {
+      const e = document.createElement(tag);
+      if (cls) e.className = cls;
+      if (text !== undefined && text !== null) e.textContent = text;
+      return e;
+    };
+    function labelBlock(label, hint) {
+      const l = el('span', 'dmp-label', label);
+      if (hint) l.append(el('span', 'dmp-hint', hint));
+      return l;
+    }
+    function section(parent, title) { parent.append(el('div', 'dmp-sec', title)); }
+    function toggleRow(parent, label, hint, get, set) {
+      const row = el('label', 'dmp-row');
+      const c = el('input', 'dmp-switch');
+      c.type = 'checkbox';
+      c.checked = !!get();
+      c.addEventListener('change', () => set(c.checked));
+      row.append(labelBlock(label, hint), c);
+      parent.append(row);
+      return row;
+    }
+    function segRow(parent, options, get, set) {
+      const seg = el('div', 'dmp-seg');
+      for (const [val, text, tip, icon] of options) {
+        const b = el('button', 'dmp-segbtn' + (icon ? ' dmp-segicon' : '') + (get() === val ? ' on' : ''), text);
+        b.type = 'button';
+        if (tip) { b.title = tip; b.setAttribute('aria-label', tip); }
+        b.addEventListener('click', () => { if (get() !== val) set(val); });
+        seg.append(b);
+      }
+      parent.append(seg);
+      return seg;
+    }
+    function btn(parent, text, fn, primary) {
+      const b = el('button', 'dmp-btn' + (primary ? ' primary' : ''), text);
+      b.type = 'button';
+      b.addEventListener('click', fn);
+      parent.append(b);
+      return b;
+    }
+
+    let panelEl = null;
+    let bodyEl = null;
+    let subEl = null;
+    let statusEl = null;
+    let busy = false;
+    let moodText = '';
+    let sequelResult = null; // { key, items } | { key, err }
+    let lastStatus = null;
+    const noun = () => (cfg.type === 'ANIME' ? 'anime' : 'manga');
+
+    function say(msg, kind) {
+      lastStatus = { msg, kind };
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.className = 'dmp-status' + (kind ? ' ' + kind : '');
+    }
+    function statusLine(parent) {
+      statusEl = el('div', 'dmp-status');
+      parent.append(statusEl);
+      if (lastStatus) say(lastStatus.msg, lastStatus.kind);
+    }
+
+    function updateSub() {
+      if (!subEl) return;
+      const user = getUsername();
+      subEl.textContent = '';
+      if (!user) { subEl.append('Open a profile or log in to load a list'); return; }
+      subEl.append('List: ', el('b', null, user));
+      const c = cache.lists.get(user.toLowerCase() + ':' + cfg.type);
+      if (c && c.data) subEl.append(' · ' + c.data.length + ' ' + noun());
+      else if (c && !c.err) subEl.append(' · loading…');
+      const r = el('button', 'dmp-reload' + (reloading ? ' spin' : ''), '↻');
+      r.type = 'button';
+      r.title = 'Reload your list from AniList';
+      r.addEventListener('click', forceReload);
+      subEl.append(r);
+    }
+
+    // Fetch the list (and airing lineup) fresh, without reloading the page.
+    let reloading = false;
+    function forceReload() {
+      if (reloading) return;
+      const user = getUsername();
+      if (!user) return;
+      cache.lists.clear();
+      cache.airing = null;
+      sequelResult = null;
+      reloading = true;
+      const p = getList(user, cfg.type).p;
+      if (cfg.type === 'ANIME') getAiring().p.catch(() => { /* reported if you pick that mode */ });
+      updateSub();
+      p.then(d => { reloading = false; lastStatus = { msg: 'Reloaded: ' + d.length + ' ' + noun() + '.' }; render(); },
+        e => { reloading = false; lastStatus = { msg: e.message || 'Couldn\'t reload.', kind: 'err' }; render(); });
+    }
+
+    // Start loading as soon as the panel opens, so a click can open Claude right away.
+    function preload() {
+      const user = getUsername();
+      updateSub();
+      if (!user) return;
+      const c = getList(user, cfg.type);
+      if (!c.data) c.p.then(updateSub, e => { updateSub(); say(e.message, 'err'); });
+      else if (Date.now() - c.ts > 60 * 1000) {
+        // show the cached list right away, then quietly refresh it so "Changes since this board" is current
+        getList(user, cfg.type, true).p.then(() => { if (panelEl) render(); }, () => { /* keep the cached one */ });
+      }
+      if (cfg.type === 'ANIME') getAiring().p.catch(() => { /* reported if you pick that mode */ });
+    }
+
+    let chatCheck = null; // { id, p, state }
+    function checkLastBoardChat() {
+      const b = GM_getValue(BOARDS_KEY, []).slice(-1)[0];
+      if (!b) { chatCheck = null; return null; }
+      const c = { id: b.id, state: null };
+      c.p = chatState(b).then(st => { c.state = st; console.log('[AniDump] last board\'s chat: ' + st); return st; });
+      chatCheck = c;
+      return c;
+    }
+
+    // The board's chat was deleted: remember it and say so with a plain OK.
+    function boardGone(board) {
+      markBoardGone(board.id);
+      if (!panelEl) open();
+      render();
+      const ov = el('div', 'dmp-modal');
+      const card = el('div', 'dmp-mcard');
+      card.append(el('div', 'dmp-mt', GONE_TITLE), el('div', 'dmp-mp', GONE_TEXT));
+      const row = el('div', 'dmp-btns');
+      row.style.justifyContent = 'flex-end';
+      btn(row, 'OK', () => ov.remove(), true);
+      card.append(row);
+      ov.append(card);
+      ov.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); ov.remove(); } });
+      ov.addEventListener('mousedown', e => { if (e.target === ov) ov.remove(); });
+      panelEl.append(ov);
+      ov.tabIndex = -1;
+      ov.focus();
+    }
+    function followUp(board) {
+      const st = chatCheck && chatCheck.id === board.id ? chatCheck.state : null;
+      if (st === 'gone') return boardGone(board);
+      window.open(board.conv, '_blank'); // opened right away so the browser doesn't block it
+    }
+
+    // Small confirm dialog inside the menu.
+    function confirmNewBoard(board, onProceed) {
+      if (!panelEl) return;
+      console.log('[AniDump] asking before a new board (last board: ' + board.label + ')');
+      const old = panelEl.querySelector('.dmp-modal');
+      if (old) old.remove();
+      const ov = el('div', 'dmp-modal');
+      const card = el('div', 'dmp-mcard');
+      card.append(el('div', 'dmp-mt', 'You already have a board'));
+      const p = el('div', 'dmp-mp', 'It looks like you already have a board made (');
+      p.append(el('b', null, board.label + ' · ' + ago(board.ts)), '). Would you like to update it instead?');
+      card.append(p, el('div', 'dmp-mh', 'To update it, cancel and use Update board under Last board.'));
+      const row = el('div', 'dmp-btns');
+      row.style.justifyContent = 'flex-end';
+      const cancel = () => {
+        ov.remove();
+        const lb = panelEl && panelEl.querySelector('.dmp-lastcard');
+        if (lb) lb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      };
+      btn(row, 'Cancel', cancel);
+      btn(row, 'Proceed anyway', () => { ov.remove(); onProceed(); }, true);
+      card.append(row);
+      ov.append(card);
+      ov.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); cancel(); } });
+      ov.addEventListener('mousedown', e => { if (e.target === ov) cancel(); });
+      panelEl.append(ov);
+      ov.tabIndex = -1;
+      ov.focus();
+    }
+
+    // ---------------- Board updates ----------------
+    const SNAP_STATUS = { CURRENT: 'W', COMPLETED: 'C', REPEATING: 'R', PAUSED: 'P', DROPPED: 'D', PLANNING: 'L' };
+    // A small copy of the list as it was when a board was made, to see what changed since.
+    function makeSnap(list) {
+      const e = {};
+      for (const x of list) e[x.id] = [SNAP_STATUS[x.status] || x.status, x.score || 0, x.progress || 0, x.title];
+      return { at: Date.now(), e };
+    }
+    function boardPicks(html) {
+      const m = (html || '').match(/<script[^>]*id=["']anidump-picks["'][^>]*>([\s\S]*?)<\/script>/i);
+      if (!m) return [];
+      try { const j = JSON.parse(m[1]); return Array.isArray(j) ? j : []; } catch (e) { return []; }
+    }
+    const normT = t => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+    function computeChanges(board, list) {
+      const A = board.type !== 'MANGA';
+      const unit = A ? 'eps' : 'ch';
+      const W = { W: A ? 'watching' : 'reading', C: 'completed', R: A ? 'rewatching' : 'rereading', P: 'paused', D: 'dropped', L: 'planning' };
+      const picks = boardPicks(board.html);
+      const isPick = (id, title) => picks.some(p => (p.id && +p.id === +id) || (p.title && normT(p.title) === normT(title)));
+      const old = board.snap.e;
+      const now = {};
+      for (const x of list) now[x.id] = x;
+      const out = [];
+      for (const x of list) {
+        const st = SNAP_STATUS[x.status] || x.status;
+        const prog = x.progress + '/' + (x.total || '?') + ' ' + unit;
+        const sc = x.score ? ', scored ' + +x.score.toFixed(1) : '';
+        const o = old[x.id];
+        let sign = null;
+        let detail = '';
+        if (!o) { sign = '+'; detail = 'added as ' + W[st] + ', ' + prog + sc; }
+        else {
+          // status, progress and score are each checked, so nothing gets left out when several change at once
+          const parts = [];
+          const stChanged = o[0] !== st;
+          const progChanged = (o[2] || 0) !== (x.progress || 0);
+          const scoreChanged = (o[1] || 0) !== (x.score || 0);
+          if (stChanged) parts.push(W[o[0]] + ' → ' + W[st]);
+          if (progChanged) parts.push((o[2] || 0) + ' → ' + prog);
+          else if (stChanged) parts.push(prog);
+          if (scoreChanged) parts.push('score ' + (o[1] ? +(+o[1]).toFixed(1) : 'none') + ' → ' + (x.score ? +x.score.toFixed(1) : 'none'));
+          if (parts.length) { sign = stChanged && st === 'D' ? '−' : '↑'; detail = parts.join(', '); }
+        }
+        if (sign) out.push({ sign, title: x.title, id: x.id, detail, pick: isPick(x.id, x.title) });
+      }
+      for (const id of Object.keys(old)) {
+        if (!now[id]) out.push({ sign: '−', title: old[id][3], id: +id, detail: 'removed from my list', pick: isPick(id, old[id][3]) });
+      }
+      const rank = c => (c.pick ? 0 : 1);
+      return out.sort((a, b) => rank(a) - rank(b));
+    }
+
+    let updateNote = '';
+    let changesOpen = false; // "+ N more changes" expanded?
+    function buildUpdate(board) {
+      const box = el('div', 'dmp-upd');
+      const user = board.user || getUsername();
+      const type = board.type || 'ANIME';
+      if (!user) { box.append(el('span', 'dmp-hint', 'Open a profile or log in to check for changes.')); return box; }
+      const lc = getList(user, type);
+      if (!lc.data) {
+        box.append(el('span', 'dmp-hint', 'Checking your list for changes…'));
+        lc.p.then(() => { if (panelEl && cfg.tab === 'rec') render(); }, () => { /* error shown elsewhere */ });
+        return box;
+      }
+      const list = lc.data;
+      const changes = board.snap ? computeChanges(board, list) : null;
+      if (changes && !changes.length) {
+        box.append(el('span', 'dmp-hint', 'No changes since this board. Add feedback to update it anyway.'));
+      } else if (changes) {
+        box.append(el('div', 'dmp-updt', 'Changes since this board'));
+        const ul = el('div', 'dmp-chg');
+        const COLORS = { '+': '#68D639', '−': '#E85D75', '↑': ACCENT };
+        const shown = changesOpen ? changes : changes.slice(0, 5);
+        for (const c of shown) {
+          const line = el('div');
+          const sign = el('span', 'dmp-sign', c.sign);
+          sign.style.color = COLORS[c.sign];
+          line.append(sign, el('span', 'dmp-ct', c.title), el('span', 'dmp-cd', ' · ' + (c.pick ? 'one of its picks · ' : '') + c.detail));
+          ul.append(line);
+        }
+        if (changes.length > 5) {
+          // collapsed by default; click to show every change, click again to collapse
+          const more = changes.length - 5;
+          const t = el('button', 'dmp-more', changesOpen ? 'Show less ▴' : '+ ' + more + ' more change' + (more === 1 ? '' : 's') + ' ▾');
+          t.type = 'button';
+          t.setAttribute('aria-expanded', String(changesOpen));
+          t.addEventListener('click', () => { changesOpen = !changesOpen; render(); });
+          ul.append(t);
+        }
+        box.append(ul);
+      } else {
+        box.append(el('span', 'dmp-hint', 'This board was made before AniDump tracked changes, so an update sends your whole current list.'));
+      }
+      const ta = el('textarea', 'dmp-text');
+      ta.placeholder = 'Optional: "loved Caiman, more like him"';
+      ta.value = updateNote;
+      ta.style.minHeight = '54px';
+      ta.addEventListener('input', () => { updateNote = ta.value; });
+      box.append(ta);
+      const row = el('div', 'dmp-btns');
+      row.style.justifyContent = 'flex-end';
+      row.style.marginTop = '8px';
+      btn(row, 'Update board', () => runUpdate(board, list, changes), true);
+      box.append(row);
+      return box;
+    }
+
+    function buildUpdatePrompt(board, list, changes, note, A) {
+      const unit = A ? 'eps' : 'ch';
+      const parts = ['UPDATE THE BOARD YOU MADE ABOVE (don\'t rebuild it)'];
+      if (changes) {
+        parts.push(changes.length
+          ? 'Since you made it, here\'s what changed on my AniList. Everything not listed is the same as before.\n<changes>\n' +
+            changes.map(c => c.sign + ' ' + c.title + ' (id ' + c.id + '): ' + c.detail + (c.pick ? ' (one of your picks)' : '')).join('\n') + '\n</changes>'
+          : 'Nothing changed on my list since you made it.');
+      } else {
+        parts.push('Here\'s my list as it is now. Compare it with the list I sent before and ignore everything that\'s the same.\n<my_list_now>\n' +
+          list.map(e => [e.id, e.title, STATUS_CODE[e.status] || e.status, e.score ? +e.score.toFixed(1) : '-',
+            e.progress + '/' + (e.total || '?') + ' ' + unit, e.format, e.genres.join(', ')].join(' | ')).join('\n') + '\n</my_list_now>');
+      }
+      parts.push('<my_stats> (updated, computed exactly from my list now)\n' + statsText(list, A) + '\n</my_stats>');
+      if (note) parts.push('My feedback on the board: ' + note);
+      parts.push(
+        'Update the board for this: replace picks I\'ve since added, watched, dropped or said I didn\'t like (new picks follow the same rules and card layout as before), ' +
+        're-check predicted ratings, and update any stat tiles, charts, takeaways and the header date these changes affect. Leave everything else exactly as it is, including the design.\n\n' +
+        'Reply ONLY with an edit list for the HTML page you made, as one ```json code block and nothing else:\n' +
+        '{"edits":[{"find":"exact text from the current page","replace":"new text"}]}\n' +
+        '- Each "find" is copied exactly from the current page (spaces and punctuation included) and is long enough to appear only once.\n' +
+        '- Edits are applied in order, so a later "find" must match the page after the earlier edits.\n' +
+        '- Keep the hidden anidump-picks list in sync with the picks.\n' +
+        '- Don\'t rewrite or re-create the artifact.'
+      );
+      return parts.join('\n\n');
+    }
+
+    async function runUpdate(board, list, changes) {
+      if (job) return say('A board is already being built. Wait for it, or dismiss it first.', 'err');
+      let st = chatCheck && chatCheck.id === board.id ? chatCheck.state : null;
+      if (!st) {
+        say('Checking the board\'s chat…', 'wait');
+        const c = chatCheck && chatCheck.id === board.id ? chatCheck : checkLastBoardChat();
+        st = await Promise.race([c.p, sleep(3000).then(() => 'unknown')]);
+        say('');
+      }
+      if (st === 'gone') return boardGone(board);
+      // always compare against your list as it is right now, not a cached copy
+      say('Getting your latest list…', 'wait');
+      try { list = await getList(board.user || getUsername(), board.type || 'ANIME', true).p; } catch (e) {
+        return say(e.message || 'Couldn\'t load your list.', 'err');
+      }
+      say('');
+      changes = board.snap ? computeChanges(board, list) : null;
+      const note = updateNote.trim();
+      if (changes && !changes.length && !note) {
+        if (panelEl) render();
+        return say('Nothing changed yet. Add feedback to update it anyway.', 'err');
+      }
+      const type = board.type || 'ANIME';
+      const A = type !== 'MANGA';
+      const user = board.user || getUsername();
+      const mode = board.mode || 'recent';
+      let text;
+      try {
+        text = buildUpdatePrompt(board, list, changes, note, A);
+      } catch (e) {
+        console.error('[AniDump]', e);
+        return say('Couldn\'t build the update. Check the console (F12).', 'err');
+      }
+      GM_setClipboard(text, 'text');
+      const id = Date.now().toString(36);
+      const convId = ((board.conv || '').match(/\/chat\/([0-9a-f-]{36})/) || [])[1] || '';
+      GM_setValue(HANDOFF_KEY, {
+        text, ts: Date.now(), started: Date.now(), autoSend: true, capture: true, update: true, convId,
+        baseHtml: board.html, job: id, mode, label: board.label, user, type, snap: makeSnap(list), timeKey: mode + ':update',
+      });
+      try {
+        claudeTab = GM_openInTab(convId ? 'https://claude.ai/chat/' + convId : 'https://claude.ai/new', { active: false, insert: true, setParent: true });
+      } catch (e) { claudeTab = null; }
+      job = { id, mode, label: board.label, start: Date.now(), est: estimate(mode + ':update'), update: true };
+      GM_setValue(JOB_KEY, job);
+      updateNote = '';
+      close();
+      showJob();
+    }
+
+    // ---------------- Recommend tab ----------------
+    function buildRec(body) {
+      section(body, 'List');
+      segRow(body, [['ANIME', 'Anime'], ['MANGA', 'Manga']], () => cfg.type, v => {
+        cfg.type = v; save(); lastStatus = null; render(); preload();
+      });
+
+      section(body, 'Mood');
+      const mood = el('input', 'dmp-text');
+      mood.type = 'text';
+      mood.placeholder = 'Optional: "short", "no isekai", "dark and gritty"';
+      mood.value = moodText;
+      mood.addEventListener('input', () => { moodText = mood.value; });
+      body.append(mood);
+
+      section(body, 'Get recommendations');
+      const wrap = el('div', 'dmp-modes');
+      for (const m of MODES) {
+        const disabled = m.animeOnly && cfg.type !== 'ANIME';
+        const b = el('button', 'dmp-mode');
+        b.type = 'button';
+        b.style.setProperty('--c', m.color);
+        b.append(el('span', 'dmp-dot'), labelBlock(m.title, disabled ? 'Anime only' : m.hint), el('span', 'dmp-go', disabled ? '' : '➜'));
+        if (disabled) b.disabled = true;
+        b.addEventListener('click', () => runMode(m, b));
+        wrap.append(b);
+      }
+      body.append(wrap);
+
+      section(body, 'Send to');
+      segRow(body, [['claude', 'Claude'], ['clipboard', 'Clipboard only'], ['file', '⤓', 'Save the prompt as a .txt file', true]],
+        () => cfg.dest, v => { cfg.dest = v; save(); render(); });
+      statusLine(body);
+
+      const boards = GM_getValue(BOARDS_KEY, []);
+      const lastB = boards[boards.length - 1];
+      if (lastB) {
+        section(body, 'Last board');
+        const card = el('div', 'dmp-lastcard');
+        const row = el('div', 'dmp-last');
+        row.append(labelBlock(lastB.label + (lastB.updated ? ' · updated' : ''), ago(lastB.ts) + (lastB.chatGone ? ' · chat deleted' : '')));
+        const b = el('div', 'dmp-btns');
+        b.style.margin = '0';
+        btn(b, 'Open', () => window.open(BOARD_URL(lastB.id), '_blank'), true);
+        if (lastB.conv && !lastB.chatGone) btn(b, 'Follow-up', () => followUp(lastB));
+        btn(b, 'Save', () => saveBoardFile(lastB)).title = 'Download this board as an HTML file to keep';
+        row.append(b);
+        card.append(row);
+        if (lastB.chatGone) {
+          const gone = el('div', 'dmp-upd');
+          gone.append(el('span', 'dmp-hint', 'This board\'s chat was deleted, so it can\'t be updated. Make a new board for fresh picks.'));
+          card.append(gone);
+        } else card.append(buildUpdate(lastB));
+        body.append(card);
+      }
+    }
+
+    async function runMode(mode, button, confirmed) {
+      if (busy) return;
+      const user = getUsername();
+      if (!user) return say('Couldn\'t find a username. Open a profile or log in first.', 'err');
+      const type = cfg.type;
+
+      // Already have a board of this type whose chat still exists? Offer to update it instead.
+      if (!confirmed && cfg.dest === 'claude') {
+        const last = GM_getValue(BOARDS_KEY, []).slice(-1)[0];
+        if (last && !last.chatGone && (last.type || 'ANIME') === type) {
+          let c = chatCheck && chatCheck.id === last.id ? chatCheck : checkLastBoardChat();
+          let st = c.state;
+          if (!st) {
+            say('Checking your last board…', 'wait');
+            st = await Promise.race([c.p, sleep(3000).then(() => 'unknown')]);
+            say('');
+          }
+          if (st === 'gone') markBoardGone(last.id);
+          else return confirmNewBoard(last, () => runMode(mode, button, true));
+        }
+      }
+
+      // Fast path: everything already loaded, so we're still inside the click and can open a tab.
+      const lc = getList(user, type);
+      const ac = mode.id === 'airing' ? getAiring() : null;
+      let list = lc.data;
+      let airing = ac ? ac.data : null;
+
+      if (!list || (ac && !airing)) {
+        busy = true;
+        button.classList.add('busy');
+        say('Loading ' + user + '\'s list…', 'wait');
+        try {
+          list = await lc.p;
+          if (ac) { say('Loading what\'s airing…', 'wait'); airing = await ac.p; }
+        } catch (e) {
+          console.error('[AniDump]', e);
+          return say(e.message || 'Something went wrong. Check the console (F12).', 'err');
+        } finally {
+          busy = false;
+          button.classList.remove('busy');
+        }
+        updateSub();
+      }
+
+      let text;
+      try { text = buildPrompt(mode.id, user, type, list, airing); } catch (e) {
+        console.error('[AniDump]', e);
+        return say('Couldn\'t build the prompt. Check the console (F12).', 'err');
+      }
+      GM_setClipboard(text, 'text');
+
+      if (cfg.dest === 'clipboard') return say('Copied: ' + mode.title + ' prompt with ' + list.length + ' ' + noun() + '.');
+      if (cfg.dest === 'file') {
+        const d = new Date();
+        const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        const name = ('AniDump prompt - ' + mode.title + (type === 'MANGA' ? ' (manga)' : '') + ' - ' + day + '.txt').replace(/[\\/:*?"<>|]/g, '');
+        const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+        return say('Saved ' + name + ' (also copied to your clipboard).');
+      }
+
+      if (cfg.claudeMode === 'board') {
+        if (job) return say('A board is already being built. Wait for it, or dismiss it first.', 'err');
+        const id = Date.now().toString(36);
+        GM_setValue(HANDOFF_KEY, {
+          text, ts: Date.now(), started: Date.now(), autoSend: true, capture: true, job: id, mode: mode.id, label: mode.title,
+          user, type, snap: makeSnap(list), timeKey: mode.id,
+        });
+        try { claudeTab = GM_openInTab('https://claude.ai/new', { active: false, insert: true, setParent: true }); } catch (e) { claudeTab = null; }
+        job = { id, mode: mode.id, label: mode.title, start: Date.now(), est: estimate(mode.id) };
+        GM_setValue(JOB_KEY, job);
+        close();
+        showJob();
+        return;
+      }
+
+      GM_setValue(HANDOFF_KEY, { text, ts: Date.now(), autoSend: cfg.claudeMode === 'send', label: mode.title });
+      let w = null;
+      try { w = window.open('https://claude.ai/new', '_blank'); } catch (e) { /* blocked */ }
+      if (!w) {
+        try { GM_openInTab('https://claude.ai/new', { active: true }); w = true; } catch (e) { /* ignore */ }
+      }
+      say(w
+        ? 'Opened Claude with your ' + mode.title.toLowerCase() + ' prompt. It\'s on your clipboard too.'
+        : 'Claude was blocked from opening. The prompt is on your clipboard, so paste it into a new chat.', w ? '' : 'err');
+    }
+
+    // ---------------- Background board jobs ----------------
+    const JOB_KEY = 'anidump.job';
+    let job = GM_getValue(JOB_KEY, null);
+    if (job && Date.now() - job.start > 20 * 60 * 1000) { job = null; GM_deleteValue(JOB_KEY); }
+    let claudeTab = null;
+    let jobEl = null;
+    let jobTimer = null;
+
+    // Learns from your own runs: average of the last few boards for this mode (or any mode), else ~3 min.
+    // Updates are timed separately from new boards (key "mode:update").
+    function estimate(key) {
+      const t = GM_getValue(TIMES_KEY, {});
+      const isUpd = /:update$/.test(key);
+      const own = t[key] || [];
+      const pool = own.length ? own : [].concat(...Object.keys(t).filter(k => /:update$/.test(k) === isUpd).map(k => t[k]));
+      return pool.length ? pool.reduce((a, b) => a + b, 0) / pool.length : (isUpd ? 75000 : 180000);
+    }
+    const fmtT = ms => { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    const ago = ts => {
+      const m = Math.round((Date.now() - ts) / 60000);
+      return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago';
+    };
+
+    function jobShell() {
+      if (jobEl) return jobEl;
+      jobEl = el('div');
+      jobEl.id = 'anidump-job';
+      root.append(jobEl);
+      return jobEl;
+    }
+    function hideJob() {
+      clearInterval(jobTimer);
+      if (jobEl) jobEl.remove();
+      jobEl = null;
+    }
+    function setBusy(on) {
+      navBtn.classList.toggle('busy', on);
+      toggleBtn.classList.toggle('busy', on);
+    }
+
+    function showJob() {
+      if (!job) return;
+      const box = jobShell();
+      box.textContent = '';
+      box.className = '';
+      const head = el('div', 'dmp-jh');
+      const t = el('div', 'dmp-jt', job.update ? 'Updating your board' : 'Building your board');
+      const x = el('button', 'dmp-jx', '×');
+      x.type = 'button';
+      x.title = 'Dismiss (Claude keeps going in its tab)';
+      x.addEventListener('click', () => { job = null; GM_deleteValue(JOB_KEY); setBusy(false); hideJob(); });
+      head.append(t, x);
+      const sub = el('div', 'dmp-js', job.label + (job.update ? ' · update' : ''));
+      const track = el('div', 'dmp-jtrack');
+      const fill = el('div', 'dmp-jfill');
+      track.append(fill);
+      const eta = el('div', 'dmp-jeta');
+      box.append(head, sub, track, eta);
+      if (job.signin) {
+        const note = el('div', 'dmp-jnote', 'You\'re signed out of Claude. Sign in and AniDump picks up from there.');
+        const b = el('div', 'dmp-btns');
+        btn(b, 'Sign in', () => window.open('https://claude.ai/login', '_blank'), true);
+        box.append(note, b);
+      }
+      setBusy(true);
+      const tick = () => {
+        if (!job) return;
+        const spent = Date.now() - job.start;
+        fill.style.width = Math.min(95, (spent / job.est) * 100).toFixed(1) + '%';
+        eta.textContent = spent < job.est
+          ? '~' + fmtT(job.est - spent) + ' left · ' + fmtT(spent) + ' so far'
+          : spent < job.est * 1.6 ? 'Almost done… · ' + fmtT(spent) + ' so far' : 'Taking longer than usual… · ' + fmtT(spent);
+        if (spent > Math.max(job.est * 4, 15 * 60 * 1000)) {
+          finishJob({ ok: false, error: 'Lost track of it. Check your recent chats in Claude.', conv: 'https://claude.ai/recents' });
+        }
+      };
+      tick();
+      clearInterval(jobTimer);
+      jobTimer = setInterval(tick, 1000);
+    }
+
+    function finishJob(res) {
+      const done = job;
+      job = null;
+      GM_deleteValue(JOB_KEY);
+      setBusy(false);
+      clearInterval(jobTimer);
+      console.log('[AniDump] result for ' + (done && done.id) + ': ok=' + res.ok + ', close Claude tab=' + (res.closeTab !== false) +
+        ', have its handle=' + !!(claudeTab && claudeTab.close));
+      if (res.chatGone) {
+        if (claudeTab) { try { claudeTab.close(); } catch (e) { /* already closed */ } }
+        claudeTab = null;
+        const gb = GM_getValue(BOARDS_KEY, []).slice(-1)[0];
+        if (gb) markBoardGone(gb.id);
+        const box = jobShell();
+        box.textContent = '';
+        box.className = 'err';
+        box.append(el('div', 'dmp-jt', GONE_TITLE), el('div', 'dmp-js', 'Its Claude chat is gone, so nothing was sent. You can still open and save the board, or make a new one.'));
+        const row = el('div', 'dmp-btns');
+        btn(row, 'OK', hideJob, true);
+        box.append(row);
+        if (panelEl) render();
+        return;
+      }
+      if (claudeTab && res.ok && res.closeTab !== false) {
+        try { claudeTab.close(); } catch (e) { console.log('[AniDump] closing the Claude tab failed: ' + (e && e.message)); }
+      }
+      claudeTab = null;
+      const box = jobShell();
+      box.textContent = '';
+      box.className = res.ok ? 'ok' : 'err';
+      const head = el('div', 'dmp-jh');
+      const x = el('button', 'dmp-jx', '×');
+      x.type = 'button';
+      x.addEventListener('click', hideJob);
+      head.append(el('div', 'dmp-jt', res.ok ? (res.updated ? 'Your board is updated' : 'Your board is ready')
+        : res.limit ? 'Claude usage limit reached' : 'Board didn\'t come back'), x);
+      box.append(head, el('div', 'dmp-js', res.ok
+        ? (res.fellBack ? 'The old chat was gone, so this is a new board · ' : (done ? done.label + ' · ' : '')) +
+          'took ' + fmtT(res.ms || 0) + ', opened in a new tab'
+        : res.error || 'Something went wrong.'));
+      const btns = el('div', 'dmp-btns');
+      if (res.ok && done) btn(btns, 'Open board', () => window.open(BOARD_URL(done.id), '_blank'), true);
+      if (res.conv) btn(btns, res.ok ? 'Ask a follow-up' : res.limit ? 'Open Claude' : 'Open the chat', () => window.open(res.conv, '_blank'), !res.ok);
+      box.append(btns);
+      if (res.ok) jobTimer = setTimeout(hideJob, 20000);
+      if (panelEl) render();
+    }
+
+    if (typeof GM_addValueChangeListener === 'function') {
+      GM_addValueChangeListener(RESULT_KEY, (name, oldV, v) => {
+        if (!v || !job || v.job !== job.id) return;
+        if (v.signin) { job.signin = true; GM_setValue(JOB_KEY, job); return showJob(); }
+        finishJob(v);
+      });
+    }
+
+    // ---------------- Sequels tab ----------------
+    function buildSequels(body) {
+      const user = getUsername();
+      const key = (user || '').toLowerCase() + ':' + cfg.type;
+      body.append(el('div', 'dmp-info',
+        'Finds sequels to ' + noun() + ' you\'ve completed that you haven\'t started yet. Uses AniList data directly, no AI.'));
+
+      const btns = el('div', 'dmp-btns');
+      const go = btn(btns, sequelResult && sequelResult.key === key ? 'Check again' : 'Find missing sequels', async () => {
+        if (!user) return say('Couldn\'t find a username. Open a profile or log in first.', 'err');
+        go.disabled = true;
+        say('Checking ' + user + '\'s completed ' + noun() + '…', 'wait');
+        try {
+          const list = await getList(user, cfg.type, sequelResult && sequelResult.key === key).p;
+          const items = await findSequels(list, cfg.type);
+          sequelResult = { key, items };
+          const onPlan = items.filter(x => x.planned).length;
+          say(items.length ? 'Found ' + items.length + ' missing sequel' + (items.length === 1 ? '' : 's') +
+            (onPlan ? ' (' + onPlan + ' already planned).' : '.') : 'You\'re all caught up.');
+        } catch (e) {
+          console.error('[AniDump]', e);
+          sequelResult = null;
+          say(e.message || 'Something went wrong. Check the console (F12).', 'err');
+        }
+        render();
+      }, true);
+
+      const all = sequelResult && sequelResult.key === key ? sequelResult.items : null;
+      // optionally hide sequels already on your Planning list (you know about those)
+      const res = all && cfg.hidePlanned ? all.filter(x => !x.planned) : all;
+      const hidden = all ? all.length - res.length : 0;
+      if (res && res.length) {
+        btn(btns, 'Copy list', () => {
+          GM_setClipboard(res.map(s => s.title + ' (after ' + s.after + ') - https://anilist.co/' + noun() + '/' + s.id).join('\n'), 'text');
+          say('Copied ' + res.length + ' titles.');
+        });
+      }
+      body.append(btns);
+      toggleRow(body, 'Hide planned sequels', 'Only show sequels that aren\'t on your list yet', () => cfg.hidePlanned, v => {
+        cfg.hidePlanned = v; save(); render();
+      });
+      statusLine(body);
+
+      if (!res) return;
+      const BADGE = {
+        RELEASING: ['Airing', '#3DB4F2'],
+        FINISHED: ['Finished', '#4CAF50'],
+        NOT_YET_RELEASED: ['Upcoming', '#F79A63'],
+        HIATUS: ['Hiatus', '#728AA1'],
+      };
+      section(body, 'Missing sequels (' + res.length + ')');
+      if (hidden) {
+        const h = el('div', 'dmp-hint', hidden + ' planned sequel' + (hidden === 1 ? ' is' : 's are') + ' hidden.');
+        h.style.margin = '-2px 0 8px';
+        body.append(h);
+      }
+      if (!res.length && hidden) body.append(el('div', 'dmp-info', 'Every missing sequel is already on your Planning list.'));
+      for (const s of res) {
+        const a = el('a', 'dmp-item');
+        a.href = 'https://anilist.co/' + noun() + '/' + s.id;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        if (s.cover) { const img = el('img'); img.src = s.cover; img.loading = 'lazy'; img.alt = ''; a.append(img); }
+        else a.append(el('span', 'dmp-ph'));
+        const txt = el('div');
+        txt.style.minWidth = '0';
+        txt.append(el('div', 'dmp-it', s.title),
+          el('div', 'dmp-is', 'After ' + s.after + (s.year ? ' · ' + s.year : '') + (s.format ? ' · ' + s.format.replace(/_/g, ' ') : '')));
+        a.append(txt);
+        const [label, color] = s.planned ? ['On Planning', '#9256F3'] : (BADGE[s.status] || [s.status, '#728AA1']);
+        const badge = el('span', 'dmp-badge', label);
+        badge.style.background = color;
+        a.append(badge);
+        body.append(a);
+      }
+    }
+
+    // ---------------- Settings tab ----------------
+    function buildSettings(body) {
+      section(body, 'Button');
+      segRow(body, [['top', 'Top bar'], ['bottom', 'Bottom corner']], () => cfg.btnPos, v => {
+        cfg.btnPos = v; save(); ensureButtons(); placePanel(); render();
+      });
+      body.append(el('span', 'dmp-hint', 'Top bar puts ✦ between search and your avatar. If AniList\'s bar can\'t be found, the corner button shows instead.'));
+
+      section(body, 'Claude');
+      segRow(body, [['paste', 'Paste only'], ['send', 'Paste + send'], ['board', 'Board only']], () => cfg.claudeMode, v => {
+        cfg.claudeMode = v; save(); render();
+      });
+      const CM = {
+        paste: 'Opens Claude with the prompt pasted in. You press send.',
+        send: 'Opens Claude, pastes the prompt and sends it for you.',
+        board: 'Claude works in a background tab. When the board is done, that tab closes and the board opens on its own, ' +
+          'with a button to ask follow-ups in the same chat. The time estimate learns from your past boards.',
+      };
+      const cmh = el('span', 'dmp-hint', CM[cfg.claudeMode] || '');
+      cmh.style.marginTop = '6px';
+      body.append(cmh);
+
+      section(body, 'Standing preferences');
+      body.append(el('span', 'dmp-hint', 'Stacked on top of the core prompt in every mode, before your mood. Leave empty to let your list speak for itself.'));
+      const ta = el('textarea', 'dmp-text');
+      ta.value = cfg.prefs;
+      ta.addEventListener('input', () => { cfg.prefs = ta.value; save(); });
+      body.append(ta);
+      const b = el('div', 'dmp-btns');
+      btn(b, 'Reset to default', () => { cfg.prefs = DEFAULT_PREFS; save(); render(); });
+      btn(b, 'Reload list', () => {
+        cache.lists.clear(); cache.airing = null; sequelResult = null;
+        preload();
+        say('Reloading your list…', 'wait');
+        const user = getUsername();
+        if (user) getList(user, cfg.type).p.then(d => say('Reloaded ' + d.length + ' ' + noun() + '.'), () => { /* shown by preload */ });
+      });
+      body.append(b);
+      statusLine(body);
+
+      body.append(el('div', 'dmp-note',
+        'Works on any profile: open someone\'s page and AniDump uses their list. The prompt is always copied to your clipboard ' +
+        'too, so Ctrl+V works if Claude doesn\'t paste it in.'));
+    }
+
+    function render() {
+      if (!panelEl) return;
+      const keepScroll = bodyEl.scrollTop;
+      bodyEl.textContent = '';
+      statusEl = null;
+      for (const b of panelEl.querySelectorAll('.dmp-tab')) b.classList.toggle('on', b.dataset.tab === cfg.tab);
+      if (cfg.tab === 'seq') buildSequels(bodyEl);
+      else if (cfg.tab === 'set') buildSettings(bodyEl);
+      else buildRec(bodyEl);
+      bodyEl.scrollTop = keepScroll;
+      updateSub();
+    }
+
+    function open() {
+      if (panelEl) return;
+      panelEl = el('div');
+      panelEl.id = 'anidump-panel';
+
+      const head = el('div', 'dmp-head');
+      const t = el('div');
+      const title = el('div', 'dmp-title', 'Ani');
+      title.append(el('b', null, 'Dump'));
+      subEl = el('div', 'dmp-sub');
+      t.append(title, el('div', 'dmp-tagline', 'AI recommendations from your list'), subEl);
+      const x = el('button', 'dmp-x', '×');
+      x.type = 'button';
+      x.title = 'Close';
+      x.addEventListener('click', close);
+      head.append(t, x);
+
+      const tabs = el('div', 'dmp-tabs');
+      for (const [id, name] of [['rec', 'Recommend'], ['seq', 'Sequels'], ['set', 'Settings']]) {
+        const b = el('button', 'dmp-tab', name);
+        b.type = 'button';
+        b.dataset.tab = id;
+        b.addEventListener('click', () => {
+          cfg.tab = id; save();
+          lastStatus = null;
+          bodyEl.scrollTop = 0;
+          render();
+        });
+        tabs.append(b);
+      }
+
+      bodyEl = el('div', 'dmp-body');
+      panelEl.append(head, tabs, bodyEl);
+      for (const type of ['keydown', 'keypress', 'keyup']) {
+        panelEl.addEventListener(type, e => {
+          if (type === 'keydown' && e.key === 'Escape') close();
+          e.stopPropagation();
+        });
+      }
+      root.append(panelEl);
+      placePanel();
+      checkLastBoardChat(); // ready for the new-board popup, Follow-up and Update
+      lastStatus = null;
+      toggleBtn.classList.add('open');
+      navBtn.classList.add('open');
+      try {
+        render();
+        preload();
+      } catch (e) {
+        console.error('[AniDump]', e);
+        bodyEl.textContent = '';
+        bodyEl.append(el('div', 'dmp-info', 'Something broke while drawing the menu: ' + (e && e.message) + '. Details are in the console (F12).'));
+      }
+      const pr = panelEl.getBoundingClientRect();
+      const cs = getComputedStyle(panelEl);
+      console.log('[AniDump] panel opened at x=' + Math.round(pr.left) + ' y=' + Math.round(pr.top) +
+        ' size=' + Math.round(pr.width) + 'x' + Math.round(pr.height) + ' | debug ' + JSON.stringify({
+          vh: window.innerHeight, maxH: cs.maxHeight, h: cs.height, display: cs.display, font: cs.fontSize,
+          kids: [...panelEl.children].map(c => (c.className || c.tagName) + ' ' + Math.round(c.getBoundingClientRect().height) + 'px ' + getComputedStyle(c).display),
+        }));
+    }
+
+    // Under the top-bar button when that's in use and visible, otherwise above the corner button.
+    function placePanel() {
+      if (!panelEl) return;
+      const s = panelEl.style;
+      const vh = window.innerHeight || document.documentElement.clientHeight || 800;
+      const r = navHost.isConnected ? navBtn.getBoundingClientRect() : null;
+      if (r && r.width && r.bottom > 10) {
+        const top = Math.round(r.bottom + 10);
+        s.top = top + 'px';
+        s.bottom = 'auto';
+        s.right = Math.max(12, Math.round(window.innerWidth - r.right - 8)) + 'px';
+        s.maxHeight = Math.max(260, vh - top - 16) + 'px';
+      } else {
+        s.top = '';
+        s.bottom = '72px';
+        s.right = '20px';
+        s.maxHeight = Math.max(260, vh - 92) + 'px';
+      }
+    }
+    window.addEventListener('resize', placePanel);
+
+    function close() {
+      if (!panelEl) return;
+      panelEl.remove();
+      panelEl = bodyEl = subEl = statusEl = null;
+      toggleBtn.classList.remove('open');
+      navBtn.classList.remove('open');
+    }
+    const toggle = () => (panelEl ? close() : open());
+
+    // click outside closes it (clicks inside the shadow root show up as the host element)
+    document.addEventListener('mousedown', e => {
+      if (!panelEl) return;
+      const path = e.composedPath();
+      if (!path.includes(host) && !path.includes(navHost)) close();
+    }, true);
+
+    const toggleBtn = el('button', null, '✦');
+    toggleBtn.id = 'anidump-toggle';
+    toggleBtn.type = 'button';
+    toggleBtn.title = 'AniDump';
+    toggleBtn.setAttribute('aria-label', 'AniDump');
+    root.append(toggleBtn);
+
+    // Caught at the window, before AniList's own handlers can see (or swallow) the click.
+    window.addEventListener('click', e => {
+      const path = e.composedPath();
+      if (!path.includes(navBtn) && !path.includes(toggleBtn)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('[AniDump] button clicked: ' + (panelEl ? 'closing' : 'opening'));
+      toggle();
+    }, true);
+
+    // Put our button right after the search icon in AniList's top bar, between search and your avatar.
+    // Checked every so often because AniList redraws the bar.
+    function findNavSpot() {
+      const nav = document.querySelector('#nav') || document.querySelector('.nav');
+      if (!nav) return null;
+      return nav.querySelector('.wrap > .search') || nav.querySelector('.search');
+    }
+    function ensureButtons() {
+      let inBar = false;
+      if (cfg.btnPos === 'top') {
+        if (navHost.isConnected && navHost.previousElementSibling && findNavSpot() === navHost.previousElementSibling) inBar = true;
+        else {
+          const spot = findNavSpot();
+          if (spot) { spot.after(navHost); inBar = true; }
+        }
+      }
+      if (!inBar && navHost.isConnected) navHost.remove();
+      toggleBtn.style.display = inBar ? 'none' : '';
+      if (!host.isConnected) (document.body || document.documentElement).append(host);
+    }
+    ensureButtons();
+    setInterval(ensureButtons, 1500);
+    if (job) showJob();
+    console.log('[AniDump] 2.7.5 loaded. Button in top bar: ' + navHost.isConnected);
+
+    if (typeof GM_registerMenuCommand === 'function') {
+      try { GM_registerMenuCommand('Open AniDump', open); } catch (e) { /* ignore */ }
+    }
+  }
+})();
