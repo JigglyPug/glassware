@@ -50,9 +50,11 @@ python3 tools/pages.py              # rebuild every README, banner, site page an
   `tools/features.py` (feature titles and descriptions); site themes in `tools/site_themes.py`.
 - Version labels on every page are read from each script's `@version`, so rebuild after
   every bump and the labels stay current.
-- Recapture screenshots whenever a panel changes, so the images (including the version
-  in panel footers) match the live script. Hourglass's `phone-*.webp` shots are captured
-  by hand; refresh them separately if the phone layout changes.
+- Recapture screenshots only when a panel's look or content changes, not for a version
+  bump: the capture tool leaves version numbers out of the images, and the Install buttons
+  and version chips on the pages carry the current number. Recapture just the scripts
+  whose panels changed (`python3 tools/screens.py <script>`). Hourglass's `phone-*.webp`
+  shots are captured by hand; refresh them separately if the phone layout changes.
 - Screenshots use made-up demo data only (`tools/seeds/`). Never use real browsing data.
 
 ## Committing

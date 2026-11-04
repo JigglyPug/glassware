@@ -105,6 +105,9 @@ function stubPage() {
   await page.evaluate(helpers);
   async function snap(file) {
     await page.evaluate(() => __hideErr());
+    // Screenshots never show the version: they only need recapturing when a panel changes.
+    await page.evaluate(() => { for (const e of __all()) for (const n of e.childNodes) if (n.nodeType === 3 && /v\d+\.\d+/.test(n.nodeValue))
+      n.nodeValue = n.nodeValue.replace(/\s*·\s*v\d+(\.\d+)+/g, '').replace(/v\d+(\.\d+)+\s*·\s*/g, '').replace(/\bv\d+(\.\d+)+\b/g, ''); });
     let clip;
     if (crop) { const r = await page.evaluate(() => __panelRect()); if (r) { const pad = 28; const vp = page.viewportSize();
       const x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad); clip = { x, y, width: Math.min(vp.width - x, r.w + pad * 2), height: Math.min(vp.height - y, r.h + pad * 2) }; } }
