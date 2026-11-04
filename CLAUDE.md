@@ -79,14 +79,15 @@ existing ones on it.
   - *Static* tiles never change, so they show the real app icon, embedded by
     `python3 tools/panel_icons.py` (the drawn glyph underneath is the fallback if a site blocks
     embedded images): Molten Tools, Molten for Reddit (+ Mobile), Kaleidoscope (+ Mobile).
-  - *Live* tiles change with the script's state, so they stay drawn in code and are styled in
-    CSS to look like the icons (smoked glass, lit rim, glowing glyph) while keeping their colors
-    and motion. Never paste the static icon image over these:
+  - *Live* tiles change with the script's state, so they stay drawn in code: the tile is smoked
+    glass in CSS and the glyph is the app icon's own glyph drawn as glass tubing by
+    `python3 tools/live_glyphs.py` (same shapes as `tools/icons.js`), tinted by the tile's live
+    color variables, so they look like the icons while keeping their colors and motion. Never paste the static icon image over these:
     Prism (follows the current title bar color), Hourglass (purple in free time, amber in
     lockdown, the hourglass flips; also on the block screen) and Looking-Glass (follows the
     site's color). A new script whose tile reacts to state is live too.
   - After redrawing the icons: `node tools/icons.js`, scale them to 256px,
-    `python3 tools/panel_icons.py`, check the live tiles still match the new look, raise `?v=N`
+    `python3 tools/panel_icons.py`, update the shapes in `tools/live_glyphs.py` and run it, raise `?v=N`
     on every `@icon`, bump the versions and recapture.
 
 ## After any change: rebuild the pages

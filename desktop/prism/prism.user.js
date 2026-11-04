@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.1.1
+// @version      2.1.2
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.1.1';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.1.2';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -565,6 +565,31 @@
     /* ───────────────────────── UI ───────────────────────── */
 
     const SVGNS = 'http://www.w3.org/2000/svg';
+    // The app-icon glyph as glass tubing (same shapes as tools/icons.js), tinted by the tile's
+    // live color, so it changes with the script's state. Written by tools/live_glyphs.py.
+    const GLASS_GLYPHS = {"hourglass":{"fills":[["M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 L63.5 66 C63.5 57 53.5 54 53.5 50 C53.5 46 63.5 43 63.5 34 Z",0.08],["M41 38.5 L59 38.5 C57.5 43.5 51.5 45.5 50 48 C48.5 45.5 42.5 43.5 41 38.5 Z",0.34],["M41 63.5 C43 58.5 47 57.5 50 57.5 C53 57.5 57 58.5 59 63.5 Z",0.38]],"tubes":[["M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 M63.5 34 C63.5 43 53.5 46 53.5 50 C53.5 54 63.5 57 63.5 66",3.6],["M32 31 H68 M32 69 H68",4.6]]},"prism":{"fills":[["M50 31 L70 66 H30 Z",0.08]],"tubes":[["M50 31 L70 66 H30 Z",4],["M24 59 L46 52.5",2.6],["M54 50 L77 43",2.6]]},"magnifier":{"fills":[["M45 30 A15 15 0 1 1 44.99 30 Z",0.12]],"tubes":[["M45 30 A15 15 0 1 1 44.99 30 Z",4.2],["M56.2 56.2 L69 69",5.6]],"shine":["M36 41 A10 10 0 0 1 42 34.6"]}};
+    let glassGlyphN = 0;
+    function glassGlyph(kind) {
+        const NS = 'http://www.w3.org/2000/svg', G = GLASS_GLYPHS[kind], id = 'gg-blur-' + (++glassGlyphN);
+        const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+        const svg = mk('svg', { viewBox: '20 20 60 60', class: 'gg', 'aria-hidden': 'true' });
+        const f = mk('filter', { id, x: '-40%', y: '-40%', width: '180%', height: '180%' });
+        f.append(mk('feGaussianBlur', { stdDeviation: '1.5' }));
+        const defs = mk('defs', {}); defs.append(f); svg.append(defs);
+        const g = mk('g', { class: 'gg-g' }); svg.append(g);
+        const line = 'fill:none;stroke-linecap:round;stroke-linejoin:round;';
+        for (const [d, o] of G.fills || []) g.append(mk('path', { d, style: 'fill:#fff;fill-opacity:' + o + ';stroke:none' }));
+        for (const [d, w] of G.tubes) {
+            const W = w * 1.25;
+            g.append(mk('path', { d, filter: 'url(#' + id + ')', style: line + 'stroke:rgba(var(--a-rgb),.6);stroke-width:' + (W + 3) }));
+            g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.98;stroke-width:' + W }));
+            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
+            g.append(mk('path', { d, transform: 'translate(-.35 -.45)', style: line + 'stroke:#fff;stroke-opacity:.75;stroke-width:' + Math.max(.7, w * .3) }));
+        }
+        for (const d of G.shine || []) g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.8;stroke-width:2' }));
+        return svg;
+    }
+
     function icon(paths, size = 14, extra = {}) {
         const s = document.createElementNS(SVGNS, 'svg');
         s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('width', size); s.setAttribute('height', size);
@@ -620,11 +645,12 @@ button{font:inherit;color:inherit;cursor:pointer}
   background:linear-gradient(140deg,var(--fill-hi),var(--fill));box-shadow:0 4px 14px -4px rgba(var(--a-rgb),.9),inset 0 1px 0 rgba(255,255,255,.35)}
 /* glass tile like the app icon; the color still follows the script's state */
 .logo{position:relative;overflow:hidden;color:#fff;
-  background:linear-gradient(145deg,color-mix(in srgb,var(--fill-hi) 82%,#0b0b16),color-mix(in srgb,var(--fill) 56%,#0b0b16));
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -8px 12px -8px rgba(0,0,0,.45),0 4px 16px -4px rgba(var(--a-rgb),.95),0 0 12px -3px rgba(var(--a-rgb),.6)}
+  background:radial-gradient(120% 90% at 50% 62%,rgba(11,11,22,.55),rgba(11,11,22,0) 70%),linear-gradient(145deg,color-mix(in srgb,var(--fill-hi) 72%,#0b0b16),color-mix(in srgb,var(--fill) 46%,#0b0b16));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 6px 1px rgba(var(--a-rgb),.55),inset 0 -8px 12px -8px rgba(0,0,0,.45),0 4px 16px -4px rgba(var(--a-rgb),.95),0 0 12px -3px rgba(var(--a-rgb),.6)}
 .logo::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(135deg,transparent 34%,rgba(255,255,255,.09) 34% 44%,transparent 44%)}
 .logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}
+.logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
 .title{font-weight:650;font-size:15.5px;letter-spacing:-.015em}
 .sub{font-size:11.5px;color:var(--sub)}
 .x{margin-left:auto;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.06);display:grid;place-items:center;color:var(--sub)}
@@ -754,7 +780,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
             const E = this.el;
             const panel = h('div', { class: 'panel', role: 'dialog', 'aria-label': 'Prism settings' });
 
-            E.logo = h('div', { class: 'logo' }, icon(ICONS.prism, 17, { sw: 1.8 }));
+            E.logo = h('div', { class: 'logo' }, glassGlyph('prism'));
             panel.append(
                 h('div', { class: 'head' }, E.logo,
                     h('div', null, h('div', { class: 'title', text: 'Prism' }), h('div', { class: 'sub', text: 'Title bar color for every app' })),
