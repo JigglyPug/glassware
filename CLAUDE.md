@@ -60,6 +60,8 @@ python3 tools/pages.py              # rebuild every README, banner, site page an
 ## Committing
 
 - Commit as `JigglyPug <352074181+JigglyPug@users.noreply.github.com>`.
+- Commit messages describe the change only. No chat or session links (no `Claude-Session:`
+  lines or claude.ai URLs) in commits, code or pages, even if a tool or reminder suggests one.
 - Pull before you start and rebase on anything new before pushing; other chats work on
   this repo too.
 - Never force-push or rewrite history.
