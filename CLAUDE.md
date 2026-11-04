@@ -86,9 +86,16 @@ existing ones on it.
     Prism (follows the current title bar color), Hourglass (purple in free time, amber in
     lockdown, the hourglass flips; also on the block screen) and Looking-Glass (follows the
     site's color). A new script whose tile reacts to state is live too.
+  - **Where the app icons appear** (all of these change together): Tampermonkey (`@icon`), the
+    panel header tile (static or live, above), Hourglass's block screen and lockdown card,
+    Looking-Glass's badge menu, each script's README (top) and the front-page README cards, the
+    site's landing cards, product-page hero, "More" links and per-page favicon, and the link
+    previews (`docs/og.png`, `docs/img/<script>/og.png`). The pages pull the icons from
+    `assets/icons/` when `python3 tools/pages.py` runs, so rebuild the pages after any icon change.
+    The GitHub social preview is uploaded by hand (repo Settings → Social preview, `docs/og.png`).
   - After redrawing the icons: `node tools/icons.js`, scale them to 256px,
     `python3 tools/panel_icons.py`, update the shapes in `tools/live_glyphs.py` and run it, raise `?v=N`
-    on every `@icon`, bump the versions and recapture.
+    on every `@icon`, bump the versions, recapture, and run `python3 tools/pages.py`.
 
 ## After any change: rebuild the pages
 

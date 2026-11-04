@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="../../assets/icons/prism.png" alt="Prism icon" width="112">
+
 <img src="images/banner.svg" alt="Prism: Every app title bar, in its site's own color." width="100%">
 
 [![Install](https://img.shields.io/badge/Install-v2.1.2-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/prism/)

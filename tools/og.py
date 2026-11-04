@@ -18,10 +18,13 @@ BG = {'molten': ('#0c0a0d', '#f6f1ec', 'rgba(246,241,236,.72)', ['#ff6a1f', '#ff
       'frost': ('#e9ebf5', '#1d1d26', 'rgba(29,29,38,.62)', ['#b9a7ff', '#ffb3d1', '#9fe7d3', '#9cc8ff']),
       'midnight': ('#0b1622', '#e8f1f8', 'rgba(232,241,248,.72)', ['#3db4f2', '#7a5cff', '#1f6f9f', '#c063ff'])}
 
+def data_uri_png(path):
+    return 'data:image/png;base64,' + base64.b64encode(open(path, 'rb').read()).decode()
+
 def data_uri(path):
     return 'data:image/webp;base64,' + base64.b64encode(open(path, 'rb').read()).decode()
 
-def card_html(theme, kicker, title, sub, shots, gradient_title=False):
+def card_html(theme, kicker, title, sub, shots, gradient_title=False, icons=()):
     bg, fg, sb, (c1, c2, c3, c4) = BG[theme]
     glass = 'rgba(255,255,255,.55)' if theme == 'frost' else 'rgba(255,255,255,.07)'
     edge = 'rgba(255,255,255,.8)' if theme == 'frost' else 'rgba(255,255,255,.14)'
@@ -35,6 +38,7 @@ def card_html(theme, kicker, title, sub, shots, gradient_title=False):
 .lava i:nth-child(1){{width:640px;height:640px;left:-80px;top:-160px;background:{c1}}}.lava i:nth-child(2){{width:560px;height:560px;right:-60px;top:-40px;background:{c2}}}
 .lava i:nth-child(3){{width:520px;height:520px;left:300px;bottom:-260px;background:{c3}}}.lava i:nth-child(4){{width:420px;height:420px;right:160px;bottom:-200px;background:{c4}}}
 .panel{{position:absolute;z-index:5;left:64px;top:64px;bottom:64px;width:620px;padding:56px 52px;border-radius:32px;background:{glass};border:1px solid {edge};backdrop-filter:blur(24px);display:flex;flex-direction:column;justify-content:center}}
+.icons{{display:flex;gap:4px;margin:0 0 14px -8px}}.ic{{width:{104 if len(icons) == 1 else 64}px;height:{104 if len(icons) == 1 else 64}px;display:block;flex:none}}
 .k{{font:700 17px ui-monospace,Menlo,monospace;letter-spacing:.22em;text-transform:uppercase;color:{sb};margin-bottom:18px}}
 h1{{margin:0 0 18px;font-size:{88 if len(title) < 13 else 72}px;line-height:.98;letter-spacing:-.045em;font-weight:800;{tstyle}}}
 p{{margin:0;font-size:29px;line-height:1.3;color:{sb}}}
@@ -43,7 +47,7 @@ p{{margin:0;font-size:29px;line-height:1.3;color:{sb}}}
 .shot{{position:absolute;right:0;top:0;transform:translate(var(--x),var(--y)) rotate(var(--r));border-radius:22px;padding:10px;background:{glass};border:1px solid {edge};box-shadow:0 30px 80px -20px rgba(0,0,0,.55)}}
 .shot img{{display:block;width:var(--w,430px);border-radius:14px}}
 </style></head><body><div class="lava"><i></i><i></i><i></i><i></i></div>
-<div class="panel"><div class="k">{html.escape(kicker)}</div><h1>{html.escape(title)}</h1><p>{html.escape(sub)}</p></div>
+<div class="panel"><div class="icons">{''.join(f'<img class="ic" src="{data_uri_png(i)}">' for i in icons)}</div><div class="k">{html.escape(kicker)}</div><h1>{html.escape(title)}</h1><p>{html.escape(sub)}</p></div>
 <div class="brand"><span class="dot"></span>Glassware · JigglyPug</div>{imgs}</body></html>"""
 
 def lead(p):
@@ -59,12 +63,13 @@ if __name__ == '__main__':
         # landing: three panels fanned out
         fan = [(f'{R}/desktop/prism/images/card.webp', -8, -300, 150, 1), (f'{R}/desktop/molten-tools/images/card.webp', 2, -150, 50, 2),
                (f'{R}/desktop/kaleidoscope/images/card.webp', 10, 10, 190, 3)]
-        render(card_html('molten', 'Userscripts for Tampermonkey', 'Glassware', 'Glass for the web. Frosted, lava-lit tools by JigglyPug.', fan, True), f'{D}/og.png')
+        render(card_html('molten', 'Userscripts for Tampermonkey', 'Glassware', 'Glass for the web. Frosted, lava-lit tools by JigglyPug.', fan, True,
+                         [f'{R}/assets/icons/{n}.png' for n in ['prism', 'hourglass', 'looking-glass', 'molten-tools', 'molten-for-reddit', 'kaleidoscope']]), f'{D}/og.png')
         for p, s in S.items():
             slug = p.split('/')[1]; th = THEME[p][0]
             kicker = s.get('kicker') or (('Mobile' if s.get('runs_on_phone') else 'Desktop') + ' userscript')
             shot = [(f'{R}/{p}/images/card.webp', 4, -80, 120, 1)]
             os.makedirs(f'{D}/img/{slug}', exist_ok=True)
-            render(card_html(th, kicker, s['name'], s['tag'], shot), f'{D}/img/{slug}/og.png')
+            render(card_html(th, kicker, s['name'], s['tag'], shot, False, [f'{R}/assets/icons/{slug}.png']), f'{D}/img/{slug}/og.png')
         b.close()
     print('previews rendered')

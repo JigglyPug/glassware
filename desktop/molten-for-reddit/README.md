@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="../../assets/icons/molten-for-reddit.png" alt="Molten for Reddit icon" width="112">
+
 <img src="images/banner.svg" alt="Molten for Reddit: Molten glass for new Reddit." width="100%">
 
 [![Install](https://img.shields.io/badge/Install-v2.3.1-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)

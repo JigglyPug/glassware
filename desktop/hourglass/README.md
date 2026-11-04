@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="../../assets/icons/hourglass.png" alt="Hourglass icon" width="112">
+
 <img src="images/banner.svg" alt="Hourglass: Screen time and lockdown for every site." width="100%">
 
 [![Install](https://img.shields.io/badge/Install-v1.2.8-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)

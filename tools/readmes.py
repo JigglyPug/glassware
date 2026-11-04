@@ -138,7 +138,7 @@ for p, s in S.items():
     slug = p.split('/')[1]; url = f'{RAW}/{p}/{slug}.user.js'; v = ver(f'{p}/{slug}.user.js'); c = ACCENT[p]
     phone = s.get('runs_on_phone')
     hero = HERO.get(p, s['shots'][0][0]); rest = [x for x in s['shots'] if x[0] != hero]
-    md  = f'<div align="center">\n\n<img src="images/banner.svg" alt="{s["name"]}: {s["tag"]}" width="100%">\n\n'
+    md  = f'<div align="center">\n\n<img src="../../assets/icons/{slug}.png" alt="{s["name"]} icon" width="112">\n\n<img src="images/banner.svg" alt="{s["name"]}: {s["tag"]}" width="100%">\n\n'
     md += f'[![Install]({badge("Install", "v" + v, c)})]({url}) [![Website]({badge("Website", "product page", "222")})]({SITE}{p}/)\n\n'
     md += f'![Runs on]({badge("runs on", s["sites"], "555", "flat-square")}) '
     md += f'![Platform]({badge("platform", s.get("platform") or ("mobile" if phone else "desktop"), "555", "flat-square")})\n\n'
@@ -162,7 +162,7 @@ for p, s in S.items():
 def card(p):
     s = S[p]; slug = p.split('/')[1]; url = f'{RAW}/{p}/{slug}.user.js'; hero = HERO.get(p, s['shots'][0][0])
     return (f'<td align="center" valign="top" width="50%"><a href="{p}"><img src="{p}/images/card.webp" width="380"></a><br>'
-            f'<h3><a href="{p}">{s["name"]}</a></h3>{s["tag"]}<br><sub>{s["sites"]}</sub><br><br>'
+            f'<h3><img src="assets/icons/{slug}.png" alt="" width="44" align="center"> <a href="{p}">{s["name"]}</a></h3>{s["tag"]}<br><sub>{s["sites"]}</sub><br><br>'
             f'<a href="{url}"><img src="{badge("Install", "v" + ver(f"{p}/{slug}.user.js"), ACCENT[p])}"></a></td>')
 
 def grid(plat):

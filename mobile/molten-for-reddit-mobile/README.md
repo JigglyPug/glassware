@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="../../assets/icons/molten-for-reddit-mobile.png" alt="Molten for Reddit Mobile icon" width="112">
+
 <img src="images/banner.svg" alt="Molten for Reddit Mobile: Molten glass for Reddit, pocket size." width="100%">
 
 [![Install](https://img.shields.io/badge/Install-v1.3.1-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/molten-for-reddit-mobile/)

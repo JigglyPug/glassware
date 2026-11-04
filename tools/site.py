@@ -32,6 +32,7 @@ for p in S:
     dst = f'{D}/img/{p.split("/")[1]}'; os.makedirs(dst, exist_ok=True)
     for f in os.listdir(f'{R}/{p}/images'):
         shutil.copy(f'{R}/{p}/images/{f}', f'{dst}/{f}')
+    shutil.copy(f'{R}/assets/icons/{p.split("/")[1]}.png', f'{dst}/icon.png')   # the app icon
 open(f'{D}/.nojekyll', 'w').close()
 
 CSS = r"""
@@ -86,7 +87,10 @@ section{margin:0 0 64px}
 .card:hover .shot img{transform:scale(1.035)}
 .card .shot::after{content:"";position:absolute;inset:0;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
 .card .body{padding:16px 8px 6px;display:flex;flex-direction:column;flex:1}
-.card h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em}
+.card h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.appicon{width:40px;height:40px;flex:none;display:block;margin:-4px 0 -4px -4px}
+.heroicon{width:104px;height:104px;display:block;margin:0 0 14px -8px}
+.more a .appicon{width:36px;height:36px;float:left;margin:-2px 10px 0 -4px}
 .card h3 a{text-decoration:none}
 .card p{margin:0 0 14px;color:var(--sub)}
 .card .meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
@@ -134,7 +138,7 @@ footer a{color:var(--fg)}
 if not ONLY: open(f'{D}/style.css', 'w', encoding='utf-8').write(CSS.strip() + '\n')
 
 SITE = f'https://{OWNER.lower()}.github.io/glassware/'
-def page(title, desc, theme, acc, body, depth, path='', og='og.png'):
+def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=None):
     up = '../' * depth
     meta = (f'<link rel="canonical" href="{SITE}{path}">'
             f'<meta property="og:type" content="website"><meta property="og:site_name" content="Glassware">'
@@ -146,7 +150,7 @@ def page(title, desc, theme, acc, body, depth, path='', og='og.png'):
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}">
 <meta name="theme-color" content="{acc}">{meta}<meta name="color-scheme" content="{'light dark' if theme == 'frost' else 'dark'}"><link rel="stylesheet" href="{up}style.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff8a3d'/%3E%3Cstop offset='.55' stop-color='%23ff2d6f'/%3E%3Cstop offset='1' stop-color='%237a2cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3C/svg%3E">
+{('<link rel="icon" type="image/png" href="' + up + favicon + '">') if favicon else '''<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff8a3d'/%3E%3Cstop offset='.55' stop-color='%23ff2d6f'/%3E%3Cstop offset='1' stop-color='%237a2cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3C/svg%3E">'''}
 </head><body data-theme="{theme}" style="--acc:{acc}">
 <div class="lava" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="grain" aria-hidden="true"></div>
 <nav><div class="bar glass"><a class="brand" href="{up}"><span class="dot"></span>Glassware</a><span class="sp"></span>
@@ -164,7 +168,7 @@ def card(p):
     s = S[p]; slug = p.split('/')[1]; th, acc = THEME[p]
     return f"""<article class="card glass" style="--acc:{acc}">
 <a class="shot" href="{p}/"><img src="img/{slug}/card.webp" alt="{html.escape(s['name'])} settings panel" loading="lazy"></a>
-<div class="body"><h3><a href="{p}/">{html.escape(s['name'])}</a></h3><p>{md_inline(s['tag'])}</p>
+<div class="body"><h3><img class="appicon" src="img/{slug}/icon.png" alt="" width="40" height="40"><a href="{p}/">{html.escape(s['name'])}</a></h3><p>{md_inline(s['tag'])}</p>
 <div class="meta"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">v{v_of(p)}</span></div>
 <div class="acts"><a class="btn pri" href="{install_url(p)}">Install</a><a class="btn sec" href="{p}/">Details</a></div></div></article>"""
 
@@ -190,7 +194,7 @@ for p, s in S.items():
         feats += f'<div class="feat glass">' + (f'<h4>{md_inline(t)}</h4>' if t else '') + f'<p>{md_inline(b)}</p></div>'
     gal = ''.join(f'<figure class="glass"><img src="{img(f)}" alt="{html.escape(c)}" loading="lazy"><figcaption>{html.escape(c)}</figcaption></figure>' for f, c in rest)
     sib = [q for q in S if q != p and (q.split('/')[0] == p.split('/')[0])][:3]
-    more = ''.join(f'<a class="glass" href="../../{q}/" style="--acc:{THEME[q][1]}"><b>{html.escape(S[q]["name"])}</b><small>{md_inline(S[q]["tag"])}</small></a>' for q in sib)
+    more = ''.join(f'<a class="glass" href="../../{q}/" style="--acc:{THEME[q][1]}"><img class="appicon" src="../../img/{q.split("/")[1]}/icon.png" alt="" width="36" height="36"><b>{html.escape(S[q]["name"])}</b><small>{md_inline(S[q]["tag"])}</small></a>' for q in sib)
     note = f'<div class="note glass"><b>Requires</b> {md_inline(s["note"])}</div>' if s.get('note') else ''
     start = f'<section><div class="label">Getting started</div><div class="note glass">{md_inline(s["getting_started"])}</div></section>' if s.get('getting_started') else ''
     phone_sec = ''
@@ -200,6 +204,7 @@ for p, s in S.items():
         phone_sec = f'<section><div class="label">On your phone</div><p class="lede">{md_inline(ptxt)}</p><div class="gal phone">{pg}</div></section>'
     body = f"""<main class="wrap">
 <header class="phero{' phone' if phone else ''}"><div>
+<img class="heroicon" src="../../img/{slug}/icon.png" alt="{html.escape(s['name'])} icon" width="104" height="104">
 <div class="label">{s.get('kicker') or (('Mobile' if phone else 'Desktop') + ' userscript')}</div>
 <h1>{html.escape(s['name'])}</h1><p class="tag">{md_inline(s['tag'])}</p><p class="intro">{md_inline(s['intro'])}</p>
 <div class="chips"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">v{v_of(p)}</span></div>
@@ -213,5 +218,5 @@ for p, s in S.items():
 <section><div class="label">More {'for your phone' if phone else 'for desktop'}</div><div class="more">{more}</div></section>
 </main>"""
     os.makedirs(f'{D}/{p}', exist_ok=True)
-    open(f'{D}/{p}/index.html', 'w', encoding='utf-8').write(page(f"{s['name']} — {s['tag']}", s['intro'], th, acc, body, 2, f'{p}/', f'img/{slug}/og.png'))
+    open(f'{D}/{p}/index.html', 'w', encoding='utf-8').write(page(f"{s['name']} — {s['tag']}", s['intro'], th, acc, body, 2, f'{p}/', f'img/{slug}/og.png', f'img/{slug}/icon.png'))
 print('site built:', sorted(os.listdir(D)))

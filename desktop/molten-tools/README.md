@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="../../assets/icons/molten-tools.png" alt="Molten Tools icon" width="112">
+
 <img src="images/banner.svg" alt="Molten Tools: Molten glass and quality-of-life fixes for YouTube." width="100%">
 
 [![Install](https://img.shields.io/badge/Install-v3.6.1-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-tools/molten-tools.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-tools/)
