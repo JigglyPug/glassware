@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.2.5
+// @version      1.2.6
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.5';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.6';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -473,6 +473,13 @@ button:disabled{cursor:not-allowed}
   backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);border:1px solid rgba(255,255,255,.9);
   box-shadow:0 0 0 .5px rgba(var(--a-rgb),.5),0 0 60px -14px rgba(var(--a-rgb),.9),0 40px 90px -30px rgba(0,0,0,.45),inset 0 1px 0 #fff}
 .logo{width:64px;height:64px;margin:0 auto 16px;border-radius:19px;display:grid;place-items:center;color:var(--on);background:linear-gradient(140deg,var(--fill-hi),var(--fill));box-shadow:0 10px 26px -8px rgba(var(--a-rgb),1),inset 0 1px 0 rgba(255,255,255,.4)}
+/* glass tile like the app icon; the color still follows the script's state */
+.logo{position:relative;overflow:hidden;color:#fff;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--fill-hi) 82%,#0b0b16),color-mix(in srgb,var(--fill) 56%,#0b0b16));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -8px 12px -8px rgba(0,0,0,.45),0 4px 16px -4px rgba(var(--a-rgb),.95),0 0 12px -3px rgba(var(--a-rgb),.6)}
+.logo::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(135deg,transparent 34%,rgba(255,255,255,.09) 34% 44%,transparent 44%)}
+.logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}
 .logo svg{animation:flip 6s ease-in-out infinite}
 @keyframes flip{0%,82%{transform:rotate(0)}100%{transform:rotate(180deg)}}
 h1{margin:14px 0 4px;font-size:26px;letter-spacing:-.025em;font-weight:650;line-height:1.2}
@@ -855,6 +862,13 @@ h1 span{color:var(--ink)}
 .scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:4px}
 .head{display:flex;align-items:center;gap:11px;padding:18px 18px 4px}
 .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--on);flex:none;background:linear-gradient(140deg,var(--fill-hi),var(--fill));box-shadow:0 4px 14px -4px rgba(var(--a-rgb),.9),inset 0 1px 0 rgba(255,255,255,.35)}
+/* glass tile like the app icon; the color still follows the script's state */
+.logo{position:relative;overflow:hidden;color:#fff;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--fill-hi) 82%,#0b0b16),color-mix(in srgb,var(--fill) 56%,#0b0b16));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -8px 12px -8px rgba(0,0,0,.45),0 4px 16px -4px rgba(var(--a-rgb),.95),0 0 12px -3px rgba(var(--a-rgb),.6)}
+.logo::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(135deg,transparent 34%,rgba(255,255,255,.09) 34% 44%,transparent 44%)}
+.logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}
 .title{font-weight:650;font-size:16px;letter-spacing:-.015em}
 .sub{font-size:11.5px;color:var(--sub)}
 .x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.06);display:grid;place-items:center;color:var(--sub)}

@@ -96,12 +96,14 @@ function stubPage() {
     window.__all = (root = document) => { const out = []; const walk = r => { r.querySelectorAll('*').forEach(e => { out.push(e); if (e.shadowRoot) walk(e.shadowRoot); }); }; walk(root); return out; };
     window.__panelRect = () => { const vw = innerWidth, vh = innerHeight; let best = null, ba = 0;
       for (const e of __all()) { const cs = getComputedStyle(e); if (cs.position !== 'fixed' || cs.display === 'none' || cs.visibility === 'hidden') continue;
-        const r = e.getBoundingClientRect(); const a = r.width * r.height; if (a < 40000 || a > vw * vh * 0.92) continue; if (a > ba) { ba = a; best = r; } }
+        const r = e.getBoundingClientRect(); const a = r.width * r.height; if (a < 40000 || a > vw * vh * (window.__maxFrac || 0.92)) continue; if (window.__sheet && r.top < 8) continue; if (a > ba) { ba = a; best = r; } }
       return best && { x: best.x, y: best.y, w: best.width, h: best.height }; };
     window.__clickTab = t => { const c = __all().filter(e => e.children.length <= 2 && (e.textContent || '').trim() === t && e.getBoundingClientRect().width > 0 && (e.matches('button,[role=tab],a,[data-tab],li,div,span'))); 
       const el = c.find(e => e.matches('button,[role=tab]')) || c[0]; if (el) { el.click(); return true; } return false; };
     window.__hideErr = () => { for (const e of __all()) if (/unreadable response|Couldn.t reach|returned an/i.test(e.textContent || '') && e.children.length === 0) e.style.visibility = 'hidden'; };`;
   await page.evaluate(helpers);
+  if (opt('--maxfrac', '')) await page.evaluate(f => { window.__maxFrac = f; }, +opt('--maxfrac', '0.92'));
+  if (has('--sheet')) await page.evaluate(() => { window.__sheet = true; });
   if (evalJs) { await page.evaluate(evalJs); await page.waitForTimeout(900); }
   async function snap(file) {
     await page.evaluate(() => __hideErr());
@@ -109,7 +111,7 @@ function stubPage() {
     await page.evaluate(() => { for (const e of __all()) for (const n of e.childNodes) if (n.nodeType === 3 && /v\d+\.\d+/.test(n.nodeValue))
       n.nodeValue = n.nodeValue.replace(/\s*·\s*v\d+(\.\d+)+/g, '').replace(/v\d+(\.\d+)+\s*·\s*/g, '').replace(/\bv\d+(\.\d+)+\b/g, ''); });
     let clip;
-    if (crop) { const r = await page.evaluate(() => __panelRect()); if (r) { const pad = 28; const vp = page.viewportSize();
+    if (crop) { const sel = opt('--clipsel', ''); const r = await page.evaluate(sel => { if (sel) { const e = __all().find(x => x.matches && x.matches(sel)); if (e) { const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; } } return __panelRect(); }, sel); if (r) { const pad = 28; const vp = page.viewportSize();
       const x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad); clip = { x, y, width: Math.min(vp.width - x, r.w + pad * 2), height: Math.min(vp.height - y, r.h + pad * 2) }; } }
     await page.screenshot({ path: file, clip });
     console.log('saved', file, clip ? 'cropped' : '');

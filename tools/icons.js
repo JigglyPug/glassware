@@ -18,7 +18,7 @@ function tube(d, { glow, w = 4.2, core = 1.5, fill = 0 }) {
   <path d="${d}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="${Math.max(.6, core * .55)}" stroke-linecap="round" stroke-linejoin="round" transform="translate(-.35 -.45)"/>`;
 }
 
-function icon({ a, b, deep, rimA, rimB, glow, glyph }) {
+function icon({ a, b, deep, rimA, rimB, glow, glyph }, part = 'all') {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
 <defs>
   <linearGradient id="tint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>
@@ -33,7 +33,7 @@ function icon({ a, b, deep, rimA, rimB, glow, glyph }) {
   <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
   <clipPath id="clip"><path d="${tilePath}"/></clipPath>
 </defs>
-<path d="${tilePath}" fill="none" stroke="${glow}" stroke-width="2.4" stroke-opacity=".55" filter="url(#outer)"/>
+${part === 'glyph' ? '' : `<path d="${tilePath}" fill="none" stroke="${glow}" stroke-width="2.4" stroke-opacity=".55" filter="url(#outer)"/>
 <g clip-path="url(#clip)">
   <rect width="100" height="100" fill="#0b0b16"/>
   <rect width="100" height="100" fill="url(#tint)" opacity=".66"/>
@@ -44,8 +44,8 @@ function icon({ a, b, deep, rimA, rimB, glow, glyph }) {
   <path d="M28 96 L96 28 L96 36 L36 96 Z" fill="#fff" fill-opacity=".03"/>
 </g>
 <path d="${tilePath}" fill="none" stroke="url(#rim)" stroke-width="1.5"/>
-<path d="${tilePath}" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width=".6" transform="translate(50 50) scale(.965) translate(-50 -50)"/>
-${glyph}
+<path d="${tilePath}" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width=".6" transform="translate(50 50) scale(.965) translate(-50 -50)"/>`}
+${part === 'tile' ? '' : glyph}
 </svg>`;
 }
 
@@ -83,6 +83,7 @@ const prism = (g) => `
   ${tube('M24 59 L46 52.5', { glow: g, w: 2.6, core: 1.1 })}
   ${tube('M54 50 L77 43', { glow: g, w: 2.6, core: 1.1 })}`;
 
+const HG = { a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') };
 const ICONS = {
   'hourglass':         icon({ a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') }),
   'kaleidoscope':      icon({ a: '#2f7dff', b: '#1a3a9c', deep: '#06112e', rimA: '#a9d1ff', rimB: '#7fd6ff', glow: '#5aa2ff', glyph: gem('#8ec8ff') }),
@@ -93,6 +94,9 @@ const ICONS = {
 };
 ICONS['molten-for-reddit-mobile'] = ICONS['molten-for-reddit'];
 ICONS['kaleidoscope-mobile'] = ICONS['kaleidoscope'];
+// Hourglass's block screen flips the glyph on its own layer, so it also gets the two halves.
+ICONS['parts/hourglass-tile'] = icon(HG, 'tile');
+ICONS['parts/hourglass-glyph'] = icon(HG, 'glyph');
 
 (async () => {
   const out = path.join(__dirname, '..', 'assets', 'icons');

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.9.0
+// @version      2.9.1
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -1130,6 +1130,8 @@
       '#kaleidoscope-panel .kld-brand{display:flex;align-items:center;gap:11px;min-width:0}' +
       '#kaleidoscope-panel .kld-icon{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;' +
       'background:linear-gradient(145deg,#4cc2ff,#2257d6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}' +
+      '#kaleidoscope-panel .kld-icon{position:relative}' +
+      '#kaleidoscope-panel .kld-icon-img{position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;display:block}' +
       '#kaleidoscope-panel .kld-icon svg{width:22px;height:22px;display:block}' +
       '#kaleidoscope-panel .kld-ctx{display:flex;align-items:center;gap:8px;margin:0 16px 10px;min-width:0}' +
       '#kaleidoscope-panel .kld-ctx .kld-sub{font:12.5px ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important}' +
@@ -1325,6 +1327,7 @@
       if (lastStatus) say(lastStatus.msg, lastStatus.kind);
     }
 
+    const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
     const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '';
     function iconTile() {
       const tile = el('div', 'kld-icon');
@@ -1340,6 +1343,11 @@
         p.setAttribute('stroke', '#fff'); p.setAttribute('stroke-width', '1.1'); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('stroke-linecap', 'round');
         svg.append(p); }
       tile.append(svg);
+      const img = el('img', 'kld-icon-img');
+      img.alt = '';
+      img.addEventListener('error', () => img.remove());
+      img.src = ICON_SRC;
+      tile.append(img);
       return tile;
     }
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.3.0
+// @version      1.3.1
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1858,6 +1858,8 @@ div.lava-blobs {
       '#ytt-panel .ytt-icon{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;' +
       'background:radial-gradient(circle at 25% 20%,#ffb23d,transparent 60%),radial-gradient(circle at 85% 30%,#ff2d6f,transparent 60%),' +
       'radial-gradient(circle at 40% 95%,#ff6a1f,transparent 65%),#7a2cd6;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}' +
+      '#ytt-panel .ytt-icon{position:relative}' +
+      '#ytt-panel .ytt-icon-img{position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;display:block}' +
       '#ytt-panel .ytt-icon svg{width:20px;height:20px;display:block}' +
       '#ytt-panel .ytt-ctx{display:flex;align-items:center;gap:8px;margin:0 16px 10px;min-width:0}' +
       '#ytt-panel .ytt-host{font:12.5px ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
@@ -1936,6 +1938,7 @@ div.lava-blobs {
       return Number(v).toFixed(dec);
     };
 
+    const ICON_SRC = 'data:image/webp;base64,UklGRmwJAABXRUJQVlA4WAoAAAAQAAAAXwAAXwAAQUxQSBECAAABh+SokSRHUlQb7X/5o7V3DCIiXVEK8UdQgU4hptrQIVS5LXUukhgkUSuHRVCuwArxnlDQRpJyjP/+HbOBiP5PAOOiLMXSXKK/6JjYAoO2JEmKJMk8qrl7mflpZd/o/z9kj2GYubky/RjjGCQiJoAIRXR7AxY3n9x/eLvbITqIn9r8nK6z1fJyOt+/vGrdLtdtqdUOUEQT83uvHj6ZkOHieO9k/3zZNCEhJKRO6b17+QKsX5tBwGxjd7Or5lsOQOXW/ddUiRwrweWnow4CHAYGE0qIPO1gMmxk7KhWTKAhV5txD3DttjGbIjKORXGp3ebkApOxuZivXQbrvUrOwZ2hJH2+0Tgn4AYlFl9gkpb7arnxUaQFGs1XT6/IW+7NVg/kvLBW83siczXTO2Qu9U+7qWGpyQ2VyK6Tnjq5iT7pK730ld4/wJ3e/75Vev8A9+891+yYZde2OLc6Jfn8yhXKbT27xKkdH52lZg4uj8hcV/tXR7NwWmZ7uz3YILPdC5/vTuWkHBsf9tvl1odpVX9yxCqa0Q2S1r1+sGqiNxrjyEdcv1U6tBE0TQWUjBmOShMUSfJqekdGibgytyVRJeE6H076slEOdnC5ACQscGUtNOpJMujXZsHGxyedCoiKsWultPNZjT4ZTrf33h9FqcZQAddSQqyW8+nJjfGNXr9BP5l+FtdS2/Xpwf7WWU9trQYAAFZQOCA0BwAAUCIAnQEqYABgAD4pEodCoaEJzgI2DAFCUATpygqR8zP1X4jfjB8r1qf1XDcHXt2ek/bweZDza/Qf/qN9h/oH/D9gDpY/209KXBk0i9sKzVtruNX0NtHH0d/0fcG/Uz/a+sB1KP6UA1V6f++j+wO3TuDjT2kNgYaktuYx9i407OPbZ7vOxamqBBYWqbVR54YurV2nvVZMZSSuPQ3gV4gxCs+9YR4Ks4u7qLTsNw88zABGoj4Iti0/6Nhb7s/Zqycrdp8zXsby1D0DMPuRtZbVpTwZHbautg2axSYvrO0211zUqXvFyciWSMv/P+IzL0zag87S6jELJcqRLlHWg21meaWa3D5UXGcQavQE51yg8mjcs7r4QYIntZpFgAD+68Lmx2cx7bEcPf6awVg65tfsbLn85kbYEwLCKvX2lL9BNvupufHpGn7vlsor1rxAgqiL9H47e3RSTxnUFlmCVYzp8ACK2Bf7wPW992TDvqpRgNY0ljgf4X6nJVagARp44c7ibFgDYdeJNYT2k1lOLpg8j4AdJ7PZEJ8m96BTjuSHhwSPHsRUjzfyN9UHwl2QBwUucBN5ISk9CcF+QrSjDJJVBalEaXCcY1mqJPTEFzAoUZymV7psdLrDAr2ILxvJYpLRh9bIp+aRpOk7s0MDnDZz75gNf/PKSH60ENsX6tMcADOlyDhotI6Wvpg+sycNVRWztZRDbaLD7cWSRQe+fyVes8yngyVO+7obtAjtJQkzg7rq8HnDGQEkCZ8c8QghcC0Wvo9/lvSpVjbLXtfGQUMXEILewTx9kP2kjqE2+LNRI5zj/td/Uf+GUb/79Thxegcri6b+Lx5pd6HNuG31OT5uqvDUeNtG+tJ6yWWT5rD4D+V8uYPeSx3xZ+jZDHZvjc2Qxv2frrsigWx1y24hb4KIVgyZ4xIZaI1B3vsYQmNYUJgVKtUTQgfycB8xbxAf24bVl1KZkttFAX0PoJqcxkiFg1rOTiIsHeF15//nZUjsP5Ra6/6Wxzi5I+6FJYEu+lQfWlZ92rXwoIXsXdzzlX3RUJunpTc+310/ah5CYnx8muULAWa3P7gcTADQpNkD8HoVRxu+wd3vgvOoxeKsD0ECnUdYgt5Q1cYFrHawUAbik+RdRgAK8DLTVuPg73nvVTvtYb1D/q772xTattZtOD5vmcHfwBt9GjYjhfU2OTnntp4MDTxXS5ucxDoQ7m8J0mXwyJqiP1SCC882jWyh3yx88skn0x22RqphqDulsXjIa13T1X/vY2Da2Rfl+04pmQ7DqsrqjIcCpKnm1XM9f3z4xZ6vozE95Tqv6uiVLPir2mRVazHHyI3xJq+1oAWttvSVmPjQfFKHqp/ub7IQJfy44hxh6D3YKAd3kAZAeTIln89eFvYZ+VdRkfnBpy0rnkghc6d5Cul8MH1xXAHZpbm1LqV/NQ5iEOwjJEWnHgdSqDjZkIk7fveOqNABpe/cYn2wqADFOP9dmSEK34V/0zijgBg+JuuIICu9evDIPkgq80vvtMa50h+3hnuqHuL/mC5IVt/7wxSId/hm6gq5VIIoo9ao5/16CH/4MgIPrMDI5wGag5Lv0ovpcI/TrbMGk7d3akAGAuEZ4y9gQYpo/Dnc243RG7RuSj/u+RPjAJGhKDqky5C2nHkTjw0ZlKVNf/tCQ+SUnZ7vHWPxvAVo/YCrZPzERczmrHniXTPO9RkmRKEdO+TT4ozegxy/7JAoEY0+f2DXtaN55jSHrS7NAW6H8N1nK/q/zB1/ZtUSQrpe2lhDXPG76qPxk+N/unJyp+cbr9iktB8/ghKKrw3Dw3SvKmncg9u3PHEDZ2T/YZhJRcIddScsilaiKKO1tONYIQ7M7iDSvYzKXXCHQwatdC37BaHwjMSy03Dw5ymePbOXsRrqVlYv4vHZUW0XEm0xBw6XYrxCw/4E3lu4buYvL1pvYQmdhxU3exJ6aY2taBMTtjBUnxPgqRKXqo1exsoxUcxNYC56y4iaNYCDcQBvHV1PHsdV0sm+d+OW7LGP/85sa6Pc6mDcPA4vZPT0s+c7yHcbfBtOTtQRVzdu1hxKPJ3XDqJUoCMiEpip20BgZzRVW8t/c2zV694xx+9kRfeq7gb0IxGkQFCH3b1sEaSpzys4TLxzHprjJSSmaZWkkwSX2n4pd619ds7g4O722O4ttCgHrD/E6wksnBEOakqSidQ3q0u3Vc3Iz4+Nx/6Z5JK4dMA/AYg5uki/rynPOLJpBXyJWcreIRJ06dwUAGHqWNCWdQOb6JDydqzTSVGO4xHBdKQEfXzxECmlSrijMhUnJAOWOLhQ5MtMONTJFO6gfmTJGqEC5F5tCHr6vIFdYIfZDNfgIvTn9Z43TcjhHzaCv+hVHyct58zh40ly3vCYnq47Mue4HOCgGbdUCS7kt8/SSL8xG0rcn1yHxve9/M//b36+XKUesxqMpimQGgvB8sn2qoAAAAA='; // app icon (assets/icons), embedded by tools/panel_icons.py
     const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '';
     function iconTile() {
       const tile = el('div', 'ytt-icon');
@@ -1947,6 +1950,11 @@ div.lava-blobs {
       p.setAttribute('fill', '#fff');
       svg.append(p);
       tile.append(svg);
+      const img = el('img', 'ytt-icon-img');
+      img.alt = '';
+      img.addEventListener('error', () => img.remove());
+      img.src = ICON_SRC;
+      tile.append(img);
       return tile;
     }
 

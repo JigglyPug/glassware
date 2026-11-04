@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.6.0
+// @version      3.6.1
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -4486,6 +4486,8 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel .ytt-icon{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;' +
       'background:radial-gradient(circle at 25% 20%,#ffb23d,transparent 60%),radial-gradient(circle at 85% 30%,#ff2d6f,transparent 60%),' +
       'radial-gradient(circle at 40% 95%,#ff6a1f,transparent 65%),#7a2cd6;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}' +
+      '#ytt-panel .ytt-icon{position:relative}' +
+      '#ytt-panel .ytt-icon-img{position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;display:block}' +
       '#ytt-panel .ytt-icon svg{width:20px;height:20px;display:block}' +
       '#ytt-panel .ytt-ctx{display:flex;align-items:center;gap:8px;margin:0 16px 10px;min-width:0}' +
       '#ytt-panel .ytt-host{font:12.5px ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
@@ -4564,6 +4566,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       return Number(v).toFixed(dec);
     };
 
+    const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
     const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '';
     function iconTile() {
       const tile = el('div', 'ytt-icon');
@@ -4575,6 +4578,11 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       p.setAttribute('fill', '#fff');
       svg.append(p);
       tile.append(svg);
+      const img = el('img', 'ytt-icon-img');
+      img.alt = '';
+      img.addEventListener('error', () => img.remove());
+      img.src = ICON_SRC;
+      tile.append(img);
       return tile;
     }
 

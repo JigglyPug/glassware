@@ -5,8 +5,8 @@
 
 Each panel is opened in a stubbed page by shot.js, captured at full height, cropped to
 the panel, saved as WebP in <platform>/<script>/images/, and the landing-page card is
-cut from the top of the lead image. Hourglass's phone-*.webp shots (block screen,
-late-night nudge, phone dashboard/schedule) are captured by hand and are not touched.
+cut from the top of the lead image. Hourglass also gets its phone shots (dashboard,
+schedule, block screen); only phone-nudge.webp is still captured by hand.
 Run tools/pages.py afterwards to copy the images into the site.
 """
 import os, subprocess, sys, tempfile
@@ -35,6 +35,18 @@ def webp(src, dst):
     if im.width > 1400: im = im.resize((1400, round(im.height * 1400 / im.width)), Image.LANCZOS)
     im.save(dst, 'WEBP', quality=90, method=6)
 
+def hourglass_phone():
+    tmp = tempfile.mkdtemp(); js = f'{R}/desktop/hourglass/hourglass.user.js'; imgs = f'{R}/desktop/hourglass/images'
+    seed = ['--seed', f'{HERE}/seeds/hourglass.json']
+    subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop',
+                    '--vh', '2600', '--clipsel', '.frame.m .panel', '--clock', CLOCK, '--tabs', 'Schedule'] + seed, check=True, capture_output=True)
+    # the block screen: a weekday morning, inside the demo lockdown
+    subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/block.png', '--cmd', 'none', '--mobile',
+                    '--clock', '2026-11-03T11:48:00-05:00'] + seed, check=True, capture_output=True)
+    webp(f'{tmp}/phone.png', f'{imgs}/phone-dashboard.webp'); webp(f'{tmp}/phone-schedule.png', f'{imgs}/phone-schedule.webp')
+    webp(f'{tmp}/block.png', f'{imgs}/phone-block.webp')
+    print('captured desktop/hourglass phone shots')
+
 def run(p):
     url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]; mobile = '--mobile' in extra
     tmp = tempfile.mkdtemp(); out = f'{tmp}/{slug}.png'
@@ -54,3 +66,4 @@ if __name__ == '__main__':
     want = sys.argv[1:]
     for p in JOBS:
         if not want or p.split('/')[1] in want: run(p)
+    if not want or 'hourglass' in want: hourglass_phone()

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.1.0
+// @version      1.1.1
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.0';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.1';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1077,6 +1077,13 @@ button:disabled{cursor:not-allowed}
 .grab{display:none}
 .head{display:flex;align-items:center;gap:11px;padding:18px 18px 4px}
 .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--on);flex:none;background:var(--bg-fill);box-shadow:0 4px 14px -4px rgba(var(--a-rgb),.9),inset 0 1px 0 rgba(255,255,255,.35)}
+/* glass tile like the app icon; the color still follows the script's state */
+.logo{position:relative;overflow:hidden;color:#fff;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--bg-fill) 82%,#0b0b16),color-mix(in srgb,var(--bg-fill) 56%,#0b0b16));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -8px 12px -8px rgba(0,0,0,.45),0 4px 16px -4px rgba(var(--a-rgb),.95),0 0 12px -3px rgba(var(--a-rgb),.6)}
+.logo::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(135deg,transparent 34%,rgba(255,255,255,.09) 34% 44%,transparent 44%)}
+.logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}
 .title{font-weight:650;font-size:16px;letter-spacing:-.015em}
 .sub{font-size:11.5px;color:var(--sub)}
 .x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.06);display:grid;place-items:center;color:var(--sub);flex:none}
