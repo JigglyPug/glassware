@@ -92,7 +92,6 @@ function stubPage() {
     await page.evaluate(n => { const c = window.__cmds.find(c => c.n.startsWith(n)); if (c) c.f(); else console.error('no cmd ' + n); }, cmdName);
   }
   await page.waitForTimeout(waitMs);
-  if (evalJs) { await page.evaluate(evalJs); await page.waitForTimeout(900); }
   const helpers = `
     window.__all = (root = document) => { const out = []; const walk = r => { r.querySelectorAll('*').forEach(e => { out.push(e); if (e.shadowRoot) walk(e.shadowRoot); }); }; walk(root); return out; };
     window.__panelRect = () => { const vw = innerWidth, vh = innerHeight; let best = null, ba = 0;
@@ -103,6 +102,7 @@ function stubPage() {
       const el = c.find(e => e.matches('button,[role=tab]')) || c[0]; if (el) { el.click(); return true; } return false; };
     window.__hideErr = () => { for (const e of __all()) if (/unreadable response|Couldn.t reach|returned an/i.test(e.textContent || '') && e.children.length === 0) e.style.visibility = 'hidden'; };`;
   await page.evaluate(helpers);
+  if (evalJs) { await page.evaluate(evalJs); await page.waitForTimeout(900); }
   async function snap(file) {
     await page.evaluate(() => __hideErr());
     // Screenshots never show the version: they only need recapturing when a panel changes.

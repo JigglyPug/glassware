@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.8.4
+// @version      2.9.0
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -1100,10 +1100,10 @@
       '#kaleidoscope-toggle:hover{color:' + ACCENT + ';box-shadow:0 4px 18px rgba(61,180,242,.3)}' +
       '#kaleidoscope-toggle.open{color:' + ACCENT + ';background:#0B1622}' +
 
-      '#kaleidoscope-panel{position:fixed;right:20px;bottom:72px;width:380px;max-width:calc(100vw - 32px);height:auto;min-height:0;' +
+      '#kaleidoscope-panel{position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);height:auto;min-height:0;' +
       'display:flex;flex-direction:column;z-index:2147483647;background:rgba(21,31,46,.97);' +
       '-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);color:#C9D7E3;' +
-      'border:1px solid rgba(255,255,255,.07);border-radius:16px;box-shadow:0 14px 44px rgba(0,0,0,.6);' +
+      'border:1px solid rgba(255,255,255,.07);border-radius:22px;box-shadow:0 14px 44px rgba(0,0,0,.6);' +
       'font:13px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:left;opacity:1;visibility:visible}' +
       '#kaleidoscope-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
       '#kaleidoscope-panel .kld-head{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 14px 10px 16px}' +
@@ -1125,7 +1125,15 @@
       '#kaleidoscope-panel .kld-tab:hover{color:#EDF1F5}' +
       '#kaleidoscope-panel .kld-tab.on{background:rgba(61,180,242,.16);color:' + ACCENT + '}' +
       '#kaleidoscope-panel .kld-body{overflow-y:auto;padding:2px 16px 16px;scrollbar-width:thin;scrollbar-color:#2B3A4F transparent}' +
-      '#kaleidoscope-panel .kld-sec{margin:14px 0 6px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#728AA1}' +
+      '#kaleidoscope-panel .kld-sec{margin:18px 0 6px;display:flex;align-items:center;gap:7px;color:#7FC9F5;font:700 10.5px/1.2 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;letter-spacing:.16em;text-transform:uppercase}' +
+      '#kaleidoscope-panel .kld-sec::before{content:"";width:6px;height:6px;border-radius:1px;background:' + ACCENT + ';transform:rotate(45deg);flex:none}' +
+      '#kaleidoscope-panel .kld-brand{display:flex;align-items:center;gap:11px;min-width:0}' +
+      '#kaleidoscope-panel .kld-icon{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;' +
+      'background:linear-gradient(145deg,#4cc2ff,#2257d6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}' +
+      '#kaleidoscope-panel .kld-icon svg{width:22px;height:22px;display:block}' +
+      '#kaleidoscope-panel .kld-ctx{display:flex;align-items:center;gap:8px;margin:0 16px 10px;min-width:0}' +
+      '#kaleidoscope-panel .kld-ctx .kld-sub{font:12.5px ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important}' +
+      '#kaleidoscope-panel .kld-footline{padding:9px 16px 12px;font-size:11.5px;color:#728AA1;border-top:1px solid rgba(255,255,255,.06)}' +
       '#kaleidoscope-panel .kld-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}' +
       '#kaleidoscope-panel label.kld-row{cursor:pointer}' +
       '#kaleidoscope-panel .kld-label{flex:1;min-width:0;color:#EDF1F5}' +
@@ -1315,6 +1323,24 @@
       statusEl = el('div', 'kld-status');
       parent.append(statusEl);
       if (lastStatus) say(lastStatus.msg, lastStatus.kind);
+    }
+
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '';
+    function iconTile() {
+      const tile = el('div', 'kld-icon');
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      { const p = document.createElementNS(NS, 'path');
+        p.setAttribute('d', 'M12 3.4 19.5 7.7v8.6L12 20.6 4.5 16.3V7.7Z'); p.setAttribute('fill', '#fff'); p.setAttribute('fill-opacity', '.28');
+        p.setAttribute('stroke', '#fff'); p.setAttribute('stroke-width', '1.6'); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('stroke-linecap', 'round');
+        svg.append(p); }
+      { const p = document.createElementNS(NS, 'path');
+        p.setAttribute('d', 'M12 3.4V20.6M4.5 7.7l15 8.6M19.5 7.7l-15 8.6'); p.setAttribute('fill', 'none'); p.setAttribute('fill-opacity', '0');
+        p.setAttribute('stroke', '#fff'); p.setAttribute('stroke-width', '1.1'); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('stroke-linecap', 'round');
+        svg.append(p); }
+      tile.append(svg);
+      return tile;
     }
 
     function updateSub() {
@@ -2060,12 +2086,16 @@
       const title = el('div', 'kld-title', 'Kaleido');
       title.append(el('b', null, 'scope'));
       subEl = el('div', 'kld-sub');
-      t.append(title, el('div', 'kld-tagline', 'AI recommendations from your list'), subEl);
+      t.append(title, el('div', 'kld-tagline', 'AI recommendations from your list'));
       const x = el('button', 'kld-x', '×');
       x.type = 'button';
       x.title = 'Close';
       x.addEventListener('click', close);
-      head.append(t, x);
+      const brand = el('div', 'kld-brand');
+      brand.append(iconTile(), t);
+      head.append(brand, x);
+      const ctx = el('div', 'kld-ctx');
+      ctx.append(subEl);
 
       const tabs = el('div', 'kld-tabs');
       for (const [id, name] of [['rec', 'Recommend'], ['seq', 'Sequels'], ['set', 'Settings']]) {
@@ -2082,7 +2112,8 @@
       }
 
       bodyEl = el('div', 'kld-body');
-      panelEl.append(head, tabs, bodyEl);
+      const foot = el('div', 'kld-footline', 'Open from \u2726 or the Tampermonkey menu \u00b7 v' + VERSION + ' \u00b7 every tab updates live');
+      panelEl.append(head, ctx, tabs, bodyEl, foot);
       for (const type of ['keydown', 'keypress', 'keyup']) {
         panelEl.addEventListener(type, e => {
           if (type === 'keydown' && e.key === 'Escape') close();
@@ -2112,24 +2143,12 @@
         }));
     }
 
-    // Under the top-bar button when that's in use and visible, otherwise above the corner button.
+    // Top right, like every Glassware panel, whichever button opened it.
     function placePanel() {
       if (!panelEl) return;
       const s = panelEl.style;
-      const vh = window.innerHeight || document.documentElement.clientHeight || 800;
-      const r = navHost.isConnected ? navBtn.getBoundingClientRect() : null;
-      if (r && r.width && r.bottom > 10) {
-        const top = Math.round(r.bottom + 10);
-        s.top = top + 'px';
-        s.bottom = 'auto';
-        s.right = Math.max(12, Math.round(window.innerWidth - r.right - 8)) + 'px';
-        s.maxHeight = Math.max(260, vh - top - 16) + 'px';
-      } else {
-        s.top = '';
-        s.bottom = '72px';
-        s.right = '20px';
-        s.maxHeight = Math.max(260, vh - 92) + 'px';
-      }
+      s.top = '16px'; s.bottom = 'auto'; s.right = '16px';
+      s.maxHeight = 'calc(100vh - 32px)';
     }
     window.addEventListener('resize', placePanel);
 

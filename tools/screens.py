@@ -18,7 +18,7 @@ ANI = 'https://anilist.co/user/JigglyPug/animelist'
 
 # folder: (url, menu command prefix, extra flags, [tabs]); lead image is the first capture
 JOBS = {
-    'desktop/prism':          ('https://example.com/', 'Prism', [], []),
+    'desktop/prism':          ('https://example.com/', 'Open Prism', [], []),
     'desktop/hourglass':      ('https://www.youtube.com/', 'Open', ['--seed', f'{HERE}/seeds/hourglass.json'], ['Schedule', 'Sites', 'Settings']),
     'desktop/looking-glass':  ('https://example.com/', 'Open Looking', ['--video'], []),
     'desktop/molten-tools':   ('https://www.youtube.com/', 'Open Molten', [], ['General', 'Account', 'Quality']),

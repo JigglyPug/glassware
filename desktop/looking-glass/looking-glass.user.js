@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.0.8
+// @version      1.1.0
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.7';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.0';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1067,7 +1067,7 @@ button:disabled{cursor:not-allowed}
     /* ───────────────────────── panel ───────────────────────── */
 
     const PANEL_CSS = BASE_CSS + `
-.panel{position:fixed;top:16px;right:16px;width:440px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;border-radius:22px;
+.panel{position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;border-radius:22px;
   background:radial-gradient(120% 40% at 0% 0%,rgba(var(--a-rgb),.2),transparent 64%),rgba(255,255,255,.86);
   backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);
   box-shadow:0 0 0 .5px rgba(var(--a-rgb),.4),0 0 40px -12px rgba(var(--a-rgb),.6),0 28px 64px -18px rgba(0,0,0,.34),inset 0 1px 0 #fff;
@@ -1235,7 +1235,7 @@ button:disabled{cursor:not-allowed}
             const tail = !S.cfg.on ? 'paused everywhere' : !on ? 'turned off on this site' : n ? n + ' video' + (n === 1 ? '' : 's') + ' on screen, ' + r + ' with a direct file' : 'no videos on screen right now';
             this.footEl.replaceChildren(
                 h('div', { class: 'status', role: 'status' }, h('div', { class: 'dot' + (on ? '' : ' off') }), h('div', { class: 'stxt' }, h('b', { text: on ? 'Watching' : 'Off' }), ' · ' + tail)),
-                h('div', { class: 'keys', text: (TOUCH ? 'Hold a badge for more' : 'Right-click a badge for more') + ' · open from the userscript menu · v' + VERSION }));
+                h('div', { class: 'keys', text: 'Open from the Tampermonkey menu · v' + VERSION + ' · every tab updates live' }));
         },
         vMain() {
             const c = S.cfg, st = siteCfg();
@@ -1267,7 +1267,7 @@ button:disabled{cursor:not-allowed}
 
             // master switch first, like the other Glassware panels
             const master = h('div', { class: 'tile master' },
-                this.row('Looking-Glass', c.on ? 'On for every site you haven\'t turned off' : 'Paused. No badges anywhere.', toggle(c.on, () => upd('on', !c.on), 'Looking-Glass on')));
+                this.row('Looking-Glass', c.on ? 'Everything is on. Turn off to stop every feature at once.' : 'Everything is off. Your settings are kept.', toggle(c.on, () => upd('on', !c.on), 'Looking-Glass on')));
             const out = [master, here, badge, opening];
 
             const rec = get('recent', []);
@@ -1290,7 +1290,7 @@ button:disabled{cursor:not-allowed}
                 h('div', { class: 'chips' }, offSites.map(d => h('button', { class: 'chip', 'aria-label': 'Turn back on for ' + d, onclick: () => { const s = S.sites[d]; delete s.off; if (!Object.keys(s).length) delete S.sites[d]; set('sites', S.sites); this.render(); } }, d, h('span', null, icon(ICONS.close, 9, 2.6)))))));
 
 
-            out.push(h('div', { class: 'tile', style: 'margin-bottom:14px' }, this.label('Diagnostics', SITE ? SITE.name : 'Generic'),
+            out.push(h('div', { class: 'tile', style: 'margin-bottom:14px' }, this.label('Troubleshooting', SITE ? SITE.name : 'Generic'),
                 h('div', { class: 'kv' },
                     h('span', { text: 'Video links learned' }), h('b', { text: String(IDX.size) }),
                     h('span', { text: 'Videos tracked' }), h('b', { text: String(items.size) }),
@@ -1307,7 +1307,8 @@ button:disabled{cursor:not-allowed}
 
     try {
         GM_registerMenuCommand('Open Looking-Glass', () => ui.open());
-        GM_registerMenuCommand('Badges on / off for this site', () => { setSite({ off: !siteCfg().off }); kick(); layer.toast(siteCfg().off ? 'Off on ' + HOST : 'On for ' + HOST); });
+        GM_registerMenuCommand('Turn Looking-Glass on/off', () => { S.cfg.on = !S.cfg.on; saveCfg(); layer.paint(); kick(); try { ui.render(); } catch (e) { /* closed */ } layer.toast(S.cfg.on ? 'Looking-Glass on' : 'Looking-Glass off'); });
+        GM_registerMenuCommand('Turn badges on/off for this site', () => { setSite({ off: !siteCfg().off }); kick(); layer.toast(siteCfg().off ? 'Off on ' + HOST : 'On for ' + HOST); });
     } catch {}
     try {
         for (const k of ['settings', 'sites']) GM_addValueChangeListener(k, (n, o, v, remote) => {

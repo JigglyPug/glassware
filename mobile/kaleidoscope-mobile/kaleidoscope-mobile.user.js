@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.1.2
+// @version      1.2.0
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -540,7 +540,15 @@
       '#kaleidoscope-panel .kld-tab.on{background:rgba(61,180,242,.16);color:' + ACCENT + '}' +
       '#kaleidoscope-panel .kld-body{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;' +
       'padding:2px 16px 16px;scrollbar-width:thin;scrollbar-color:#2B3A4F transparent}' +
-      '#kaleidoscope-panel .kld-sec{margin:16px 0 7px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#728AA1}' +
+      '#kaleidoscope-panel .kld-sec{margin:18px 0 7px;display:flex;align-items:center;gap:7px;color:#7FC9F5;font:700 10.5px/1.2 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;letter-spacing:.16em;text-transform:uppercase}' +
+      '#kaleidoscope-panel .kld-sec::before{content:"";width:6px;height:6px;border-radius:1px;background:' + ACCENT + ';transform:rotate(45deg);flex:none}' +
+      '#kaleidoscope-panel .kld-brand{display:flex;align-items:center;gap:11px;min-width:0}' +
+      '#kaleidoscope-panel .kld-icon{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;' +
+      'background:linear-gradient(145deg,#4cc2ff,#2257d6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}' +
+      '#kaleidoscope-panel .kld-icon svg{width:22px;height:22px;display:block}' +
+      '#kaleidoscope-panel .kld-ctx{display:flex;align-items:center;gap:8px;margin:0 16px 10px;min-width:0}' +
+      '#kaleidoscope-panel .kld-ctx .kld-sub{font:12.5px ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important}' +
+      '#kaleidoscope-panel .kld-footline{padding:9px 16px 12px;font-size:11.5px;color:#728AA1;border-top:1px solid rgba(255,255,255,.06)}' +
       '#kaleidoscope-panel .kld-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0}' +
       '#kaleidoscope-panel label.kld-row{cursor:pointer}' +
       '#kaleidoscope-panel .kld-label{flex:1;min-width:0;color:#EDF1F5}' +
@@ -715,6 +723,24 @@
       statusEl = el('div', 'kld-status');
       parent.append(statusEl);
       if (lastStatus) say(lastStatus.msg, lastStatus.kind);
+    }
+
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '';
+    function iconTile() {
+      const tile = el('div', 'kld-icon');
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      { const p = document.createElementNS(NS, 'path');
+        p.setAttribute('d', 'M12 3.4 19.5 7.7v8.6L12 20.6 4.5 16.3V7.7Z'); p.setAttribute('fill', '#fff'); p.setAttribute('fill-opacity', '.28');
+        p.setAttribute('stroke', '#fff'); p.setAttribute('stroke-width', '1.6'); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('stroke-linecap', 'round');
+        svg.append(p); }
+      { const p = document.createElementNS(NS, 'path');
+        p.setAttribute('d', 'M12 3.4V20.6M4.5 7.7l15 8.6M19.5 7.7l-15 8.6'); p.setAttribute('fill', 'none'); p.setAttribute('fill-opacity', '0');
+        p.setAttribute('stroke', '#fff'); p.setAttribute('stroke-width', '1.1'); p.setAttribute('stroke-linejoin', 'round'); p.setAttribute('stroke-linecap', 'round');
+        svg.append(p); }
+      tile.append(svg);
+      return tile;
     }
 
     function updateSub() {
@@ -1210,13 +1236,17 @@
       word.append(el('b', null, 'scope'));
       title.append(word, el('span', 'kld-tag', 'Mobile'));
       subEl = el('div', 'kld-sub');
-      t.append(title, el('div', 'kld-tagline', 'AI recommendation prompts from your list'), subEl);
+      t.append(title, el('div', 'kld-tagline', 'AI recommendation prompts from your list'));
       const x = el('button', 'kld-x', '×');
       x.type = 'button';
       x.title = 'Close';
       x.setAttribute('aria-label', 'Close');
       x.addEventListener('click', close);
-      head.append(t, x);
+      const brand = el('div', 'kld-brand');
+      brand.append(iconTile(), t);
+      head.append(brand, x);
+      const ctx = el('div', 'kld-ctx');
+      ctx.append(subEl);
 
       const tabs = el('div', 'kld-tabs');
       for (const [id, name] of [['rec', 'Recommend'], ['seq', 'Sequels'], ['set', 'Settings']]) {
@@ -1234,9 +1264,13 @@
 
       bodyEl = el('div', 'kld-body');
       footEl = el('div', 'kld-foot');
-      panelEl.append(el('div', 'kld-grab'), head, tabs, bodyEl, footEl);
-      // keep AniList's keyboard shortcuts from firing while you type in the menu
-      for (const type of ['keydown', 'keypress', 'keyup']) panelEl.addEventListener(type, e => e.stopPropagation());
+      const footLine = el('div', 'kld-footline', 'Open from \u2726 or the Tampermonkey menu \u00b7 v' + VERSION);
+      panelEl.append(el('div', 'kld-grab'), head, ctx, tabs, bodyEl, footEl, footLine);
+      // keep AniList's keyboard shortcuts from firing while you type in the menu; Esc closes it
+      for (const type of ['keydown', 'keypress', 'keyup']) panelEl.addEventListener(type, e => {
+        if (type === 'keydown' && e.key === 'Escape') close();
+        e.stopPropagation();
+      });
       root.append(backdropEl, panelEl);
       oldOverflow = document.documentElement.style.overflow;
       document.documentElement.style.overflow = 'hidden'; // the page behind doesn't scroll while the menu is open

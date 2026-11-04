@@ -38,6 +38,44 @@ tools/                                builders for all of the above
   baked into defaults.
 - Nothing about Claude or this workflow goes inside the scripts.
 
+## The panel frame (every script's settings panel)
+
+Every panel shares the same bones; each script keeps its own skin (colors, light or dark glass,
+icon, tagline, font: Kaleidoscope keeps AniList's font). Build new panels on this and keep
+existing ones on it.
+
+- **Shell.** Desktop: top right, 16px from the edges, 400px wide, 22px corners, scrolling inside
+  (Hourglass stays at its fixed 760px top-right size for the dashboard; don't change it).
+  Phones: a bottom sheet with a grab handle.
+- **Header.** Icon tile (the script's glyph on its own colors), then name and tagline, then a round
+  close button on the right.
+- **Context line** under the header: the site or account in monospace, plus a status chip when the
+  script has a status (On/Off, the color source, the list type...).
+- **Tabs** only for scripts with many settings or areas (Hourglass, Molten, Kaleidoscope). The tab
+  bar sits directly under the context line and stays put while the body scrolls. The first tab is
+  the main area (General, Dashboard, Recommend). Single-panel scripts (Prism, Looking-Glass) don't
+  use tabs.
+- **On/off card** (scripts with a master switch): the first thing in the panel or in the General tab.
+  Title is the script name; text is exactly "Everything is on. Turn off to stop every feature at
+  once." / "Everything is off. Your settings are kept."
+- **Sections.** A label of ◆ + monospace caps in the app's accent, then rows: title and short
+  description on the left, the control on the right.
+- **Controls.** Toggle for on/off. Segmented buttons for every choice, never dropdowns. 2–3 short
+  options sit inline on the right. Longer sets stay compact: the row shows the current choice as a
+  small pill with a chevron on the right; tapping it opens the segmented buttons underneath (up to 4
+  per row) and picking one folds them away. Sliders keep a number box beside them.
+- **Troubleshooting** is always the last section of the tab that holds the script's own settings
+  (or of the page), named exactly "Troubleshooting": console logging, diagnostics, layout report.
+- **Footer** (one line, pinned at the bottom): "Open from <launcher> or the Tampermonkey menu ·
+  v<version> · every tab updates live" (drop the last part if settings don't sync across tabs).
+- **Menu commands**, in this order and wording: "Open <Name>" (Prism adds "  (Alt+Shift+P)"), then
+  "Turn <Name> on/off" if it has a master switch, then extras worded the same way: "Turn lava on/off",
+  "Turn screenshot safe on/off", "Turn badges on/off for this site".
+- **Behaviour.** Esc closes the panel; changes apply live; clicks and keys inside the panel never
+  reach the site. No new keyboard shortcuts (Prism's Alt+Shift+P is the only one).
+- `tools/frame_molten.py` and `tools/frame_kaleido.py` record the change that brought the Molten and
+  Kaleidoscope panels onto this frame.
+
 ## After any change: rebuild the pages
 
 ```

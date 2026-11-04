@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.0.12
+// @version      2.1.0
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.0.12';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.1.0';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -603,9 +603,9 @@
 .panel{
   --text:#1d1d1f;--sub:rgba(29,29,31,.64);--line:rgba(0,0,0,.07);
   --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
-  position:fixed;top:12px;right:12px;width:344px;max-width:calc(100vw - 24px);max-height:calc(100vh - 24px);overflow:auto;overscroll-behavior:contain;
+  position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;overscroll-behavior:contain;
   font:13px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif;
-  color:var(--text);border-radius:20px;scrollbar-width:none;
+  color:var(--text);border-radius:22px;scrollbar-width:none;
   background:radial-gradient(120% 60% at 0% 0%,rgba(var(--a-rgb),var(--glow)),transparent 64%),var(--bg);
   backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);
   border:1px solid rgba(255,255,255,.8);
@@ -693,7 +693,7 @@ code,.mono{font:12px var(--mono)}
 .ibtn:hover{background:rgba(0,0,0,.06);color:var(--text)}
 .ibtn.spin svg{animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.keys{padding:0 14px 12px 34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px;color:var(--sub)}
+.keys{padding:0 14px 12px 34px;font-size:10.5px;line-height:1.7;color:var(--sub)}
 kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,0,.06)}
 `;
 
@@ -814,7 +814,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
             E.refresh = h('button', { class: 'ibtn', title: 'Check this site again', 'aria-label': 'Check again', onclick: () => { colorMemo.clear(); manifestMemo.clear(); resolve({ force: true }); } }, icon(ICONS.refresh, 13));
             panel.append(h('div', { class: 'foot' },
                 h('div', { class: 'status', role: 'status' }, E.dot, E.stxt, E.take, E.refresh),
-                h('div', { class: 'keys' }, h('kbd', { text: 'Alt' }), ' + ', h('kbd', { text: 'Shift' }), ' + ', h('kbd', { text: 'P' }), ' opens Prism · every tab updates live')));
+                h('div', { class: 'keys' }, 'Open with ', h('kbd', { text: 'Alt' }), ' + ', h('kbd', { text: 'Shift' }), ' + ', h('kbd', { text: 'P' }), ' or the Tampermonkey menu · v' + VERSION + ' · every tab updates live')));
 
             panel.addEventListener('keydown', e => { if (e.key === 'Escape' && !this.dropperOpen) this.close(); });
             return panel;
@@ -867,7 +867,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
             E.kind.title = app ? 'The color shows in this app\'s title bar' : 'Desktop tabs ignore title bar colors; installed apps, Android Chrome and Safari use them';
 
             E.master.setAttribute('aria-checked', String(set_.enabled));
-            E.masterD.textContent = set_.enabled ? 'Everything is on. Turn off to stop it everywhere.' : 'Off everywhere. Sites use their own colors.';
+            E.masterD.textContent = set_.enabled ? 'Everything is on. Turn off to stop every feature at once.' : 'Everything is off. Your settings are kept.';
 
 
             for (const b of E.toneSeg.children) b.classList.toggle('on', b.dataset.v === set_.tone);
@@ -991,7 +991,8 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
     /* ───────────────────────── start ───────────────────────── */
 
     // 0. Menu first, so nothing below can stop it from being reachable.
-    try { GM_registerMenuCommand('Prism settings  (Alt+Shift+P)', () => ui.open()); } catch {}
+    try { GM_registerMenuCommand('Open Prism  (Alt+Shift+P)', () => ui.open()); } catch {}
+    try { GM_registerMenuCommand('Turn Prism on/off', () => { saveSettings({ enabled: !S.settings.enabled }); resolve(); }); } catch {}
     const onKey = e => {
         if (e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyP' || e.key === 'P' || e.key === 'p')) {
             if (e.__prism) return; e.__prism = true;

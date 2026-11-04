@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.2.12
+// @version      2.3.0
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1825,10 +1825,10 @@ div.lava-blobs {
     const ACCENT = '#ff9a3d';
 
     coreStyle(
-      '#ytt-panel{position:fixed;top:60px;right:16px;width:380px;max-width:calc(100vw - 32px);max-height:calc(100vh - 84px);' +
+      '#ytt-panel{position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);' +
       'display:flex;flex-direction:column;z-index:2147483647;background:rgba(22,22,26,.94);' +
       '-webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);color:#f1f1f1;' +
-      'border:1px solid rgba(255,255,255,.12);border-radius:16px;box-shadow:0 14px 44px rgba(0,0,0,.6);' +
+      'border:1px solid rgba(255,255,255,.12);border-radius:22px;box-shadow:0 14px 44px rgba(0,0,0,.6);' +
       'font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:opacity .15s ease;text-align:left}' +
       '#ytt-panel.ytt-peek{opacity:.18}' +
       '#ytt-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
@@ -1845,7 +1845,31 @@ div.lava-blobs {
       '#ytt-panel .ytt-tab:hover{opacity:1}' +
       '#ytt-panel .ytt-tab.on{background:rgba(255,154,61,.2);color:#ffb470;opacity:1}' +
       '#ytt-panel .ytt-body{overflow-y:auto;padding:2px 16px 16px;scrollbar-width:thin !important}' +
-      '#ytt-panel .ytt-sec{margin:14px 0 2px;font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.62}' +
+      '#ytt-panel .ytt-sec{margin:18px 0 4px;display:flex;align-items:center;gap:7px;color:#ffb470;font:700 10.5px/1.2 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;letter-spacing:.16em;text-transform:uppercase}' +
+      '#ytt-panel .ytt-sec::before{content:"";width:6px;height:6px;border-radius:1px;background:' + ACCENT + ';transform:rotate(45deg);flex:none}' +
+      '#ytt-panel .ytt-brand{display:flex;align-items:center;gap:11px;min-width:0}' +
+      '#ytt-panel .ytt-icon{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;' +
+      'background:radial-gradient(circle at 25% 20%,#ffb23d,transparent 60%),radial-gradient(circle at 85% 30%,#ff2d6f,transparent 60%),' +
+      'radial-gradient(circle at 40% 95%,#ff6a1f,transparent 65%),#7a2cd6;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}' +
+      '#ytt-panel .ytt-icon svg{width:20px;height:20px;display:block}' +
+      '#ytt-panel .ytt-ctx{display:flex;align-items:center;gap:8px;margin:0 16px 10px;min-width:0}' +
+      '#ytt-panel .ytt-host{font:12.5px ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '#ytt-panel .ytt-chip{font:700 10px/1 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;letter-spacing:.12em;text-transform:uppercase;' +
+      'padding:5px 8px;border-radius:7px;background:rgba(255,154,61,.16);color:#ffb470;flex:none}' +
+      '#ytt-panel .ytt-chip.off{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6)}' +
+      '#ytt-panel .ytt-foot{padding:9px 16px 12px;font-size:11.5px;opacity:.55;border-top:1px solid rgba(255,255,255,.08)}' +
+      '#ytt-panel .ytt-seg.inline{margin-top:0;flex:none}' +
+      '#ytt-panel .ytt-seg.inline .ytt-segbtn{flex:none;padding:6px 11px}' +
+      '#ytt-panel .ytt-seg.grid{display:grid;gap:4px}' +
+      '#ytt-panel .ytt-pickrow{padding:0}' +
+      '#ytt-panel .ytt-pick{display:inline-flex;align-items:center;gap:7px;flex:none;max-width:180px;padding:6px 10px 6px 12px;border:0;border-radius:9px;' +
+      'background:rgba(255,255,255,.08);color:#ffb470;font-size:12.5px;font-weight:650;cursor:pointer}' +
+      '#ytt-panel .ytt-pick:hover,#ytt-panel .ytt-pick.open{background:rgba(255,154,61,.18)}' +
+      '#ytt-panel .ytt-pick span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '#ytt-panel .ytt-chev{width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .15s;flex:none}' +
+      '#ytt-panel .ytt-pick.open .ytt-chev{transform:translateY(1px) rotate(-135deg)}' +
+      '#ytt-panel .ytt-seg[hidden]{display:none !important}' +
+      '#ytt-panel .ytt-seg.grid .ytt-segbtn{padding:7px 4px;line-height:1.25}' +
       '#ytt-panel .ytt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;cursor:default}' +
       '#ytt-panel label.ytt-row{cursor:pointer}' +
       '#ytt-panel .ytt-label{flex:1;min-width:0}' +
@@ -1905,6 +1929,20 @@ div.lava-blobs {
       return Number(v).toFixed(dec);
     };
 
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '';
+    function iconTile() {
+      const tile = el('div', 'ytt-icon');
+      const NS = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('d', 'M6 6.5h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-6.2L8 19.3v-2.8H6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z');
+      p.setAttribute('fill', '#fff');
+      svg.append(p);
+      tile.append(svg);
+      return tile;
+    }
+
     function labelBlock(label, hint) {
       const l = el('span', 'ytt-label', label);
       if (hint) l.append(el('span', 'ytt-hint', hint));
@@ -1956,19 +1994,42 @@ div.lava-blobs {
       return f;
     }
 
+    // Choices are segmented buttons. 2-3 short options sit inline on the right. Longer sets show the
+    // current choice as a compact pill; tapping it opens the buttons underneath, and picking one folds them away.
     function selectRow(parent, label, hint, options, get, set) {
-      const row = el('div', 'ytt-row');
-      const s = el('select', 'ytt-sel');
+      const short = options.length <= 3 && options.every(([, t]) => t.length <= 12);
+      const cur = String(get());
+      const seg = el('div', 'ytt-seg ' + (short ? 'inline' : 'grid'));
+      if (!short) seg.style.gridTemplateColumns = 'repeat(' + Math.min(options.length, 4) + ',1fr)';
+      let pill = null;
       for (const [val, text] of options) {
-        const op = el('option', null, text);
-        op.value = val;
-        s.append(op);
+        const b = el('button', 'ytt-segbtn' + (String(val) === cur ? ' on' : ''), text);
+        b.type = 'button';
+        b.addEventListener('click', () => {
+          for (const x of seg.children) x.classList.toggle('on', x === b);
+          if (pill) { pill.firstChild.textContent = text; seg.hidden = true; pill.classList.remove('open'); }
+          set(val);
+        });
+        seg.append(b);
       }
-      s.value = get();
-      s.addEventListener('change', () => set(s.value));
-      row.append(labelBlock(label, hint), s);
-      parent.append(row);
-      return row;
+      if (short) {
+        const row = el('div', 'ytt-row');
+        row.append(labelBlock(label, hint), seg);
+        parent.append(row);
+        return row;
+      }
+      const field = el('div', 'ytt-field');
+      const row = el('div', 'ytt-row ytt-pickrow');
+      const now = options.find(([v]) => String(v) === cur) || options[0];
+      pill = el('button', 'ytt-pick');
+      pill.type = 'button';
+      pill.append(el('span', null, now[1]), el('i', 'ytt-chev'));
+      pill.addEventListener('click', () => { seg.hidden = !seg.hidden; pill.classList.toggle('open', !seg.hidden); });
+      seg.hidden = true;
+      row.append(labelBlock(label, hint), pill);
+      field.append(row, seg);
+      parent.append(field);
+      return field;
     }
 
     function btn(parent, text, fn, primary) {
@@ -2002,7 +2063,7 @@ div.lava-blobs {
       const master = el('div', 'ytt-master');
       toggleRow(master, 'Molten for Reddit', ENABLED
         ? 'Everything is on. Turn off to stop every feature at once.'
-        : 'Off: lava, glass, colors, video and search tweaks are all stopped.',
+        : 'Everything is off. Your settings are kept.',
         () => ENABLED, v => { setEnabled(v); render(); });
       body.append(master);
       if (!ENABLED) {
@@ -2015,7 +2076,7 @@ div.lava-blobs {
       section(body, 'Title bar');
       toggleRow(body, 'Match the title bar to the art', 'Same picture or video the lava is showing', get('titleColor'), set('titleColor'));
       const t = el('div', gen.titleColor ? '' : 'ytt-off');
-      selectRow(t, 'Tone', null, [['dark', 'Dark (easy to read)'], ['vivid', 'Vivid'], ['muted', 'Muted']], get('titleTone'), set('titleTone'));
+      selectRow(t, 'Tone', 'Dark is easiest to read', [['dark', 'Dark'], ['vivid', 'Vivid'], ['muted', 'Muted']], get('titleTone'), set('titleTone'));
       swatchRow(t, TITLE.color());
       body.append(t);
       if (TITLE.yielded()) body.append(el('div', 'ytt-note', 'Another script is also setting the title bar color, so Molten stepped back ' +
@@ -2024,7 +2085,7 @@ div.lava-blobs {
       section(body, 'Video seek bar');
       toggleRow(body, 'Match the seek bar to the art', 'The played part and the ball, same color as the title bar', get('seekColor'), set('seekColor'));
       const k = el('div', gen.seekColor ? '' : 'ytt-off');
-      selectRow(k, 'Tone', null, [['bright', 'Bright (easy to see)'], ['title', 'Same as title bar']], get('seekTone'), set('seekTone'));
+      selectRow(k, 'Tone', 'Bright is easiest to see', [['bright', 'Bright'], ['title', 'Match title bar']], get('seekTone'), set('seekTone'));
       swatchRow(k, TITLE.seek());
       body.append(k);
 
@@ -2113,7 +2174,7 @@ div.lava-blobs {
 
       section(body, 'Quality');
       selectRow(body, 'Video quality', 'For videos Reddit serves as MP4 files; streams stay automatic', [
-        ['best', 'Best available'], ['auto', "Auto (Reddit's choice)"], ['1080', 'Up to 1080p'], ['720', 'Up to 720p'], ['480', 'Up to 480p']],
+        ['best', 'Best'], ['auto', "Auto (Reddit's choice)"], ['1080', '1080p'], ['720', '720p'], ['480', '480p']],
         () => rd.videoQuality, rset('videoQuality'));
 
       section(body, 'Player');
@@ -2122,7 +2183,7 @@ div.lava-blobs {
 
       section(body, 'Videos in the lava');
       selectRow(body, 'Playing videos', 'A playing video takes over the lava while it plays',
-        [['any', 'Feed, posts and profiles'], ['post', 'Posts and profiles'], ['off', 'Never']], lget('videoSource'), lset('videoSource'));
+        [['any', 'Everywhere'], ['post', 'Posts only'], ['off', 'Never']], lget('videoSource'), lset('videoSource'));
       const v = el('div', lava.videoSource !== 'off' && lava.on ? '' : 'ytt-off');
       sliderRow(v, 'Frame rate', 'Lower = cheaper; it is blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps', hardMin: 1, hardMax: 60 }, lget('videoFps'), lset('videoFps'), S.videoFps);
       sliderRow(v, 'Frame copy width', 'Small is fine behind the blur', { min: 32, max: 512, step: 16, unit: 'px', hardMin: 8, hardMax: 1024 }, lget('videoWidth'), lset('videoWidth'), S.videoWidth);
@@ -2189,11 +2250,11 @@ div.lava-blobs {
       section(body, 'The 🔍 on profiles');
       toggleRow(body, 'Show 🔍 next to the name', 'On profile pages; opens their history on Arctic Shift', get('profileButton'), set('profileButton'));
       const o = el('div', srch.profileButton ? '' : 'ytt-off');
-      selectRow(o, 'Opens', null, [['posts', 'Their posts'], ['comments', 'Their comments']], get('type'), set('type'));
+      selectRow(o, 'Opens', null, [['posts', 'Posts'], ['comments', 'Comments']], get('type'), set('type'));
       body.append(o);
       section(body, 'Results');
-      selectRow(body, 'How many', null, [['25', '25'], ['50', '50'], ['100', '100'], ['auto', 'As many as possible']], get('limit'), set('limit'));
-      selectRow(body, 'Order', null, [['desc', 'Newest first'], ['asc', 'Oldest first']], get('sort'), set('sort'));
+      selectRow(body, 'How many', null, [['25', '25'], ['50', '50'], ['100', '100'], ['auto', 'All']], get('limit'), set('limit'));
+      selectRow(body, 'Order', null, [['desc', 'Newest'], ['asc', 'Oldest']], get('sort'), set('sort'));
       body.append(el('div', 'ytt-note', 'Arctic Shift is an independent archive of Reddit posts and comments; it opens in a new tab.'));
     }
 
@@ -2202,6 +2263,8 @@ div.lava-blobs {
       const keepScroll = bodyEl.scrollTop;
       bodyEl.textContent = '';
       for (const b of panelEl.querySelectorAll('.ytt-tab')) b.classList.toggle('on', b.dataset.tab === tab);
+      const chip = panelEl.querySelector('.ytt-chip');
+      if (chip) { chip.textContent = ENABLED ? 'On' : 'Off'; chip.classList.toggle('off', !ENABLED); }
       if (!ENABLED && tab !== 'general') {
         bodyEl.append(el('div', 'ytt-info', 'Molten for Reddit is off. Turn it back on in the General tab.'));
         const b = el('div', 'ytt-btns');
@@ -2229,12 +2292,16 @@ div.lava-blobs {
 
       const head = el('div', 'ytt-head');
       const t = el('div');
-      t.append(el('div', 'ytt-title', 'Molten for Reddit'), el('div', 'ytt-tagline', 'Molten glass for Reddit'), el('div', 'ytt-sub', 'Settings for all your Reddit tabs'));
+      t.append(el('div', 'ytt-title', 'Molten for Reddit'), el('div', 'ytt-tagline', 'Molten glass for Reddit'));
       const x = el('button', 'ytt-x', '×');
       x.type = 'button';
       x.title = 'Close';
       x.addEventListener('click', close);
-      head.append(t, x);
+      const brand = el('div', 'ytt-brand');
+      brand.append(iconTile(), t);
+      head.append(brand, x);
+      const ctx = el('div', 'ytt-ctx');
+      ctx.append(el('span', 'ytt-host', location.hostname.replace(/^www\./, '')), el('span', 'ytt-chip'));
 
       const tabs = el('div', 'ytt-tabs');
       for (const [id, name] of [['general', 'General'], ['lava', 'Lava'], ['video', 'Video'], ['reddit', 'Reddit'], ['search', 'Search']]) {
@@ -2251,7 +2318,8 @@ div.lava-blobs {
       }
 
       bodyEl = el('div', 'ytt-body');
-      panelEl.append(head, tabs, bodyEl);
+      const foot = el('div', 'ytt-foot', 'Open from the lava button or the Tampermonkey menu \u00b7 v' + VERSION + ' \u00b7 every tab updates live');
+      panelEl.append(head, ctx, tabs, bodyEl, foot);
 
       // keep Reddit's keyboard shortcuts from firing while you type in the panel
       for (const type of ['keydown', 'keypress', 'keyup']) {
@@ -2287,7 +2355,7 @@ div.lava-blobs {
 
   if (typeof GM_registerMenuCommand === 'function') {
     try {
-      GM_registerMenuCommand('Open Molten for Reddit settings', () => UI.open());
+      GM_registerMenuCommand('Open Molten for Reddit', () => UI.open());
       GM_registerMenuCommand('Turn Molten for Reddit on/off', () => setEnabled(!ENABLED));
     } catch (e) { /* ignore */ }
   }
