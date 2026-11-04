@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.0.7
+// @version      1.0.8
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -1084,6 +1084,8 @@ button:disabled{cursor:not-allowed}
 .siteline{display:flex;align-items:center;gap:8px;padding:6px 18px 12px;font:12px var(--mono);color:var(--sub);min-width:0}
 .siteline b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sw8{width:12px;height:12px;border-radius:4px;flex:none;background:var(--bg-fill);box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.tile.master{padding:10px 16px;background:rgba(255,255,255,.75)}
+.tile.master .t{font-weight:650}
 .card{margin:0 14px 10px;padding:14px 16px;border-radius:16px;background:rgba(var(--a-rgb),.09);border:1px solid rgba(var(--a-rgb),.22)}
 .tile{margin:0 14px 10px;padding:15px 16px;border-radius:16px;background:rgba(255,255,255,.6);border:1px solid var(--line);min-width:0}
 .label{display:flex;align-items:center;gap:7px;font:600 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:12px;min-height:12px}
@@ -1241,7 +1243,7 @@ button:disabled{cursor:not-allowed}
             const updSite = patch => { setSite(patch); kick(); if ('color' in patch) detectColor(); else this.render(); };
 
             const here = h('div', { class: 'card' }, this.label('This site', SITE ? SITE.name + ' support' : 'Any plain video'),
-                this.row('Badges on ' + HOST, !c.on ? 'Paused everywhere. Turn it back on in General.' : st.off ? 'Off here. Every other site still gets badges.' : 'A circle in the corner of each video', toggle(!st.off, () => updSite({ off: !st.off }), 'Badges on this site', !c.on)),
+                this.row('Badges on ' + HOST, !c.on ? 'Paused everywhere. Turn it back on at the top.' : st.off ? 'Off here. Every other site still gets badges.' : 'A circle in the corner of each video', toggle(!st.off, () => updSite({ off: !st.off }), 'Badges on this site', !c.on)),
                 this.row('Corner here', st.corner ? 'Only on ' + HOST + '. ' : 'Same as everywhere else',
                     h('div', { class: 'cpw' }, st.corner ? h('button', { class: 'link', text: 'Reset', onclick: () => updSite({ corner: null }) }) : null,
                         this.cornerPick(cornerHere(), k => updSite({ corner: k === c.corner ? null : k })))),
@@ -1263,7 +1265,10 @@ button:disabled{cursor:not-allowed}
                 this.row('Look harder', 'Quietly loads the post page to find the file when the feed hasn\'t shared it', toggle(c.deep, () => upd('deep', !c.deep), 'Look harder')),
                 this.row(TOUCH ? 'Hold for more' : 'Right-click for more', 'Copy link, open the post, hide, settings', toggle(c.hold, () => upd('hold', !c.hold), 'Badge menu')));
 
-            const out = [here, badge, opening];
+            // master switch first, like the other Glassware panels
+            const master = h('div', { class: 'tile master' },
+                this.row('Looking-Glass', c.on ? 'On for every site you haven\'t turned off' : 'Paused. No badges anywhere.', toggle(c.on, () => upd('on', !c.on), 'Looking-Glass on')));
+            const out = [master, here, badge, opening];
 
             const rec = get('recent', []);
             const recent = h('div', { class: 'tile' }, this.label('Recent', c.recent && rec.length ? h('button', { class: 'link', text: 'Clear', onclick: () => { set('recent', []); this.render(); } }) : null),
@@ -1284,8 +1289,6 @@ button:disabled{cursor:not-allowed}
             if (offSites.length) out.push(h('div', { class: 'tile' }, this.label('Turned off on'),
                 h('div', { class: 'chips' }, offSites.map(d => h('button', { class: 'chip', 'aria-label': 'Turn back on for ' + d, onclick: () => { const s = S.sites[d]; delete s.off; if (!Object.keys(s).length) delete S.sites[d]; set('sites', S.sites); this.render(); } }, d, h('span', null, icon(ICONS.close, 9, 2.6)))))));
 
-            out.push(h('div', { class: 'tile' }, this.label('General'),
-                this.row('Looking-Glass', c.on ? 'On for every site you haven\'t turned off' : 'Paused. No badges anywhere.', toggle(c.on, () => upd('on', !c.on), 'Looking-Glass on'))));
 
             out.push(h('div', { class: 'tile', style: 'margin-bottom:14px' }, this.label('Diagnostics', SITE ? SITE.name : 'Generic'),
                 h('div', { class: 'kv' },
