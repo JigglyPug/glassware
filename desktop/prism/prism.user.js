@@ -583,7 +583,7 @@
             const W = w * 1.25;
             g.append(mk('path', { d, filter: 'url(#' + id + ')', style: line + 'stroke:rgba(var(--a-rgb),.6);stroke-width:' + (W + 3) }));
             g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.98;stroke-width:' + W }));
-            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
+            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill, var(--bg)));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
             g.append(mk('path', { d, transform: 'translate(-.35 -.45)', style: line + 'stroke:#fff;stroke-opacity:.75;stroke-width:' + Math.max(.7, w * .3) }));
         }
         for (const d of G.shine || []) g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.8;stroke-width:2' }));

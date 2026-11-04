@@ -37,7 +37,7 @@ JS = r"""    // The app-icon glyph as glass tubing (same shapes as tools/icons.j
             const W = w * 1.25;
             g.append(mk('path', { d, filter: 'url(#' + id + ')', style: line + 'stroke:rgba(var(--a-rgb),.6);stroke-width:' + (W + 3) }));
             g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.98;stroke-width:' + W }));
-            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
+            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill, var(--bg)));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
             g.append(mk('path', { d, transform: 'translate(-.35 -.45)', style: line + 'stroke:#fff;stroke-opacity:.75;stroke-width:' + Math.max(.7, w * .3) }));
         }
         for (const d of G.shine || []) g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.8;stroke-width:2' }));
@@ -45,6 +45,17 @@ JS = r"""    // The app-icon glyph as glass tubing (same shapes as tools/icons.j
     }
 """
 CSS = ".logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}\n"
+EXTRA = {   # other places that show the app icon: same glass tile + glyph
+    'desktop/hourglass/hourglass.user.js': ("h('div', { class: 'glogo' }, icon(ICONS.glass, 28, 1.8))", "h('div', { class: 'glogo' }, glassGlyph('hourglass'))", '.glogo', 'var(--fill-hi)', 'var(--fill)', '\n.glogo svg{'),
+    'desktop/looking-glass/looking-glass.user.js': ("h('span', { class: 'lg' }, icon(ICONS.mirror, 14, 2.1))", "h('span', { class: 'lg' }, glassGlyph('magnifier'))", '.mh .lg', 'var(--bg)', 'var(--bg)', '\n.mh .lg{'),
+}
+def glass_css(sel, a, b):
+    return (f"{sel}{{position:relative;overflow:hidden;color:#fff;"
+            f"background:radial-gradient(120% 90% at 50% 62%,rgba(11,11,22,.55),rgba(11,11,22,0) 70%),linear-gradient(145deg,color-mix(in srgb,{a} 72%,#0b0b16),color-mix(in srgb,{b} 46%,#0b0b16));"
+            "box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 6px 1px rgba(var(--a-rgb),.55),0 4px 16px -4px rgba(var(--a-rgb),.95)}"
+            f"{sel}::before{{content:\"\";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(135deg,transparent 34%,rgba(255,255,255,.09) 34% 44%,transparent 44%)}}"
+            f"{sel} svg.gg{{position:relative;width:88%;height:88%;overflow:visible}}\n")
+
 TARGETS = {
     'desktop/prism/prism.user.js': [("icon(ICONS.prism, 17, { sw: 1.8 })", "glassGlyph('prism')")],
     'desktop/hourglass/hourglass.user.js': [("icon(ICONS.glass, 30, 1.8)", "glassGlyph('hourglass')"), ("icon(ICONS.glass, 19, 1.9)", "glassGlyph('hourglass')")],
@@ -66,6 +77,12 @@ def run():
             s = s.replace(".logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}\n",
                           ".logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}\n" + CSS)
         if CSS not in s or "glassGlyph('" not in s.split('function glassGlyph', 1)[1]: sys.exit(f'{f}: not wired')
+        if f in EXTRA:
+            old, new, sel, a, b, anchor = EXTRA[f]
+            s = s.replace(old, new)
+            if f'{sel}::before' not in s:
+                i = s.index(anchor) + 1; j = s.index('}\n', i) + 2
+                s = s[:j] + glass_css(sel, a, b) + s[j:]
         open(p, 'w', encoding='utf-8').write(s); print('drew glass glyph in', f)
 
 if __name__ == '__main__': run()

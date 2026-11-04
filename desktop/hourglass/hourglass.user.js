@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.2.7
+// @version      1.2.8
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.7';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.8';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -379,7 +379,7 @@
             const W = w * 1.25;
             g.append(mk('path', { d, filter: 'url(#' + id + ')', style: line + 'stroke:rgba(var(--a-rgb),.6);stroke-width:' + (W + 3) }));
             g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.98;stroke-width:' + W }));
-            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
+            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill, var(--bg)));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
             g.append(mk('path', { d, transform: 'translate(-.35 -.45)', style: line + 'stroke:#fff;stroke-opacity:.75;stroke-width:' + Math.max(.7, w * .3) }));
         }
         for (const d of G.shine || []) g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.8;stroke-width:2' }));
@@ -1110,6 +1110,7 @@ h1 span{color:var(--ink)}
   box-shadow:0 0 0 .5px rgba(var(--a-rgb),.5),0 30px 70px -20px rgba(0,0,0,.4),0 0 50px -16px rgba(var(--a-rgb),.9)}
 .glogo{width:56px;height:56px;margin:0 auto 14px;border-radius:17px;display:grid;place-items:center;color:var(--on);background:linear-gradient(140deg,var(--fill-hi),var(--fill));box-shadow:0 8px 22px -6px rgba(var(--a-rgb),1)}
 .glogo svg{animation:flip 5s ease-in-out infinite}
+.glogo{position:relative;overflow:hidden;color:#fff;background:radial-gradient(120% 90% at 50% 62%,rgba(11,11,22,.55),rgba(11,11,22,0) 70%),linear-gradient(145deg,color-mix(in srgb,var(--fill-hi) 72%,#0b0b16),color-mix(in srgb,var(--fill) 46%,#0b0b16));box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 6px 1px rgba(var(--a-rgb),.55),0 4px 16px -4px rgba(var(--a-rgb),.95)}.glogo::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(135deg,transparent 34%,rgba(255,255,255,.09) 34% 44%,transparent 44%)}.glogo svg.gg{position:relative;width:88%;height:88%;overflow:visible}
 @keyframes flip{0%,80%{transform:rotate(0)}100%{transform:rotate(180deg)}}
 .gcard h2{margin:0 0 6px;font-size:21px;letter-spacing:-.02em;font-weight:650}
 .gcard p{margin:0 auto;max-width:330px;font-size:12.5px;line-height:1.5;color:var(--sub)}
@@ -1276,7 +1277,7 @@ h1 span{color:var(--ink)}
                 onclick: () => { clearInterval(this.gateTimer); this.gateOpen = false; this.unlocked = true; this.tab = this.gateTarget; this.render(); this.scroll.scrollTop = 0; } });
             const bar = h('i'); bar.style.animationDuration = S.cfg.gateDelay + 's';
             const g = h('div', { class: 'gate' }, h('div', { class: 'gcard', role: 'alertdialog', 'aria-modal': 'true', 'aria-label': 'Is this important?' },
-                h('div', { class: 'glogo' }, icon(ICONS.glass, 28, 1.8)),
+                h('div', { class: 'glogo' }, glassGlyph('hourglass')),
                 h('h2', { text: 'Is this important?' }),
                 h('p', { text: "You're in lockdown until " + end + '. You can make your rules stricter now. Anything that loosens them waits until lockdown ends.' }),
                 h('div', { class: 'gbar' }, bar), this.el_gw,

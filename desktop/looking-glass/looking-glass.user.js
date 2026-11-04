@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.1.2
+// @version      1.1.3
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.2';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.3';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -681,7 +681,7 @@
             const W = w * 1.25;
             g.append(mk('path', { d, filter: 'url(#' + id + ')', style: line + 'stroke:rgba(var(--a-rgb),.6);stroke-width:' + (W + 3) }));
             g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.98;stroke-width:' + W }));
-            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
+            g.append(mk('path', { d, style: line + 'stroke:var(--fill-hi, var(--bg-fill, var(--bg)));stroke-opacity:.85;stroke-width:' + (W - 1.7) }));
             g.append(mk('path', { d, transform: 'translate(-.35 -.45)', style: line + 'stroke:#fff;stroke-opacity:.75;stroke-width:' + Math.max(.7, w * .3) }));
         }
         for (const d of G.shine || []) g.append(mk('path', { d, style: line + 'stroke:#fff;stroke-opacity:.8;stroke-width:2' }));
@@ -801,6 +801,7 @@ button:disabled{cursor:not-allowed}
 @keyframes min{from{opacity:0;transform:scale(.94)}}
 .mh{display:flex;align-items:center;gap:8px;padding:8px 10px 8px}
 .mh .lg{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--bg);color:var(--on);box-shadow:0 3px 10px -3px rgba(var(--a-rgb),.9)}
+.mh .lg{position:relative;overflow:hidden;color:#fff;background:radial-gradient(120% 90% at 50% 62%,rgba(11,11,22,.55),rgba(11,11,22,0) 70%),linear-gradient(145deg,color-mix(in srgb,var(--bg) 72%,#0b0b16),color-mix(in srgb,var(--bg) 46%,#0b0b16));box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 6px 1px rgba(var(--a-rgb),.55),0 4px 16px -4px rgba(var(--a-rgb),.95)}.mh .lg::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(135deg,transparent 34%,rgba(255,255,255,.09) 34% 44%,transparent 44%)}.mh .lg svg.gg{position:relative;width:88%;height:88%;overflow:visible}
 .mt{display:flex;flex-direction:column;min-width:0}
 .mh b{font-weight:650;font-size:13px;letter-spacing:-.01em}
 .mh small{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -909,7 +910,7 @@ button:disabled{cursor:not-allowed}
             const go = mode => () => { this.closeMenu(); act(it, mode); };
             const has = !!res.url || (res.deepIds.length && S.cfg.deep);
             const items_ = [
-                h('div', { class: 'mh' }, h('span', { class: 'lg' }, icon(ICONS.mirror, 14, 2.1)),
+                h('div', { class: 'mh' }, h('span', { class: 'lg' }, glassGlyph('magnifier')),
                     h('div', { class: 'mt' }, h('b', { text: 'Looking-Glass' }),
                         h('small', { text: res.url ? 'Found in ' + res.how : has ? 'Looks it up on the post page when you tap' : 'No file found, only the post' })),
                     h('span', { class: 'pill acc', text: res.url ? (res.q || 'Ready') : has ? 'On tap' : 'Post only' })),
