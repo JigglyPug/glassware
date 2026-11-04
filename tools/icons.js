@@ -1,43 +1,105 @@
-// Render one PNG icon per script (256px, downsized later) from inline SVG.
+// Script icons: dark glass tiles with a tinted body, a lit rim and glass-tube glyphs.
+// Renders assets/icons/<script>.png at 512px (scale them down to 256 afterwards).
+//   node tools/icons.js
 const { chromium } = require('playwright');
-const glyph = (paths, sw = 1.9) => `<g fill="none" stroke="#fff" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${paths.map(d => `<path d="${d}"/>`).join('')}</g>`;
-const PRISM = ['M12 3.5 21 19.5H3Z', 'M2 13.2 11 12.2', 'M13.5 11.6 22 8.5', 'M13.6 12.3 22 12.6'];
-const GLASS = ['M6 2.5h12', 'M6 21.5h12', 'M7.5 2.5v3c0 2.4 1.9 3.9 4.5 6.5-2.6 2.6-4.5 4.1-4.5 6.5v3', 'M16.5 2.5v3c0 2.4-1.9 3.9-4.5 6.5 2.6 2.6 4.5 4.1 4.5 6.5v3', 'M9.5 19h5'];
-const MIRROR = ['M12 2.5c3.3 0 6 3 6 6.8s-2.7 6.7-6 6.7-6-3-6-6.7 2.7-6.8 6-6.8Z', 'M12 16v5.5', 'M9.5 21.5h5', 'M9.3 7.2c.5-1.2 1.5-2 2.7-2.2'];
-const PLAY = ['M9.5 7.8v8.4l7-4.2Z'];
-const BUBBLE = ['M5 6.5h14a1.8 1.8 0 0 1 1.8 1.8v6.6a1.8 1.8 0 0 1-1.8 1.8h-7.2L8 19.8v-3.1H5a1.8 1.8 0 0 1-1.8-1.8V8.3A1.8 1.8 0 0 1 5 6.5Z'];
-// six-fold rosette: hexagram + center
-const ROSETTE = ['M12 2.8 20 7.4v9.2L12 21.2 4 16.6V7.4Z', 'M12 2.8v18.4', 'M4 7.4l16 9.2', 'M20 7.4 4 16.6'];
-function tile(id, bg, inner, extra = '') {
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 24 24">
-<defs>${bg.defs}<clipPath id="r"><rect x="1" y="1" width="22" height="22" rx="5.6"/></clipPath>
-<linearGradient id="hi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
-<g clip-path="url(#r)">${bg.fill}<rect x="1" y="1" width="22" height="22" fill="url(#hi)"/>${extra}</g>
-<rect x="1.25" y="1.25" width="21.5" height="21.5" rx="5.4" fill="none" stroke="#fff" stroke-opacity=".28" stroke-width=".5"/>
-<g transform="translate(12 12) scale(.62) translate(-12 -12)">${inner}</g></svg>`;
+const path = require('path');
+
+const T = { x: 7, y: 7, s: 86, r: 21 };   // tile inside a 100x100 canvas (room for the outer glow)
+const tilePath = `M${T.x + T.r} ${T.y}H${T.x + T.s - T.r}Q${T.x + T.s} ${T.y} ${T.x + T.s} ${T.y + T.r}V${T.y + T.s - T.r}Q${T.x + T.s} ${T.y + T.s} ${T.x + T.s - T.r} ${T.y + T.s}H${T.x + T.r}Q${T.x} ${T.y + T.s} ${T.x} ${T.y + T.s - T.r}V${T.y + T.r}Q${T.x} ${T.y} ${T.x + T.r} ${T.y}Z`;
+
+// A glass tube: soft colored glow, translucent body, bright core.
+function tube(d, { glow, w = 4.2, core = 1.5, fill = 0 }) {
+  const W = w * 1.25;
+  return `
+  ${fill ? `<path d="${d}" fill="#fff" fill-opacity="${fill}" stroke="none"/>` : ''}
+  <path d="${d}" fill="none" stroke="${glow}" stroke-width="${W + 2.6}" stroke-opacity=".42" stroke-linecap="round" stroke-linejoin="round" filter="url(#bloom)"/>
+  <path d="${d}" fill="none" stroke="#fff" stroke-opacity=".98" stroke-width="${W}" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="${d}" fill="none" stroke="url(#tubeBody)" stroke-width="${W - 1.7}" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="${d}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="${Math.max(.6, core * .55)}" stroke-linecap="round" stroke-linejoin="round" transform="translate(-.35 -.45)"/>`;
 }
-const lin = (a, b) => ({ defs: `<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>`, fill: `<rect width="24" height="24" fill="url(#g)"/>` });
-const lava = { defs: `<filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>`,
-  fill: `<rect width="24" height="24" fill="#1a0f0c"/><g filter="url(#b)"><circle cx="6" cy="6" r="7" fill="#ff6a1f"/><circle cx="19" cy="9" r="6" fill="#ff2d6f"/><circle cx="10" cy="20" r="7" fill="#ffb23d"/><circle cx="20" cy="21" r="5" fill="#7a2cff"/></g>` };
+
+function icon({ a, b, deep, rimA, rimB, glow, glyph }) {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+<defs>
+  <linearGradient id="tint" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient>
+  <radialGradient id="depth" cx="55" cy="62" r="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${deep}" stop-opacity=".78"/><stop offset="1" stop-color="${deep}" stop-opacity="0"/></radialGradient>
+  <linearGradient id="top" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="${rimA}"/><stop offset=".3" stop-color="#fff" stop-opacity=".5"/>
+    <stop offset=".55" stop-color="${rimA}" stop-opacity=".25"/><stop offset="1" stop-color="${rimB}"/></linearGradient>
+  <linearGradient id="tubeBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${rimA}" stop-opacity=".95"/><stop offset=".55" stop-color="${glow}" stop-opacity=".7"/><stop offset="1" stop-color="${rimB}" stop-opacity=".85"/></linearGradient>
+  <filter id="edgeGlow" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="3.2"/></filter>
+  <filter id="outer" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.6"/></filter>
+  <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="1.6"/></filter>
+  <clipPath id="clip"><path d="${tilePath}"/></clipPath>
+</defs>
+<path d="${tilePath}" fill="none" stroke="${glow}" stroke-width="2.4" stroke-opacity=".55" filter="url(#outer)"/>
+<g clip-path="url(#clip)">
+  <rect width="100" height="100" fill="#0b0b16"/>
+  <rect width="100" height="100" fill="url(#tint)" opacity=".66"/>
+  <rect width="100" height="100" fill="url(#depth)"/>
+  <path d="${tilePath}" fill="none" stroke="${glow}" stroke-width="7" stroke-opacity=".55" filter="url(#edgeGlow)"/>
+  <rect width="100" height="100" fill="url(#top)"/>
+  <path d="M10 76 L76 10 L88 10 L10 88 Z" fill="#fff" fill-opacity=".045"/>
+  <path d="M28 96 L96 28 L96 36 L36 96 Z" fill="#fff" fill-opacity=".03"/>
+</g>
+<path d="${tilePath}" fill="none" stroke="url(#rim)" stroke-width="1.5"/>
+<path d="${tilePath}" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width=".6" transform="translate(50 50) scale(.965) translate(-50 -50)"/>
+${glyph}
+</svg>`;
+}
+
+// ---------- glyphs (centered in the tile, ~40 units across) ----------
+const hourglass = (g) => `
+  <path d="M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 L63.5 66 C63.5 57 53.5 54 53.5 50 C53.5 46 63.5 43 63.5 34 Z" fill="#fff" fill-opacity=".07"/>
+  <path d="M41 38.5 L59 38.5 C57.5 43.5 51.5 45.5 50 48 C48.5 45.5 42.5 43.5 41 38.5 Z" fill="#fff" fill-opacity=".3"/>
+  <path d="M41 63.5 C43 58.5 47 57.5 50 57.5 C53 57.5 57 58.5 59 63.5 Z" fill="#fff" fill-opacity=".34"/>
+  ${tube('M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 M63.5 34 C63.5 43 53.5 46 53.5 50 C53.5 54 63.5 57 63.5 66', { glow: g, w: 3.6, core: 1.3 })}
+  ${tube('M32 31 H68 M32 69 H68', { glow: g, w: 4.6, core: 1.7 })}`;
+
+function gem(g) {
+  const r = 23, pts = [...Array(6)].map((_, i) => { const t = Math.PI / 3 * i - Math.PI / 2; return [50 + r * Math.cos(t), 50 + r * Math.sin(t)]; });
+  const P = p => p.map(v => v.toFixed(2)).join(' ');
+  const shade = [['#ffffff', .5], ['#bfe6ff', .3], ['#5f8fff', .16], ['#c9a8ff', .24], ['#4f7cff', .12], ['#e6f6ff', .4]];
+  const facets = pts.map((p, i) => `<path d="M50 50 L${P(p)} L${P(pts[(i + 1) % 6])} Z" fill="${shade[i][0]}" fill-opacity="${shade[i][1]}"/>`).join('');
+  const hex = 'M' + pts.map(P).join(' L') + ' Z';
+  const spokes = pts.map(p => `M50 50 L${P(p)}`).join(' ');
+  return facets + tube(spokes, { glow: g, w: 1.8, core: .8 }) + tube(hex, { glow: g, w: 3.4, core: 1.3 });
+}
+
+const magnifier = (g) => `
+  <defs><radialGradient id="lens" cx="40" cy="40" r="18" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#fff" stop-opacity=".04"/></radialGradient></defs>
+  <circle cx="45" cy="45" r="15" fill="url(#lens)"/>
+  <path d="M36 41 A10 10 0 0 1 42 34.6" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2" stroke-linecap="round"/>
+  ${tube('M45 30 A15 15 0 1 1 44.99 30 Z', { glow: g, w: 4.2, core: 1.5 })}
+  ${tube('M56.2 56.2 L69 69', { glow: g, w: 5.6, core: 2 })}`;
+
+const bubble = (g) => tube('M33 31 H67 Q73 31 73 37 V55 Q73 61 67 61 H45 L36 69 V61 H33 Q27 61 27 55 V37 Q27 31 33 31 Z', { glow: g, w: 4, core: 1.5, fill: .07 });
+
+const play = (g) => tube('M41 33.5 Q41 30 44 31.8 L67 46.3 Q70 48.2 67 50.1 L44 64.6 Q41 66.4 41 62.9 Z', { glow: g, w: 4, core: 1.5, fill: .07 });
+
+const prism = (g) => `
+  ${tube('M50 31 L70 66 H30 Z', { glow: g, w: 4, core: 1.5, fill: .07 })}
+  ${tube('M24 59 L46 52.5', { glow: g, w: 2.6, core: 1.1 })}
+  ${tube('M54 50 L77 43', { glow: g, w: 2.6, core: 1.1 })}`;
+
 const ICONS = {
-  'prism': tile('prism', lin('#6d9bf5', '#2f5fc4'), glyph(PRISM, 1.8)),
-  'hourglass': tile('hourglass', lin('#8a8af5', '#4b4bc4'), glyph(GLASS, 1.9)),
-  'looking-glass': tile('looking-glass', lin('#6d9bf5', '#2f5fc4'), glyph(MIRROR, 1.9)),
-  'molten-tools': tile('molten-tools', lava, `<g fill="#fff">${PLAY.map(d => `<path d="${d}" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>`).join('')}</g>`),
-  'molten-for-reddit': tile('molten-for-reddit', lava, glyph(BUBBLE, 1.9)),
-  'kaleidoscope': tile('kaleidoscope', lin('#5cc8ff', '#2a6fdb'), (() => {
-    const c = [12, 12], r = 9.2, pts = [...Array(6)].map((_, i) => { const a = (Math.PI / 3) * i - Math.PI / 2; return [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)]; });
-    const wedges = pts.map((p, i) => { const q = pts[(i + 1) % 6]; return `<path d="M12 12L${p[0].toFixed(2)} ${p[1].toFixed(2)}L${q[0].toFixed(2)} ${q[1].toFixed(2)}Z" fill="#fff" fill-opacity="${i % 2 ? 0.12 : 0.72}"/>`; }).join('');
-    return wedges + glyph(ROSETTE, 1.3) + '<circle cx="12" cy="12" r="1.5" fill="#fff"/>';
-  })()),
+  'hourglass':         icon({ a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') }),
+  'kaleidoscope':      icon({ a: '#2f7dff', b: '#1a3a9c', deep: '#06112e', rimA: '#a9d1ff', rimB: '#7fd6ff', glow: '#5aa2ff', glyph: gem('#8ec8ff') }),
+  'looking-glass':     icon({ a: '#3a8bff', b: '#1d3f9e', deep: '#07122f', rimA: '#b4d6ff', rimB: '#a3b8ff', glow: '#5c9dff', glyph: magnifier('#9ec7ff') }),
+  'molten-for-reddit': icon({ a: '#ff9a3d', b: '#a3249e', deep: '#2a0a1a', rimA: '#ffd08a', rimB: '#ff8ae6', glow: '#ff8a4a', glyph: bubble('#ffc27a') }),
+  'molten-tools':      icon({ a: '#ff7a2e', b: '#7a2cd6', deep: '#2a0a1a', rimA: '#ffc37a', rimB: '#c9a2ff', glow: '#ff6a4a', glyph: play('#ffb07a') }),
+  'prism':             icon({ a: '#8b5cf6', b: '#2b48b8', deep: '#0c0a2a', rimA: '#d6c6ff', rimB: '#9ec2ff', glow: '#9a7dff', glyph: prism('#c7b5ff') }),
 };
 ICONS['molten-for-reddit-mobile'] = ICONS['molten-for-reddit'];
 ICONS['kaleidoscope-mobile'] = ICONS['kaleidoscope'];
+
 (async () => {
-  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 256, height: 256 } });
+  const out = path.join(__dirname, '..', 'assets', 'icons');
+  const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 512, height: 512 } });
   for (const [k, svg] of Object.entries(ICONS)) {
     await p.setContent(`<html><body style="margin:0;background:transparent">${svg}</body></html>`);
-    await p.locator('svg').first().screenshot({ path: require('path').join(__dirname, '..', 'assets', 'icons', `${k}.png`), omitBackground: true });
+    await p.locator('svg').first().screenshot({ path: path.join(out, `${k}.png`), omitBackground: true });
   }
   await b.close();
 })();

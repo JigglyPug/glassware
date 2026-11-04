@@ -23,7 +23,9 @@ tools/                                builders for all of the above
   only updates when the number goes up. Never ship a lower number than what's live.
 - Keep these header lines exactly in this form (only the folder/name changes per script):
   - `@author JigglyPug`, `@license MIT`
-  - `@icon https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/<script>.png`
+  - `@icon https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/<script>.png?v=N`
+    (icons are drawn by `node tools/icons.js`, then scaled to 256px; raise `?v=N` whenever they
+    change so Tampermonkey downloads the new ones)
   - `@homepageURL https://jigglypug.github.io/glassware/<platform>/<script>/`
   - `@supportURL https://github.com/JigglyPug/glassware/issues`
   - `@updateURL` and `@downloadURL`: `https://raw.githubusercontent.com/JigglyPug/glassware/main/<platform>/<script>/<script>.user.js`

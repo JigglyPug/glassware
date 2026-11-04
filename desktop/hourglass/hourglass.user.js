@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.2.4
+// @version      1.2.5
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -13,7 +13,7 @@
 // @noframes
 // @author       JigglyPug
 // @license      MIT
-// @icon         https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/hourglass.png
+// @icon         https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/hourglass.png?v=2
 // @homepageURL  https://jigglypug.github.io/glassware/desktop/hourglass/
 // @supportURL   https://github.com/JigglyPug/glassware/issues
 // @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.4';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.5';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },

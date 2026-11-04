@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.1.1
+// @version      1.1.2
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -12,7 +12,7 @@
 // @grant        GM_registerMenuCommand
 // @author       JigglyPug
 // @license      MIT
-// @icon         https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/kaleidoscope-mobile.png
+// @icon         https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/kaleidoscope-mobile.png?v=2
 // @homepageURL  https://jigglypug.github.io/glassware/mobile/kaleidoscope-mobile/
 // @supportURL   https://github.com/JigglyPug/glassware/issues
 // @updateURL    https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js
