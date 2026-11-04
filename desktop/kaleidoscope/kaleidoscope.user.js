@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.8.2
+// @version      2.8.3
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -134,7 +134,7 @@
       bar.append(save);
       if (b.conv && !b.chatGone) {
         let state = null;
-        chatState(b).then(st => { state = st; });
+        const check = chatState(b).then(st => { state = st; return st; });
         const fu = document.createElement('a');
         fu.href = b.conv;
         fu.target = '_blank';
@@ -142,12 +142,15 @@
         fu.title = 'Opens the chat this board came from, so a follow-up doesn\'t rebuild everything';
         fu.style.cssText = pill;
         fu.innerHTML = '<span style="color:#3DB4F2;font-size:16px">✦</span>Ask a follow-up in Claude';
-        fu.addEventListener('click', e => {
-          if (state !== 'gone') return;
+        const gone = () => { markBoardGone(b.id); fu.remove(); pageNotice(GONE_TITLE, GONE_TEXT); };
+        fu.addEventListener('click', async e => {
+          if (state && state !== 'gone') return; // answer ready and the chat exists: let the link open it
           e.preventDefault();
-          markBoardGone(b.id);
-          fu.remove();
-          pageNotice(GONE_TITLE, GONE_TEXT);
+          if (state === 'gone') return gone();
+          // answer not ready yet: wait a moment for it before opening anything
+          const st = await Promise.race([check, sleep(3000).then(() => 'unknown')]);
+          if (st === 'gone') return gone();
+          GM_openInTab(b.conv, { active: true }); // the browser blocks normal pop-ups after a wait
         });
         bar.append(fu);
       }
@@ -1390,10 +1393,19 @@
       ov.tabIndex = -1;
       ov.focus();
     }
-    function followUp(board) {
-      const st = chatCheck && chatCheck.id === board.id ? chatCheck.state : null;
+    async function followUp(board) {
+      const c = chatCheck && chatCheck.id === board.id ? chatCheck : checkLastBoardChat();
+      if (c.state) {
+        if (c.state === 'gone') return boardGone(board);
+        return window.open(board.conv, '_blank'); // answer was ready: open right away
+      }
+      // answer not ready yet: wait a moment for it before opening anything
+      say('Checking the board\'s chat…', 'wait');
+      const st = await Promise.race([c.p, sleep(3000).then(() => 'unknown')]);
+      say('');
       if (st === 'gone') return boardGone(board);
-      window.open(board.conv, '_blank'); // opened right away so the browser doesn't block it
+      // opened through Tampermonkey, since the browser blocks normal pop-ups after a wait
+      GM_openInTab(board.conv, { active: true });
     }
 
     // Small confirm dialog inside the menu.
