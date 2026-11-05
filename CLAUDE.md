@@ -10,12 +10,24 @@ is built from `docs/`. Keep every change consistent with the rules below.
 desktop/<script>/<script>.user.js    the script (what users install)
 desktop/<script>/README.md            GitHub product page (generated)
 desktop/<script>/images/              panel screenshots, card, banner (generated)
-mobile/...                            same for the phone-only scripts
+mobile/...                            same for the phone-only scripts (folders never change; see below)
 assets/icons/<script>.png             @icon for each script
 assets/glassware-banner.svg           README banner for the front page
 docs/                                 GitHub Pages site (generated, served from main /docs)
 tools/                                builders for all of the above
 ```
+
+## Where a script runs
+
+- The folder (`desktop/` or `mobile/`) only fixes a script's update URLs. Never move a script
+  between folders: every installed copy would stop updating.
+- Where a script actually runs is set in `RUNS` in `tools/readmes.py`: `both`, `desktop` or
+  `phone`. Every script needs an entry. It decides the platform chip and kicker, the landing
+  page sections (Desktop and phone / Desktop / Phone) and its All · Desktop · Phone filter
+  (opens on Phone on a phone), the front README's "Where each script runs" table and sections,
+  and the "More for…" links on product pages.
+- Desktop and phone versions of the same app are listed in `PAIR`, which adds the "Phone
+  version" / "Desktop version" links and the "Also on your phone" / "Also on desktop" card.
 
 ## Changing a script
 

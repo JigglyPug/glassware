@@ -29,8 +29,7 @@ S['desktop/prism'] = dict(name='Prism', tag="Every app title bar, in its site's 
   'Optional console logging (lines start with `[prism]`).'],
  shots=[('main', 'Settings panel')])
 
-S['desktop/hourglass'] = dict(name='Hourglass', tag='Screen time and lockdown for every site.', sites='Every site; phone and PC',
- platform='desktop + mobile', kicker='Desktop and phone userscript',
+S['desktop/hourglass'] = dict(name='Hourglass', tag='Screen time and lockdown for every site.', sites='Every site',
  getting_started='A fresh install starts in setup mode: Hourglass counts your screen time but blocks nothing and locks no settings. Check your sites and schedule, then tap **Start lockdown** on the welcome card. If you start during scheduled hours, you can begin right away or wait until the current block ends.',
  phone=('The same script switches to a phone layout on its own: a bottom-sheet menu, a trimmed dashboard you can tap for details, and bigger touch targets. Open it from the Tampermonkey menu, or from the Open Hourglass link on any block screen.',
         [('phone-dashboard', 'Dashboard'), ('phone-schedule', 'Schedule'), ('phone-block', 'Block screen'), ('phone-nudge', 'Late-night nudge')]),
@@ -49,7 +48,7 @@ S['desktop/hourglass'] = dict(name='Hourglass', tag='Screen time and lockdown fo
  shots=[('main', 'Dashboard'), ('schedule', 'Schedule'), ('sites', 'Sites'), ('settings', 'Settings')],
  )
 
-S['desktop/looking-glass'] = dict(name='Looking-Glass', tag='Open any video on its own.', sites='Every site; phone and PC',
+S['desktop/looking-glass'] = dict(name='Looking-Glass', tag='Open any video on its own.', sites='Every site',
  intro='Looking-Glass puts a small circle in the corner of every video, in the site\'s own color. Tap it to open the video file in its own tab. It works on Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video.',
  features=[
   '**One tap** opens the direct video file in a new tab, in the background or switching to it.',
@@ -112,7 +111,7 @@ S['mobile/kaleidoscope-mobile'] = dict(name='Kaleidoscope Mobile', tag='Kaleidos
  shots=[('main', 'Recommend'), ('sequels', 'Sequels'), ('settings', 'Settings')],
  runs_on_phone=True)
 
-S['mobile/molten-for-reddit-mobile'] = dict(name='Molten for Reddit Mobile', tag='Molten glass for Reddit, pocket size.', sites='reddit.com on your phone',
+S['mobile/molten-for-reddit-mobile'] = dict(name='Molten for Reddit Mobile', tag='Molten glass for Reddit, pocket size.', sites='reddit.com',
  intro='This is the phone version of Molten for Reddit: a gentle lava background from the post you are looking at, clear-glass posts and comments, with simpler controls made for touch.',
  features=[
   '**Lava**: Calm / Balanced / Crazy presets, with Clear / Soft / Frosted glass.',
@@ -123,6 +122,24 @@ S['mobile/molten-for-reddit-mobile'] = dict(name='Molten for Reddit Mobile', tag
  shots=[('general', 'General'), ('lava', 'Lava'), ('video', 'Video'), ('reddit', 'Reddit'), ('search', 'Search')],
  runs_on_phone=True)
 
+
+
+# Where each script runs. This, not the folder, decides the platform labels, the landing filter,
+# the README sections, the "Also on" links and the "More for..." links. Folders only fix the
+# update URLs, so a script never moves folders. Every new script needs an entry here.
+RUNS = {'desktop/prism': 'desktop', 'desktop/hourglass': 'both', 'desktop/looking-glass': 'both',
+        'desktop/molten-tools': 'desktop', 'desktop/molten-for-reddit': 'desktop', 'desktop/kaleidoscope': 'desktop',
+        'mobile/kaleidoscope-mobile': 'phone', 'mobile/molten-for-reddit-mobile': 'phone'}
+# Desktop and phone versions of the same app link to each other.
+PAIR = {'desktop/kaleidoscope': 'mobile/kaleidoscope-mobile', 'desktop/molten-for-reddit': 'mobile/molten-for-reddit-mobile'}
+PAIR.update({v: k for k, v in list(PAIR.items())})
+GROUPS = [('both', 'Desktop and phone'), ('desktop', 'Desktop'), ('phone', 'Phone')]
+PLATFORM = {'both': 'Desktop + phone', 'desktop': 'Desktop', 'phone': 'Phone'}
+assert set(RUNS) == set(S), 'every script needs a RUNS entry'
+def runs_on(p, where): return RUNS[p] in ('both', where)
+for _p, _s in S.items():
+    _s['platform'] = PLATFORM[RUNS[_p]]
+    _s['kicker'] = dict(GROUPS)[RUNS[_p]] + ' userscript'
 
 ACCENT = {'desktop/prism':'3b6fd6','desktop/hourglass':'5b5bd6','desktop/looking-glass':'3b6fd6','desktop/molten-tools':'ff8a3d',
           'desktop/molten-for-reddit':'ff8a3d','desktop/kaleidoscope':'3db4f2','mobile/kaleidoscope-mobile':'3db4f2','mobile/molten-for-reddit-mobile':'ff8a3d'}
@@ -141,7 +158,7 @@ for p, s in S.items():
     md  = f'<div align="center">\n\n<img src="../../assets/icons/{slug}.png" alt="{s["name"]} icon" width="112">\n\n<img src="images/banner.svg" alt="{s["name"]}: {s["tag"]}" width="100%">\n\n'
     md += f'[![Install]({badge("Install", "v" + v, c)})]({url}) [![Website]({badge("Website", "product page", "222")})]({SITE}{p}/)\n\n'
     md += f'![Runs on]({badge("runs on", s["sites"], "555", "flat-square")}) '
-    md += f'![Platform]({badge("platform", s.get("platform") or ("mobile" if phone else "desktop"), "555", "flat-square")})\n\n'
+    md += f'![Platform]({badge("platform", s["platform"], "555", "flat-square")})\n\n'
     md += f'<img src="images/{hero}.webp" width="{300 if phone else 620}">\n\n</div>\n\n'
     md += s['intro'] + '\n\n'
     if s.get('getting_started'): md += '## Getting started\n\n' + s['getting_started'] + '\n\n'
@@ -161,13 +178,27 @@ for p, s in S.items():
 
 def card(p):
     s = S[p]; slug = p.split('/')[1]; url = f'{RAW}/{p}/{slug}.user.js'; hero = HERO.get(p, s['shots'][0][0])
+    pair = PAIR.get(p)
+    also = (f'<br><sub>{"Phone version" if RUNS[pair] == "phone" else "Desktop version"}: <a href="{pair}">{S[pair]["name"]}</a></sub>') if pair else ''
     return (f'<td align="center" valign="top" width="50%"><a href="{p}"><img src="{p}/images/card.webp" width="380"></a><br>'
-            f'<h3><img src="assets/icons/{slug}.png" alt="" width="44" align="center"> <a href="{p}">{s["name"]}</a></h3>{s["tag"]}<br><sub>{s["sites"]}</sub><br><br>'
+            f'<h3><img src="assets/icons/{slug}.png" alt="" width="44" align="center"> <a href="{p}">{s["name"]}</a></h3>{s["tag"]}<br><sub>{s["sites"]}</sub>{also}<br><br>'
             f'<a href="{url}"><img src="{badge("Install", "v" + ver(f"{p}/{slug}.user.js"), ACCENT[p])}"></a></td>')
 
-def grid(plat):
-    ps = [p for p in S if p.startswith(plat)]
+def group(g):
+    return [p for p in S if RUNS[p] == g]
+
+def grid(g):
+    ps = group(g)
     return '<table>\n' + ''.join('<tr>' + ''.join(card(p) for p in ps[i:i+2]) + '</tr>\n' for i in range(0, len(ps), 2)) + '</table>\n'
+
+def cell(p, where):
+    if runs_on(p, where): return '✓'
+    q = PAIR.get(p)
+    return f'[{S[q]["name"]}]({q}) ↗' if q and runs_on(q, where) else ''
+
+table = ('| Script | Desktop | Phone | Runs on |\n|---|:---:|:---:|---|\n'
+         + ''.join(f'| <img src="assets/icons/{p.split("/")[1]}.png" alt="" width="20" align="center"> [{S[p]["name"]}]({p}) | {cell(p, "desktop")} | {cell(p, "phone")} | {S[p]["sites"]} |\n'
+                   for g, _ in GROUPS for p in group(g)))
 
 root = f"""<div align="center">
 
@@ -179,12 +210,13 @@ Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates it
 
 </div>
 
-## Desktop
+## Where each script runs
 
-{grid('desktop')}
-## Mobile
+{table}
+""" + ''.join(f"""
+## {title}
 
-{grid('mobile')}"""
+{grid(g)}""" for g, title in GROUPS)
 if not ONLY: open(f'{R}/README.md', 'w', encoding='utf-8').write(root)
 ROOT_CARD = card
 print('ok')

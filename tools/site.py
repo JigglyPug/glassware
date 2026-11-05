@@ -6,6 +6,7 @@ R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); D = f'{R}/docs'
 src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readmes.py'), encoding='utf-8').read()
 ns = {'__file__': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readmes.py')}; exec(src[:src.index('\nACCENT = {')], ns)   # S, ver, RAW, OWNER
 S, ver, RAW, OWNER = ns['S'], ns['ver'], ns['RAW'], ns['OWNER']
+RUNS, PAIR, GROUPS, runs_on = ns['RUNS'], ns['PAIR'], ns['GROUPS'], ns['runs_on']
 REPO_URL = f'https://github.com/{OWNER}/glassware'
 
 sys_path = __import__('sys').path; sys_path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -130,6 +131,16 @@ section{margin:0 0 64px}
 .more{display:flex;gap:12px;flex-wrap:wrap}
 .more a{flex:1;min-width:200px;padding:16px 18px;border-radius:20px;text-decoration:none}
 .more a small{display:block;color:var(--sub)}
+/* platform filter */
+.seg{display:inline-flex;gap:4px;padding:5px;border-radius:999px;margin:30px auto 0}
+.seg button{font-family:inherit;font-weight:650;font-size:14.5px;line-height:1;color:var(--sub);background:none;border:0;padding:11px 20px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
+.seg button:hover{color:var(--fg)}
+.seg button[aria-pressed=true]{background:var(--acc);color:#fff;box-shadow:0 8px 24px -10px var(--acc)}
+[data-for=desktop] #phone,[data-for=phone] #desktop{display:none}
+a.chip{text-decoration:none;color:var(--fg)}a.chip:hover{background:var(--edge)}
+.pair{display:inline-flex;align-items:center;gap:12px;margin-top:16px;padding:10px 18px 10px 12px;border-radius:18px;text-decoration:none}
+.pair .appicon{width:34px;height:34px;margin:0}
+.pair small{display:block;color:var(--sub);font-size:12.5px}
 footer{padding:30px 0 60px;text-align:center;color:var(--sub);font-size:14px}
 footer a{color:var(--fg)}
 @media (max-width:560px){nav a.link.sec{display:none}.label .r{display:none}nav{top:10px}}
@@ -154,7 +165,7 @@ def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=Non
 </head><body data-theme="{theme}" style="--acc:{acc}">
 <div class="lava" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="grain" aria-hidden="true"></div>
 <nav><div class="bar glass"><a class="brand" href="{up}"><span class="dot"></span>Glassware</a><span class="sp"></span>
-<a class="link sec" href="{up}#desktop">Desktop</a><a class="link sec" href="{up}#mobile">Mobile</a><a class="link" href="{REPO_URL}">GitHub</a></div></nav>
+<a class="link sec" href="{up}#desktop">Desktop</a><a class="link sec" href="{up}#phone">Phone</a><a class="link" href="{REPO_URL}">GitHub</a></div></nav>
 {body}
 <footer>Made by <b>JigglyPug</b> · Built for <a href="https://www.tampermonkey.net/">Tampermonkey</a> · <a href="{REPO_URL}">Source on GitHub</a></footer>
 </body></html>
@@ -164,22 +175,42 @@ def install_url(p): slug = p.split('/')[1]; return f'{RAW}/{p}/{slug}.user.js'
 def v_of(p): slug = p.split('/')[1]; return ver(f'{p}/{slug}.user.js')
 
 # ---------------------------------------------------------------- landing
+def pair_chip(p):
+    q = PAIR.get(p)
+    if not q: return ''
+    return f'<a class="chip" href="{q}/">{"Phone" if RUNS[q] == "phone" else "Desktop"} version ↗</a>'
+
 def card(p):
     s = S[p]; slug = p.split('/')[1]; th, acc = THEME[p]
     return f"""<article class="card glass" style="--acc:{acc}">
 <a class="shot" href="{p}/"><img src="img/{slug}/card.webp" alt="{html.escape(s['name'])} settings panel" loading="lazy"></a>
 <div class="body"><h3><img class="appicon" src="img/{slug}/icon.png" alt="" width="40" height="40"><a href="{p}/">{html.escape(s['name'])}</a></h3><p>{md_inline(s['tag'])}</p>
-<div class="meta"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">v{v_of(p)}</span></div>
+<div class="meta"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">{s['platform']}</span><span class="chip">v{v_of(p)}</span>{pair_chip(p)}</div>
 <div class="acts"><a class="btn pri" href="{install_url(p)}">Install</a><a class="btn sec" href="{p}/">Details</a></div></div></article>"""
 
-desk = [p for p in S if p.startswith('desktop')]; mob = [p for p in S if p.startswith('mobile')]
+NOTE = {'both': 'The same script, on your computer and your phone', 'desktop': 'For desktop browsers',
+        'phone': 'Made for phone browsers like Edge on Android'}
+sections = ''.join(f"""<section id="{g}"><div class="label">{t}<span class="r">{NOTE[g]}</span></div><div class="grid">{''.join(card(p) for p in S if RUNS[p] == g)}</div></section>
+""" for g, t in GROUPS)
+# The filter: All / Desktop / Phone. Desktop hides the phone-only section, Phone hides the
+# desktop-only one. Opens on Phone when the page is opened on a phone. Without JS everything shows.
+FILTER = """<script>
+(function(){var b=document.body,bs=[].slice.call(document.querySelectorAll('.seg button'));
+function set(v,push){b.dataset.for=v;bs.forEach(function(x){x.setAttribute('aria-pressed',x.dataset.v===v)});
+if(push)history.replaceState(null,'',v==='all'?location.pathname:'#'+v)}
+function fromHash(){var h=location.hash.slice(1);if(h==='mobile')h='phone';return h==='desktop'||h==='phone'?h:null}
+bs.forEach(function(x){x.addEventListener('click',function(){set(x.dataset.v,true)})});
+addEventListener('hashchange',function(){var h=fromHash();if(h){set(h);scrollTo({top:0})}});
+var phone=matchMedia('(pointer:coarse) and (max-width:860px)').matches;
+set(fromHash()||(phone?'phone':'all'))})();
+</script>"""
 body = f"""<main class="wrap">
 <header class="hero"><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>
-<div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + mobile</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div></header>
-<section id="desktop"><div class="label">Desktop<span class="r">{len(desk)} scripts</span></div><div class="grid">{''.join(card(p) for p in desk)}</div></section>
-<section id="mobile"><div class="label">Mobile<span class="r">Made for phone browsers like Edge on Android</span></div><div class="grid">{''.join(card(p) for p in mob)}</div></section>
-</main>"""
+<div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
+<div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></header>
+{sections}</main>
+{FILTER}"""
 (lambda h: None if ONLY else open(f'{D}/index.html', 'w', encoding='utf-8').write(h))(page('Glassware by JigglyPug', 'Glassware: frosted-glass, lava-lit tools for Tampermonkey.', 'molten', '#ff8a3d', body, 0, '', 'og.png'))
 
 # ---------------------------------------------------------------- product pages
@@ -193,7 +224,13 @@ for p, s in S.items():
     for t, b in F[p]:
         feats += f'<div class="feat glass">' + (f'<h4>{md_inline(t)}</h4>' if t else '') + f'<p>{md_inline(b)}</p></div>'
     gal = ''.join(f'<figure class="glass"><img src="{img(f)}" alt="{html.escape(c)}" loading="lazy"><figcaption>{html.escape(c)}</figcaption></figure>' for f, c in rest)
-    sib = [q for q in S if q != p and (q.split('/')[0] == p.split('/')[0])][:3]
+    where = RUNS[p]
+    if where == 'both': sib = [q for q in S if q != p and RUNS[q] == 'both']
+    else: sib = sorted([q for q in S if q != p and runs_on(q, where)], key=lambda q: (RUNS[q] != 'both',))
+    q = PAIR.get(p)
+    pair = (f'<a class="pair glass" href="../../{q}/" style="--acc:{THEME[q][1]}"><img class="appicon" src="../../img/{q.split("/")[1]}/icon.png" alt="" width="34" height="34">'
+            f'<span><small>{"Also on your phone" if RUNS[q] == "phone" else "Also on desktop"}</small><b>{html.escape(S[q]["name"])}</b></span></a>') if q else ''
+    more_label = {'both': 'More for desktop and phone', 'desktop': 'More for desktop', 'phone': 'More for your phone'}[where]
     more = ''.join(f'<a class="glass" href="../../{q}/" style="--acc:{THEME[q][1]}"><img class="appicon" src="../../img/{q.split("/")[1]}/icon.png" alt="" width="36" height="36"><b>{html.escape(S[q]["name"])}</b><small>{md_inline(S[q]["tag"])}</small></a>' for q in sib)
     note = f'<div class="note glass"><b>Requires</b> {md_inline(s["note"])}</div>' if s.get('note') else ''
     start = f'<section><div class="label">Getting started</div><div class="note glass">{md_inline(s["getting_started"])}</div></section>' if s.get('getting_started') else ''
@@ -205,17 +242,17 @@ for p, s in S.items():
     body = f"""<main class="wrap">
 <header class="phero{' phone' if phone else ''}"><div>
 <img class="heroicon" src="../../img/{slug}/icon.png" alt="{html.escape(s['name'])} icon" width="104" height="104">
-<div class="label">{s.get('kicker') or (('Mobile' if phone else 'Desktop') + ' userscript')}</div>
+<div class="label">{s['kicker']}</div>
 <h1>{html.escape(s['name'])}</h1><p class="tag">{md_inline(s['tag'])}</p><p class="intro">{md_inline(s['intro'])}</p>
-<div class="chips"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">v{v_of(p)}</span></div>
-<div class="acts"><a class="btn pri big" href="{install_url(p)}">Install {html.escape(s['name'])}</a><a class="btn sec big" href="{REPO_URL}/blob/main/{p}/{slug}.user.js">View source</a></div>
+<div class="chips"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">{s['platform']}</span><span class="chip">v{v_of(p)}</span></div>
+<div class="acts"><a class="btn pri big" href="{install_url(p)}">Install {html.escape(s['name'])}</a><a class="btn sec big" href="{REPO_URL}/blob/main/{p}/{slug}.user.js">View source</a></div>{pair}
 </div><figure class="glass"><img src="{img(hero)}" alt="{html.escape(s['name'])} panel"></figure></header>
 {start}
 <section><div class="label">Features</div><div class="feats">{feats}</div></section>
 {f'<section><div class="label">A closer look</div><div class="gal{" phone" if phone else ""}">{gal}</div></section>' if gal else ''}
 {phone_sec}
 {f'<section>{note}</section>' if note else ''}
-<section><div class="label">More {'for your phone' if phone else 'for desktop'}</div><div class="more">{more}</div></section>
+<section><div class="label">{more_label}</div><div class="more">{more}</div></section>
 </main>"""
     os.makedirs(f'{D}/{p}', exist_ok=True)
     open(f'{D}/{p}/index.html', 'w', encoding='utf-8').write(page(f"{s['name']} — {s['tag']}", s['intro'], th, acc, body, 2, f'{p}/', f'img/{slug}/og.png', f'img/{slug}/icon.png'))

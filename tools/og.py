@@ -67,7 +67,7 @@ if __name__ == '__main__':
         render(card_html('molten', 'Userscripts for Tampermonkey', 'Glassware', 'Glass for the web. Frosted, lava-lit tools by JigglyPug.', fan, True), f'{D}/og.png')
         for p, s in S.items():
             slug = p.split('/')[1]; th = THEME[p][0]
-            kicker = s.get('kicker') or (('Mobile' if s.get('runs_on_phone') else 'Desktop') + ' userscript')
+            kicker = s['kicker']
             shot = [(f'{R}/{p}/images/card.webp', 4, -80, 120, 1)]
             os.makedirs(f'{D}/img/{slug}', exist_ok=True)
             render(card_html(th, kicker, s['name'], s['tag'], shot, False, [f'{R}/assets/icons/{slug}.png']), f'{D}/img/{slug}/og.png')

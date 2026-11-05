@@ -42,5 +42,5 @@ if __name__ == '__main__':
     for p, s in S.items():
         if ONLY and p not in ONLY: continue
         th = THEME[p][0]
-        open(f'{R}/{p}/images/banner.svg', 'w').write(banner(s['name'], s['tag'], th, s.get('kicker') or (('Mobile' if s.get('runs_on_phone') else 'Desktop') + ' userscript')))
+        open(f'{R}/{p}/images/banner.svg', 'w').write(banner(s['name'], s['tag'], th, s['kicker']))
     print('banners written')
