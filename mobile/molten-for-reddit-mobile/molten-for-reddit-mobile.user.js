@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.3.1
+// @version      1.3.2
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1878,7 +1878,9 @@ div.lava-blobs {
       '#ytt-panel .ytt-chev{width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .15s;flex:none}' +
       '#ytt-panel .ytt-pick.open .ytt-chev{transform:translateY(1px) rotate(-135deg)}' +
       '#ytt-panel .ytt-seg[hidden]{display:none !important}' +
-      '#ytt-panel .ytt-seg.grid .ytt-segbtn{padding:7px 4px;line-height:1.25}' +
+      '#ytt-panel .ytt-seg.grid .ytt-segbtn{padding:7px 4px;line-height:1.25;min-width:0;white-space:normal;overflow-wrap:break-word}' +
+      // The panel lives in the page, so undo site-wide text rules it would otherwise inherit (no-wrap buttons and labels).
+      '#ytt-panel,#ytt-panel *{white-space:normal}' +
       '#ytt-panel .ytt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;cursor:default}' +
       '#ytt-panel label.ytt-row{cursor:pointer}' +
       '#ytt-panel .ytt-label{flex:1;min-width:0}' +
@@ -2015,7 +2017,8 @@ div.lava-blobs {
       const short = options.length <= 3 && options.every(([, t]) => t.length <= 12);
       const cur = String(get());
       const seg = el('div', 'ytt-seg ' + (short ? 'inline' : 'grid'));
-      if (!short) seg.style.gridTemplateColumns = 'repeat(' + Math.min(options.length, 4) + ',1fr)';
+      // Equal columns; long labels get 3 to a row so they wrap onto two lines instead of spilling out.
+      if (!short) seg.style.gridTemplateColumns = 'repeat(' + Math.min(options.length, options.some(([, t]) => t.length > 10) ? 3 : 4) + ',minmax(0,1fr))';
       let pill = null;
       for (const [val, text] of options) {
         const b = el('button', 'ytt-segbtn' + (String(val) === cur ? ' on' : ''), text);
@@ -2392,7 +2395,7 @@ div.lava-blobs {
   // Settings as a sheet from the bottom, sized for thumbs. (16px text in fields stops the browser zooming in.)
   coreStyle(
     '#ytt-panel{top:auto!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;' +
-    'max-height:84vh!important;border-radius:20px 20px 0 0!important;padding-bottom:env(safe-area-inset-bottom)!important}' +
+    'max-height:84vh!important;max-height:84dvh!important;border-radius:20px 20px 0 0!important;padding-bottom:env(safe-area-inset-bottom)!important}' +
     '#ytt-panel::before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.3);margin:8px auto 0}' +
     '#ytt-panel .ytt-head{padding-top:8px!important}' +
     '#ytt-panel .ytt-tab{font-size:13.5px!important;padding:10px 2px!important}' +

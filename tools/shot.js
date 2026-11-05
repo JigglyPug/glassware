@@ -1,5 +1,7 @@
 // Render a userscript's own menu in a stubbed page and screenshot it.
 // usage: node shot.js <script.user.js> <url> <out.png> [--mobile] [--cmd "Open ..."] [--theme dark|light] [--wait ms] [--eval js] [--full]
+// --audit: take no pictures; check the open panel (each tab, each fold-out picker) for text that
+// spills out of its box, things clipped or pushed off screen, and overlapping controls. tools/audit.py runs it.
 const { chromium, devices } = require('playwright');
 const fs = require('fs');
 
@@ -38,14 +40,21 @@ function stubPage() {
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(${mobile ? 300 : 280}px,1fr));gap:18px;padding:20px}
   .thumb{aspect-ratio:16/9;border-radius:12px}.t1,.t2{height:12px;border-radius:6px;background:${dark ? '#2a2a2a' : '#dde'};margin-top:10px}.t2{width:60%}
   video{display:block;width:${mobile ? '100%' : '640px'};aspect-ratio:16/9;background:linear-gradient(135deg,#ff6a3d,#7a2cff);margin:20px;border-radius:12px}
-  </style></head><body><header><div class="logo"></div><div class="search"></div><div id="end" style="display:flex;gap:10px"></div></header>
+  </style>${has('--hostile') ? `<style>
+  /* Global rules big sites ship (Reddit, YouTube, AniList). Panels that live in the page, not a
+     shadow root, inherit them, so the audit checks the panels with these on too. */
+  html{font-size:62.5%}body{line-height:1}*,*::before,*::after{box-sizing:border-box}
+  button{white-space:nowrap;line-height:1;font:inherit;text-transform:none;letter-spacing:normal;min-width:0}
+  p,h1,h2,h3,h4,ul{margin:0;padding:0}a{color:inherit;text-decoration:none}svg{fill:currentColor}img,video{max-width:100%;height:auto}
+  input,select,textarea{line-height:1;font:inherit}label{white-space:nowrap}
+  </style>` : ''}</head><body><header><div class="logo"></div><div class="search"></div><div id="end" style="display:flex;gap:10px"></div></header>
   ${has('--video') ? '<video muted playsinline src="https://' + host + '/clip.mp4"></video>' : ''}
   <main class="grid">${cards}</main></body></html>`;
 }
 
 (async () => {
   const browser = await chromium.launch();
-  const ctxOpts = mobile ? { ...devices['Pixel 7'], ...(opt('--vh', '') ? { viewport: { width: 412, height: +opt('--vh', '839') } } : {}) } : { viewport: { width: +opt('--vw', '1280'), height: +opt('--vh', '820') }, deviceScaleFactor: 2 };
+  const ctxOpts = mobile ? { ...devices['Pixel 7'], ...(opt('--vh', '') ? { viewport: { width: +opt('--vw', '412'), height: +opt('--vh', '839') } } : {}) } : { viewport: { width: +opt('--vw', '1280'), height: +opt('--vh', '820') }, deviceScaleFactor: 2 };
   ctxOpts.colorScheme = theme;
   ctxOpts.timezoneId = 'America/Detroit';
   const ctx = await browser.newContext(ctxOpts);
@@ -102,6 +111,43 @@ function stubPage() {
       const el = c.find(e => e.matches('button,[role=tab]')) || c[0]; if (el) { el.click(); return true; } return false; };
     window.__hideErr = () => { for (const e of __all()) if (/unreadable response|Couldn.t reach|returned an/i.test(e.textContent || '') && e.children.length === 0) e.style.visibility = 'hidden'; };`;
   await page.evaluate(helpers);
+
+  const auditJs = `
+    window.__audit = (where) => {
+      const vw = innerWidth, vh = innerHeight, out = [], seen = new Set();
+      const vis = e => { const cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+      const name = e => { const t = (e.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 40); return e.tagName.toLowerCase() + (e.className && typeof e.className === 'string' ? '.' + e.className.trim().split(/\\s+/).join('.') : '') + (t ? ' "' + t + '"' : ''); };
+      const add = (kind, e, extra) => { const k = kind + name(e); if (seen.has(k)) return; seen.add(k); out.push(where + ' | ' + kind + ' | ' + name(e) + (extra ? ' | ' + extra : '')); };
+      const fixedAnc = e => { for (let x = e; x; x = x.parentElement || (x.getRootNode() && x.getRootNode().host)) { if (x.nodeType === 1 && getComputedStyle(x).position === 'fixed') return x; } return null; };
+      const parentOf = x => x.parentElement || (x.getRootNode && x.getRootNode().host) || null;
+      const els = __all().filter(e => e.nodeType === 1 && !/^(STYLE|SCRIPT|svg|path|defs|g|circle|rect|line|polyline|polygon|ellipse|stop|linearGradient|radialGradient|filter|feGaussianBlur|feMerge|feMergeNode|feColorMatrix|use|clipPath|mask)$/i.test(e.tagName) && !(e instanceof SVGElement) && fixedAnc(e) && vis(e));
+      for (const e of els) {
+        const cs = getComputedStyle(e), r = e.getBoundingClientRect();
+        if (cs.position === 'fixed' && cs.pointerEvents !== 'none' && !(r.width >= vw && r.height >= vh) && r.width * r.height > 400 && (r.top < -1 || r.left < -1 || r.right > vw + 1 || r.bottom > vh + 1) && !/translate/.test(cs.transform + '') ) add('off screen', e, 'box ' + [r.left, r.top, r.right, r.bottom].map(Math.round).join(',') + ' in ' + vw + 'x' + vh);
+        // text that spills out of its own box
+        const texts = [...e.childNodes].filter(n => n.nodeType === 3 && n.nodeValue.trim());
+        // (only where it shows: past a box with its own fill or border, or past the parent's edge)
+        const boxed = cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || cs.backgroundImage !== 'none' || parseFloat(cs.borderLeftWidth) > 0;
+        const pr = (parentOf(e) || e).getBoundingClientRect();
+        if (texts.length && cs.overflow === 'visible') { const rg = document.createRange(); for (const n of texts) { rg.selectNodeContents(n); for (const q of rg.getClientRects()) {
+          const past = boxed ? Math.max(q.right - r.right, r.left - q.left) : Math.max(q.right - pr.right, pr.left - q.left);
+          if (past > 1.5) { add('text spills out', e, Math.round(past) + 'px'); break; } } } }
+        // text cut short (ellipsis or hidden overflow)
+        if (texts.length && cs.overflow !== 'visible' && e.scrollWidth > e.clientWidth + 1 && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll') add(cs.textOverflow === 'ellipsis' ? 'text cut with …' : 'text clipped', e, e.scrollWidth - e.clientWidth + 'px');
+        // clipped by an ancestor that hides overflow
+        for (let a = parentOf(e); a && a.nodeType === 1; a = parentOf(a)) { const ac = getComputedStyle(a); if (ac.overflowX === 'visible') { if (ac.position === 'fixed') break; continue; }
+          const ar = a.getBoundingClientRect(); if ((ac.overflowX === 'hidden' || ac.overflowX === 'clip') && (r.right > ar.right + 1.5 || r.left < ar.left - 1.5) && r.width < ar.width) add('cut off by its container', e, Math.round(Math.max(r.right - ar.right, ar.left - r.left)) + 'px'); break; }
+        // sideways scrolling inside the panel
+        if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && e.scrollWidth > e.clientWidth + 1) add('scrolls sideways', e, e.scrollWidth - e.clientWidth + 'px');
+        // children that overlap each other
+        const kids = [...e.children].filter(k => vis(k) && !/absolute|fixed|sticky/.test(getComputedStyle(k).position) && !(k instanceof SVGElement));
+        for (let i = 0; i < kids.length; i++) for (let j = i + 1; j < kids.length; j++) { const A = kids[i].getBoundingClientRect(), B = kids[j].getBoundingClientRect();
+          const w = Math.min(A.right, B.right) - Math.max(A.left, B.left), h = Math.min(A.bottom, B.bottom) - Math.max(A.top, B.top); if (w > 2 && h > 2) add('overlaps', kids[i], 'with ' + name(kids[j]) + ' by ' + Math.round(w) + 'x' + Math.round(h)); }
+      }
+      return out;
+    };
+    window.__folds = () => __all().filter(e => e.nodeType === 1 && (e.matches('.ytt-pick,[aria-expanded="false"]')) && e.getBoundingClientRect().width > 0);`;
+  if (has('--audit')) await page.evaluate(auditJs);
   if (opt('--maxfrac', '')) await page.evaluate(f => { window.__maxFrac = f; }, +opt('--maxfrac', '0.92'));
   if (has('--sheet')) await page.evaluate(() => { window.__sheet = true; });
   if (evalJs) { await page.evaluate(evalJs); await page.waitForTimeout(900); }
@@ -116,6 +162,26 @@ function stubPage() {
     await page.screenshot({ path: file, clip });
     console.log('saved', file, clip ? 'cropped' : '');
     if (has('--text')) console.log('TEXT>>', await page.evaluate(() => { const seen = new Set(); const out = []; for (const e of __all()) { if (e.children.length) continue; const t = (e.textContent || '').trim(); const r = e.getBoundingClientRect(); if (!t || r.width === 0 || seen.has(t) || t.length > 140) continue; if (e.closest('header,main')) continue; seen.add(t); out.push(t); } return out.join(' | '); }));
+  }
+
+  if (has('--audit')) {
+    const res = [];
+    const check = async label => {
+      res.push(...await page.evaluate(l => __audit(l), label));
+      const n = await page.evaluate(() => __folds().length);
+      for (let i = 0; i < n; i++) {
+        const t = await page.evaluate(i => { const f = __folds()[i]; if (!f) return null; const t = (f.closest('[class*=row]') || f.parentElement).textContent.trim().slice(0, 30); f.click(); return t; }, i);
+        if (t === null) continue;
+        await page.waitForTimeout(250);
+        res.push(...await page.evaluate(l => __audit(l), label + ' > ' + t));
+        await page.evaluate(i => { const f = __all().find(e => e.matches && e.matches('.ytt-pick[aria-expanded="true"],.ytt-pick.open,[aria-expanded="true"]')); if (f) f.click(); }, i);
+        await page.waitForTimeout(150);
+      }
+    };
+    await check('main');
+    if (tabs) for (const t of tabs.split(',')) { if (await page.evaluate(t => __clickTab(t), t)) { await page.waitForTimeout(700); await check(t); } }
+    console.log('AUDIT ' + JSON.stringify(res));
+    await browser.close(); return;
   }
   await snap(out);
   if (tabs) for (const t of tabs.split(',')) {

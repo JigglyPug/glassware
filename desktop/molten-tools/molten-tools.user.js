@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.6.1
+// @version      3.6.2
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -4506,7 +4506,9 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel .ytt-chev{width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .15s;flex:none}' +
       '#ytt-panel .ytt-pick.open .ytt-chev{transform:translateY(1px) rotate(-135deg)}' +
       '#ytt-panel .ytt-seg[hidden]{display:none !important}' +
-      '#ytt-panel .ytt-seg.grid .ytt-segbtn{padding:7px 4px;line-height:1.25}' +
+      '#ytt-panel .ytt-seg.grid .ytt-segbtn{padding:7px 4px;line-height:1.25;min-width:0;white-space:normal;overflow-wrap:break-word}' +
+      // The panel lives in the page, so undo site-wide text rules it would otherwise inherit (no-wrap buttons and labels).
+      '#ytt-panel,#ytt-panel *{white-space:normal}' +
       '#ytt-panel .ytt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;cursor:default}' +
       '#ytt-panel label.ytt-row{cursor:pointer}' +
       '#ytt-panel .ytt-label{flex:1;min-width:0}' +
@@ -4643,7 +4645,8 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       const short = options.length <= 3 && options.every(([, t]) => t.length <= 12);
       const cur = String(get());
       const seg = el('div', 'ytt-seg ' + (short ? 'inline' : 'grid'));
-      if (!short) seg.style.gridTemplateColumns = 'repeat(' + Math.min(options.length, 4) + ',1fr)';
+      // Equal columns; long labels get 3 to a row so they wrap onto two lines instead of spilling out.
+      if (!short) seg.style.gridTemplateColumns = 'repeat(' + Math.min(options.length, options.some(([, t]) => t.length > 10) ? 3 : 4) + ',minmax(0,1fr))';
       let pill = null;
       for (const [val, text] of options) {
         const b = el('button', 'ytt-segbtn' + (String(val) === cur ? ' on' : ''), text);

@@ -115,7 +115,19 @@ existing ones on it.
 ```
 python3 tools/screens.py [script]   # recapture panel screenshots (needs Playwright + Chromium)
 python3 tools/pages.py              # rebuild every README, banner, site page and link preview
+python3 tools/audit.py [script]     # check panels for small visual glitches (run after panel changes)
 ```
+
+- `tools/audit.py` opens every panel, tab and fold-out picker at laptop, desktop and phone sizes
+  (phones in Roboto), once on a plain page and once with common site-wide CSS, and lists text
+  spilling out of buttons, things cut off or off screen, sideways scrolling and overlaps. It also
+  flags phone sheets sized in plain `vh`. Fix what it finds before shipping; it should print
+  "clean" for every script.
+- Panels that live in the page (not a shadow root) inherit the site's CSS: undo text rules like
+  `white-space` on the panel itself. Picker grids use equal columns
+  (`minmax(0,1fr)`) and drop to 3 per row when a label is long, so labels wrap instead of
+  spilling. Phone sheets size with `dvh` (after a `vh` fallback) so the address and tool bars
+  never cover the top.
 
 - Pages are generated. Edit the data, not the output: product copy lives in
   `tools/readmes.py` (name, tagline, intro, sites, screenshots, extra sections) and

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.1.3
+// @version      1.1.4
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.3';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.4';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1180,7 +1180,7 @@ button:disabled{cursor:not-allowed}
 .stxt b{color:var(--text);font-weight:600}
 .keys{font-size:10.5px;color:var(--sub);padding:0 18px 12px}
 @media (max-width:620px){
-  .panel{top:auto;bottom:0;left:0;right:0;width:100%;max-width:none;max-height:88vh;border-radius:24px 24px 0 0;animation:up .26s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .panel{top:auto;bottom:0;left:0;right:0;width:100%;max-width:none;max-height:88vh;max-height:88dvh;border-radius:24px 24px 0 0;animation:up .26s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
   @keyframes up{from{transform:translateY(40px);opacity:0}}
   .grab{display:block;width:38px;height:5px;border-radius:3px;background:rgba(0,0,0,.16);margin:8px auto 0}
   .head{padding-top:10px}
