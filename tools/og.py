@@ -47,7 +47,7 @@ p{{margin:0;font-size:29px;line-height:1.3;color:{sb}}}
 .shot{{position:absolute;right:0;top:0;transform:translate(var(--x),var(--y)) rotate(var(--r));border-radius:22px;padding:10px;background:{glass};border:1px solid {edge};box-shadow:0 30px 80px -20px rgba(0,0,0,.55)}}
 .shot img{{display:block;width:var(--w,430px);border-radius:14px}}
 </style></head><body><div class="lava"><i></i><i></i><i></i><i></i></div>
-<div class="panel"><div class="icons">{''.join(f'<img class="ic" src="{data_uri_png(i)}">' for i in icons)}</div><div class="k">{html.escape(kicker)}</div><h1>{html.escape(title)}</h1><p>{html.escape(sub)}</p></div>
+<div class="panel">{('<div class="icons">' + ''.join(f'<img class="ic" src="{data_uri_png(i)}">' for i in icons) + '</div>') if icons else ''}<div class="k">{html.escape(kicker)}</div><h1>{html.escape(title)}</h1><p>{html.escape(sub)}</p></div>
 <div class="brand"><span class="dot"></span>Glassware · JigglyPug</div>{imgs}</body></html>"""
 
 def lead(p):
@@ -63,8 +63,8 @@ if __name__ == '__main__':
         # landing: three panels fanned out
         fan = [(f'{R}/desktop/prism/images/card.webp', -8, -300, 150, 1), (f'{R}/desktop/molten-tools/images/card.webp', 2, -150, 50, 2),
                (f'{R}/desktop/kaleidoscope/images/card.webp', 10, 10, 190, 3)]
-        render(card_html('molten', 'Userscripts for Tampermonkey', 'Glassware', 'Glass for the web. Frosted, lava-lit tools by JigglyPug.', fan, True,
-                         [f'{R}/assets/icons/{n}.png' for n in ['prism', 'hourglass', 'looking-glass', 'molten-tools', 'molten-for-reddit', 'kaleidoscope']]), f'{D}/og.png')
+        # landing preview: screenshots only (no icon row), so a new script doesn't mean redrawing it
+        render(card_html('molten', 'Userscripts for Tampermonkey', 'Glassware', 'Glass for the web. Frosted, lava-lit tools by JigglyPug.', fan, True), f'{D}/og.png')
         for p, s in S.items():
             slug = p.split('/')[1]; th = THEME[p][0]
             kicker = s.get('kicker') or (('Mobile' if s.get('runs_on_phone') else 'Desktop') + ' userscript')

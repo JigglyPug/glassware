@@ -89,8 +89,9 @@ existing ones on it.
   - **Where the app icons appear** (all of these change together): Tampermonkey (`@icon`), the
     panel header tile (static or live, above), Hourglass's block screen and lockdown card,
     Looking-Glass's badge menu, each script's README (top) and the front-page README cards, the
-    site's landing cards, product-page hero, "More" links and per-page favicon, and the link
-    previews (`docs/og.png`, `docs/img/<script>/og.png`). The pages pull the icons from
+    site's landing cards, product-page hero, "More" links and per-page favicon, and each script's
+    link preview (`docs/img/<script>/og.png`). The landing preview (`docs/og.png`) stays
+    screenshots only, with no icons, so adding a script doesn't mean redrawing it. The pages pull the icons from
     `assets/icons/` when `python3 tools/pages.py` runs, so rebuild the pages after any icon change.
     The GitHub social preview is uploaded by hand (repo Settings → Social preview, `docs/og.png`).
   - After redrawing the icons: `node tools/icons.js`, scale them to 256px,
