@@ -159,6 +159,11 @@ python3 tools/check.py              # release check: everything below, plus the 
   whose panels changed (`python3 tools/screens.py <script>`). `screens.py hourglass` also
   refreshes Hourglass's phone shots; only `phone-nudge.webp` is captured by hand.
 - Screenshots use made-up demo data only (`tools/seeds/`). Never use real browsing data.
+- A panel change that only shows up with data (a counter line, a list, a status) needs demo data
+  in `tools/seeds/` so the screenshots show it; otherwise the pages never show the new feature.
+- Captures repeat exactly (fixed clock, demo data, animations stopped), so `tools/check.py`
+  recaptures every changed script's panels in a scratch folder and fails if a committed
+  screenshot no longer matches its panel.
 
 ## Committing
 

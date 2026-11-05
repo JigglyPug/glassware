@@ -22,6 +22,7 @@ It checks, in order:
   generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes (changed scripts)
+  screenshots the committed panel screenshots still match the panels (changed scripts)
 """
 import glob, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
@@ -192,6 +193,37 @@ if '--quick' not in args:
             elif l.strip() and cur: ok(False, f'{cur}: {l.strip()}')
         for p in targets:   # every script asked about must report back; silence is not a pass
             ok(p.split('/')[1] in seen, f'{p.split("/")[1]}: the glitch check gave no result')
+
+# ------------------------------------------------------------------ screenshots
+if '--quick' not in args:
+    head('screenshots')
+    # Recapture each panel in a scratch folder and compare with the committed image. Captures repeat
+    # exactly (fixed clock, demo data, animations stopped), so any difference means the panel changed
+    # and its screenshots weren't recaptured (python3 tools/screens.py <script>).
+    targets = [p for p in (list(RUNS) if '--all' in args else changed)]
+    if not targets: print('  ✓ no script differs from GitHub')
+    else:
+        import tempfile, screens
+        from PIL import Image, ImageChops
+        def same(a, b):
+            A, B = Image.open(a).convert('RGB'), Image.open(b).convert('RGB')
+            if A.size != B.size: return False
+            d = ImageChops.difference(A, B).convert('L').point(lambda x: 255 if x > 40 else 0)
+            return sum(1 for v in d.get_flattened_data() if v) <= A.size[0] * A.size[1] * 0.0005
+        for p in targets:
+            tmp = tempfile.mkdtemp()
+            try:
+                import contextlib, io
+                with contextlib.redirect_stdout(io.StringIO()):
+                    screens.run(p, tmp)
+                    if p == 'desktop/hourglass': screens.hourglass_phone(tmp)
+            except Exception as e:
+                ok(False, f'{p.split("/")[1]}: screenshots could not be captured: {e}'); continue
+            got = sorted(f for f in os.listdir(tmp) if f.endswith('.webp'))
+            ok(got, f'{p.split("/")[1]}: the capture produced no screenshots')
+            stale = [f for f in got if not os.path.exists(f'{R}/{p}/images/{f}') or not same(f'{tmp}/{f}', f'{R}/{p}/images/{f}')]
+            for f in stale: ok(False, f'{p.split("/")[1]}: {f} doesn\'t match the panel any more (run python3 tools/screens.py {p.split("/")[1]})')
+            if got and not stale: print(f'  ✓ {p.split("/")[1]}: {len(got)} screenshots match')
 
 # ------------------------------------------------------------------ generated
 if '--quick' not in args:

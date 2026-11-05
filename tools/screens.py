@@ -21,11 +21,11 @@ JOBS = {
     'desktop/prism':          ('https://example.com/', 'Open Prism', [], []),
     'desktop/hourglass':      ('https://www.youtube.com/', 'Open', ['--seed', f'{HERE}/seeds/hourglass.json'], ['Schedule', 'Sites', 'Settings']),
     'desktop/looking-glass':  ('https://example.com/', 'Open Looking', ['--video'], []),
-    'desktop/molten-tools':   ('https://www.youtube.com/', 'Open Molten', [], ['General', 'Account', 'Quality']),
-    'desktop/molten-for-reddit': ('https://www.reddit.com/', 'Open Molten', [], ['General', 'Video', 'Reddit', 'Search']),
+    'desktop/molten-tools':   ('https://www.youtube.com/', 'Open Molten', ['--seed', f'{HERE}/seeds/molten.json'], ['General', 'Account', 'Quality']),
+    'desktop/molten-for-reddit': ('https://www.reddit.com/', 'Open Molten', ['--seed', f'{HERE}/seeds/molten.json'], ['General', 'Video', 'Reddit', 'Search']),
     'desktop/kaleidoscope':   (ANI, 'Open Kaleidoscope', [], ['Sequels', 'Settings']),
     'mobile/kaleidoscope-mobile': (ANI, 'Open Kaleidoscope', ['--mobile'], ['Sequels', 'Settings']),
-    'mobile/molten-for-reddit-mobile': ('https://www.reddit.com/', 'Open Molten', ['--mobile'], ['General', 'Video', 'Reddit', 'Search']),
+    'mobile/molten-for-reddit-mobile': ('https://www.reddit.com/', 'Open Molten', ['--mobile', '--seed', f'{HERE}/seeds/molten.json'], ['General', 'Video', 'Reddit', 'Search']),
 }
 # the Molten panels open on their Lava tab, so the first capture is saved as lava.webp
 FIRST = {'desktop/molten-tools': 'lava', 'desktop/molten-for-reddit': 'lava', 'mobile/molten-for-reddit-mobile': 'lava'}
@@ -35,8 +35,8 @@ def webp(src, dst):
     if im.width > 1400: im = im.resize((1400, round(im.height * 1400 / im.width)), Image.LANCZOS)
     im.save(dst, 'WEBP', quality=90, method=6)
 
-def hourglass_phone():
-    tmp = tempfile.mkdtemp(); js = f'{R}/desktop/hourglass/hourglass.user.js'; imgs = f'{R}/desktop/hourglass/images'
+def hourglass_phone(imgs=None):
+    tmp = tempfile.mkdtemp(); js = f'{R}/desktop/hourglass/hourglass.user.js'; imgs = imgs or f'{R}/desktop/hourglass/images'
     seed = ['--seed', f'{HERE}/seeds/hourglass.json']
     subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop',
                     '--vh', '2600', '--clipsel', '.frame.m .panel', '--clock', CLOCK, '--tabs', 'Schedule'] + seed, check=True, capture_output=True)
@@ -47,13 +47,14 @@ def hourglass_phone():
     webp(f'{tmp}/block.png', f'{imgs}/phone-block.webp')
     print('captured desktop/hourglass phone shots')
 
-def run(p):
+def run(p, imgs=None):
+    """Capture one script's panels into its images folder (or into imgs, to compare without touching it)."""
     url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]; mobile = '--mobile' in extra
     tmp = tempfile.mkdtemp(); out = f'{tmp}/{slug}.png'
     args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, out, '--cmd', cmd, '--crop', '--clock', CLOCK,
             '--vh', '2600' if mobile else '3000'] + extra + (['--tabs', ','.join(tabs)] if tabs else [])
     subprocess.run(args, check=True, capture_output=True)
-    imgs = f'{R}/{p}/images'; os.makedirs(imgs, exist_ok=True)
+    imgs = imgs or f'{R}/{p}/images'; os.makedirs(imgs, exist_ok=True)
     lead = FIRST.get(p, 'main')
     webp(out, f'{imgs}/{lead}.webp')
     for t in tabs:

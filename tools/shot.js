@@ -165,7 +165,7 @@ function stubPage() {
     let clip;
     if (crop) { const sel = opt('--clipsel', ''); const r = await page.evaluate(sel => { if (sel) { const e = __all().find(x => x.matches && x.matches(sel)); if (e) { const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; } } return __panelRect(); }, sel); if (r) { const pad = 28; const vp = page.viewportSize();
       const x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad); clip = { x, y, width: Math.min(vp.width - x, r.w + pad * 2), height: Math.min(vp.height - y, r.h + pad * 2) }; } }
-    await page.screenshot({ path: file, clip });
+    await page.screenshot({ path: file, clip, animations: 'disabled' });   // animations stopped, so captures repeat exactly
     console.log('saved', file, clip ? 'cropped' : '');
     if (has('--text')) console.log('TEXT>>', await page.evaluate(() => { const seen = new Set(); const out = []; for (const e of __all()) { if (e.children.length) continue; const t = (e.textContent || '').trim(); const r = e.getBoundingClientRect(); if (!t || r.width === 0 || seen.has(t) || t.length > 140) continue; if (e.closest('header,main')) continue; seen.add(t); out.push(t); } return out.join(' | '); }));
   }
