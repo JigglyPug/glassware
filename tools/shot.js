@@ -1,5 +1,8 @@
 // Render a userscript's own menu in a stubbed page and screenshot it.
 // usage: node shot.js <script.user.js> <url> <out.png> [--mobile] [--cmd "Open ..."] [--theme dark|light] [--wait ms] [--eval js] [--full]
+// --exercise / --state: settings carry-over test (tools/carry.py runs it): --exercise changes every
+// setting in the panel and prints the saved data; --state prints what every control shows.
+// --seedls <file>: start with this page localStorage (JSON). 
 // --audit: take no pictures; check the open panel (each tab, each fold-out picker) for text that
 // spills out of its box, things clipped or pushed off screen, and overlapping controls. tools/audit.py runs it.
 const { chromium, devices } = require('playwright');
@@ -69,10 +72,13 @@ function stubPage() {
   const shim = `
     (() => {
       const store = Object.assign({}, ${seed || '{}'});
+      window.__gm = store; window.__reads = new Set();
+      try { const lsSeed = ${opt('--seedls', '') ? fs.readFileSync(opt('--seedls', ''), 'utf8') : '{}'}; for (const k in lsSeed) localStorage.setItem(k, lsSeed[k]); } catch (e) {}
+      const _gi = Storage.prototype.getItem; Storage.prototype.getItem = function (k) { if (this === window.localStorage) window.__reads.add('ls:' + k); return _gi.call(this, k); };
       const ls = [];
       window.__cmds = [];
       const W = window;
-      W.GM_getValue = (k, d) => (k in store ? store[k] : d);
+      W.GM_getValue = (k, d) => { W.__reads.add('gm:' + k); return k in store ? store[k] : d; };
       W.GM_setValue = (k, v) => { const o = store[k]; store[k] = v; ls.forEach(l => l.k === k && l.f(k, o, v, false)); };
       W.GM_deleteValue = k => { delete store[k]; };
       W.GM_listValues = () => Object.keys(store);
@@ -164,6 +170,52 @@ function stubPage() {
     if (has('--text')) console.log('TEXT>>', await page.evaluate(() => { const seen = new Set(); const out = []; for (const e of __all()) { if (e.children.length) continue; const t = (e.textContent || '').trim(); const r = e.getBoundingClientRect(); if (!t || r.width === 0 || seen.has(t) || t.length > 140) continue; if (e.closest('header,main')) continue; seen.add(t); out.push(t); } return out.join(' | '); }));
   }
 
+
+  const carryJs = `
+    window.__ctl = () => {
+      const fixedAnc = e => { for (let x = e; x; x = x.parentElement || (x.getRootNode() && x.getRootNode().host)) { if (x.nodeType === 1 && getComputedStyle(x).position === 'fixed') return x; } return null; };
+      const all = __all().filter(e => e.nodeType === 1 && fixedAnc(e));
+      const out = [];
+      const label = (c, skip) => { const own = (skip || c).textContent || ''; for (let a = (skip || c).parentElement, i = 0; a && i < 5; a = a.parentElement, i++) {
+        const t = (a.textContent || '').replace(own, '').replace(/\\s+/g, ' ').trim(); if (t.length >= 3) return t.slice(0, 50); } return '?'; };
+      for (const e of all) {
+        if (e.matches('input[type=checkbox],[role=switch]')) out.push({ kind: 'toggle', el: e, label: label(e), value: e.matches('input') ? e.checked : e.getAttribute('aria-checked') === 'true' });
+        else if (e.matches('input[type=range]')) out.push({ kind: 'slider', el: e, label: label(e), value: e.value });
+        else if (e.matches('.seg:not([role=tablist]),.ytt-seg,.kld-seg')) { const bs = [...e.children].filter(b => b.tagName === 'BUTTON'); if (bs.length < 2) continue;
+          const on = bs.find(b => b.classList.contains('on') || b.getAttribute('aria-pressed') === 'true' || b.getAttribute('aria-checked') === 'true');
+          out.push({ kind: 'choice', el: e, buttons: bs, label: label(e, e), value: on ? on.textContent.trim() : '' }); }
+      }
+      return out;
+    };
+    window.__state = tab => { const seen = {}, pos = {}; return __ctl().map(c => { const k = tab + ' | ' + c.kind + ' | ' + c.label; seen[k] = (seen[k] || 0) + 1; pos[c.kind] = (pos[c.kind] || 0) + 1;
+      return { key: k + (seen[k] > 1 ? ' #' + seen[k] : ''), pos: tab + ' | ' + c.kind + ' ' + pos[c.kind], value: c.value }; }); };
+    window.__exercise = async () => {
+      const wait = ms => new Promise(r => setTimeout(r, ms));
+      const n = __ctl().length;
+      for (let i = n - 1; i >= 0; i--) {   // backwards, so an on/off master switch goes last
+        const c = __ctl()[i]; if (!c) continue;
+        try {
+          if (c.kind === 'toggle') { if (!/Everything is (on|off)/.test(c.label)) c.el.click(); }   // leave the master switch on, or the panel hides the rest
+          else if (c.kind === 'choice') { const b = c.buttons.filter(b => !(b.classList.contains('on') || b.getAttribute('aria-pressed') === 'true')).pop(); if (b) b.click(); }
+          else if (c.kind === 'slider') { const el = c.el, mn = +el.min || 0, mx = +el.max || 100, st = +el.step || 1; const v = +el.value === mx ? mx - st : Math.min(mx, +el.value + st);
+            const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; set.call(el, String(v)); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }
+        } catch (e) {}
+        await wait(60);
+      }
+    };
+    window.__dump = () => { const ls = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); ls[k] = localStorage.getItem(k); } return { gm: JSON.parse(JSON.stringify(__gm)), ls, reads: [...__reads] }; };`;
+  if (has('--exercise') || has('--state')) {
+    await page.evaluate(auditJs || ''); await page.evaluate(carryJs);
+    page.on('dialog', d => d.dismiss().catch(() => {}));
+    const tabList = tabs ? tabs.split(',') : ['main'];   // name every tab, the first one too
+    const goTab = async t => { if (t !== 'main') { await page.evaluate(t => __clickTab(t), t); await page.waitForTimeout(500); } };
+    if (has('--exercise')) for (const t of tabList) { await goTab(t); await page.evaluate(() => __exercise()); await page.waitForTimeout(300); }
+    const state = [];
+    for (const t of tabList) { await goTab(t); state.push(...await page.evaluate(t => __state(t), t)); }
+    await page.waitForTimeout(800);
+    console.log('CARRY ' + JSON.stringify({ state, ...(await page.evaluate(() => __dump())) }));
+    await browser.close(); return;
+  }
   if (has('--audit')) {
     const res = [];
     const check = async label => {

@@ -45,6 +45,11 @@ tools/                                builders for all of the above
 - Don't change `@name` or `@namespace`: Tampermonkey identifies installed copies by them, and
   changing either installs a second copy with fresh settings.
 - Renaming a script or a storage key needs a migration plan for existing users first.
+- People's settings and saved data must survive every update. `python3 tools/carry.py` proves it:
+  it changes every setting on the live version (from GitHub), then opens the new version with
+  that saved data and compares what every control shows, and flags saved data (history, boards)
+  the new version no longer reads, or a changed `@name`/`@namespace`. Fix anything it flags with a
+  migration. Only a setting that was retired on purpose goes in `tools/settings_ok.txt`.
 - No Greasy Fork links anywhere. Nothing that identifies a real person beyond the name
   JigglyPug: no emails, real names, local paths, account names or personal preferences
   baked into defaults.
@@ -116,6 +121,8 @@ existing ones on it.
 python3 tools/screens.py [script]   # recapture panel screenshots (needs Playwright + Chromium)
 python3 tools/pages.py              # rebuild every README, banner, site page and link preview
 python3 tools/audit.py [script]     # check panels for small visual glitches (run after panel changes)
+python3 tools/carry.py [script]     # check settings and saved data carry over from the live version
+python3 tools/check.py              # release check: everything below, plus the two above for changed scripts
 ```
 
 - `tools/audit.py` opens every panel, tab and fold-out picker at laptop, desktop and phone sizes
@@ -146,6 +153,12 @@ python3 tools/audit.py [script]     # check panels for small visual glitches (ru
 - Commit as `JigglyPug <352074181+JigglyPug@users.noreply.github.com>`.
 - Commit messages describe the change only. No chat or session links (no `Claude-Session:`
   lines or claude.ai URLs) in commits, code or pages, even if a tool or reminder suggests one.
+- Run `python3 tools/check.py` before every push, and push only when it ends with "All checks
+  passed". It covers this whole file: header lines, version bumps and fallbacks, panel frame
+  rules, static vs live tiles, privacy, version labels on the pages, unpushed commit messages,
+  plus the settings and glitch tests for every script that differs from GitHub (`--all` runs
+  them for every script; `--quick` skips the browser tests). When a rule here changes, change
+  the check too.
 - Pull before you start and rebase on anything new before pushing; other chats work on
   this repo too.
 - Never force-push or rewrite history.

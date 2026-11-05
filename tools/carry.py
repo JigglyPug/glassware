@@ -1,0 +1,108 @@
+"""Settings carry-over test: do people's settings and saved data survive an update?
+
+    python3 tools/carry.py              # every script whose code differs from GitHub
+    python3 tools/carry.py --all        # every script
+    python3 tools/carry.py prism        # just one (folder name)
+
+For each script it takes the version that's live on GitHub (origin/main) and:
+  1. opens its panel, changes every setting it can (switches, choices, sliders) on every tab,
+     and keeps what it saved, exactly as Tampermonkey would;
+  2. reopens the live version with that saved data, and notes what every control shows;
+  3. opens the new version with the same saved data, and notes what every control shows.
+Any setting that shows differently in 3 than in 2 didn't carry over. Saved data the live
+version reads but the new one never looks at is flagged too (that's how history or boards get
+lost). It also checks that @name and @namespace haven't changed, since Tampermonkey would
+install the new version as a separate script with fresh settings.
+
+A deliberate change (a setting really was retired) goes in tools/settings_ok.txt as
+"<script> | <the line this prints>" so it stops being flagged.
+"""
+import json, os, re, subprocess, sys, tempfile
+HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+from screens import JOBS, CLOCK
+
+FIRST = {'desktop/hourglass': 'Dashboard', 'desktop/molten-tools': 'Lava', 'desktop/molten-for-reddit': 'Lava',
+         'mobile/molten-for-reddit-mobile': 'Lava', 'desktop/kaleidoscope': 'Recommend', 'mobile/kaleidoscope-mobile': 'Recommend'}
+OK_FILE = f'{HERE}/settings_ok.txt'
+
+def git(*a): return subprocess.run(['git', '-C', R] + list(a), capture_output=True, text=True)
+
+def live_source(p):
+    r = git('show', f'origin/main:{p}/{p.split("/")[1]}.user.js')
+    return r.stdout if r.returncode == 0 else None
+
+def header(src, key):
+    m = re.search(r'//\s*@' + key + r'\s+(.+)', src); return m.group(1).strip() if m else None
+
+def run(script, p, mode, seed=None, seedls=None):
+    url, cmd, extra, tabs = JOBS[p]
+    tabs = ([FIRST[p]] + tabs) if p in FIRST else tabs
+    args = ['node', f'{HERE}/shot.js', script, url, '/dev/null', '--cmd', cmd, '--' + mode, '--clock', CLOCK, '--vh', '1400']
+    if seed:   # the saved data replaces any demo seed
+        i = extra.index('--seed') if '--seed' in extra else -1
+        extra = extra[:i] + extra[i + 2:] if i >= 0 else extra
+        args += extra + ['--seed', seed]
+    else: args += extra
+    if seedls: args += ['--seedls', seedls]
+    if tabs: args += ['--tabs', ','.join(tabs)]
+    r = subprocess.run(args, capture_output=True, text=True, timeout=240)
+    line = next((l for l in r.stdout.splitlines() if l.startswith('CARRY ')), None)
+    if line is None: raise RuntimeError((r.stderr or r.stdout)[-400:])
+    return json.loads(line[6:])
+
+def check(p):
+    """Returns a list of problems (strings) for one script."""
+    slug = p.split('/')[1]; new_path = f'{R}/{p}/{slug}.user.js'
+    old_src = live_source(p)
+    if old_src is None: return []                    # a brand-new script has nobody to carry over
+    new_src = open(new_path, encoding='utf-8').read()
+    probs = []
+    for k in ('name', 'namespace'):
+        if header(old_src, k) != header(new_src, k):
+            probs.append(f'@{k} changed ({header(old_src, k)} -> {header(new_src, k)}): Tampermonkey would install a second copy with fresh settings')
+    tmp = tempfile.mkdtemp(); old_path = f'{tmp}/{slug}.live.user.js'
+    open(old_path, 'w', encoding='utf-8').write(old_src)
+    used = run(old_path, p, 'exercise')               # 1. change everything on the live version
+    gm, ls = f'{tmp}/gm.json', f'{tmp}/ls.json'
+    json.dump(used['gm'], open(gm, 'w')); json.dump(used['ls'], open(ls, 'w'))
+    before = run(old_path, p, 'state', gm, ls)       # 2. live version, reopened with that data
+    after = run(new_path, p, 'state', gm, ls)        # 3. new version, same data
+    a = {x['key']: x['value'] for x in before['state']}; b = {x['key']: x['value'] for x in after['state']}
+    bpos = {x['pos']: x for x in after['state']}
+    for x in before['state']:
+        k, v = x['key'], x['value']
+        if k in b:
+            if b[k] != v: probs.append(f'"{k}" didn\'t carry over: was {v!r}, new version shows {b[k]!r}')
+            continue
+        # labels can include the current choice's description, so fall back to the control's position
+        y = bpos.get(x['pos'])
+        if y and y['key'] not in a and y['value'] != v: probs.append(f'"{k}" didn\'t carry over: was {v!r}, new version shows {y["value"]!r}')
+        elif not y or y['key'] in a: probs.append(f'can\'t find "{k}" in the new version (renamed or moved? check it by hand)')
+    saved = {'gm:' + k for k in used['gm']} | {'ls:' + k for k in used['ls']}
+    for k in sorted((set(before['reads']) & saved) - set(after['reads'])):
+        probs.append(f'saved data "{k[3:]}" is no longer read by the new version')
+    ok = set()
+    if os.path.exists(OK_FILE):
+        ok = {l.strip() for l in open(OK_FILE, encoding='utf-8') if '|' in l and not l.lstrip().startswith('#')}
+    return [x for x in probs if f'{slug} | {x}' not in ok], len(a)
+
+def changed():
+    git('fetch', '-q', 'origin')
+    out = []
+    for p in JOBS:
+        slug = p.split('/')[1]; src = live_source(p)
+        if src is not None and src != open(f'{R}/{p}/{slug}.user.js', encoding='utf-8').read(): out.append(p)
+    return out
+
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    targets = list(JOBS) if '--all' in args else [p for p in JOBS if p.split('/')[1] in args] or changed()
+    bad = 0
+    if not targets: print('no script differs from GitHub; nothing to check')
+    for p in targets:
+        probs, n = check(p)
+        print(f'== {p}: ' + ('settings carry over' if not probs else f'{len(probs)} problem(s)') + f' ({n} settings checked)')
+        for x in probs: print('   ' + x)
+        bad += bool(probs)
+    sys.exit(1 if bad else 0)

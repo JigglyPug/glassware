@@ -1,0 +1,2 @@
+# Settings that were retired on purpose, so tools/carry.py stops flagging them.
+# One per line: <script folder name> | <the line carry.py printed>
