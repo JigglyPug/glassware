@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.2.2
+// @version      1.2.3
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -43,7 +43,8 @@
     const ACCENT = '#3DB4F2';
     const DEFAULT_PREFS = '';
     const DEFAULTS = { type: 'ANIME', mode: 'recent', prefs: DEFAULT_PREFS, tab: 'rec', btnPos: 'left', hidePlanned: true, lastUser: '' };
-    const cfg = Object.assign({}, DEFAULTS, GM_getValue(SETTINGS_KEY, {}));
+    const saved = GM_getValue(SETTINGS_KEY, {});
+    const cfg = Object.assign({}, DEFAULTS, saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {});
     const save = () => GM_setValue(SETTINGS_KEY, cfg);
 
     // AniList genre-bar colors, one per mode
@@ -54,6 +55,15 @@
       { id: 'airing', color: '#F779A4', title: 'What\'s airing now', hint: 'Picks from this season\'s real lineup', animeOnly: true },
       { id: 'backlog', color: '#E85D75', title: 'Clear my backlog', hint: 'What to start next from Planning and Paused' },
     ];
+
+    // A saved value this version doesn't know (garbled, or written by a later version) falls back to
+    // its default, so the panel never opens blank. Valid saved values are kept exactly as they are.
+    {
+      const ONE_OF = { type: ['ANIME', 'MANGA'], mode: MODES.map(m => m.id), tab: ['rec', 'seq', 'set'], btnPos: ['left', 'right', 'off'] };
+      for (const [k, ok] of Object.entries(ONE_OF)) if (!ok.includes(cfg[k])) cfg[k] = DEFAULTS[k];
+      if (typeof cfg.hidePlanned !== 'boolean') cfg.hidePlanned = DEFAULTS.hidePlanned;
+      for (const k of ['prefs', 'lastUser']) if (typeof cfg[k] !== 'string') cfg[k] = DEFAULTS[k];
+    }
 
     // ---------------- Data ----------------
     async function gql(query, variables) {

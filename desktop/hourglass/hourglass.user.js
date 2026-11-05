@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.2.8
+// @version      1.2.9
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.8';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.9';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -281,6 +281,32 @@
         for (const k in p.ls) o.ls[k] = Math.round(((o.ls[k] || 0) + p.ls[k]) * 10) / 10;
         set(DKEY(p.day), o);
         registerDay(p.day);
+    }
+    // Regular saves take turns across tabs. Saving adds a tab's new time to the stored total, so two
+    // tabs saving at the same instant would both add to the same old total and one tab's time would
+    // be lost. A tab claims the turn, waits a moment for other tabs to see the claim, and saves only
+    // if the claim is still its own; otherwise it tries again shortly. Claims expire, so a closed tab
+    // never blocks saving, and after a few tries a tab saves anyway. Saves when leaving a page can't
+    // wait, so they stay immediate.
+    const TURN = 'saveTurn', TURN_MS = 3000;
+    let turnWait = false;
+    function flushSoon(done, tries = 0) {
+        lastFlush = Date.now();
+        if (!pend) { if (done) done(); return; }
+        if (turnWait) return;                          // this tab's save is already on its way
+        const retry = () => { turnWait = false; setTimeout(() => flushSoon(done, tries + 1), 300 + Math.random() * 500); };
+        const cur = get(TURN, null);
+        if (tries < 8 && cur && cur.id !== TAB_ID && Date.now() - cur.t < TURN_MS) { turnWait = true; return retry(); }
+        const mine = { id: TAB_ID, t: Date.now() };
+        turnWait = true; set(TURN, mine);
+        setTimeout(() => {
+            const now = get(TURN, null);
+            if (tries < 8 && now && (now.id !== TAB_ID || now.t !== mine.t) && Date.now() - now.t < TURN_MS) return retry();
+            flush();
+            const after = get(TURN, null); if (after && after.id === TAB_ID) del(TURN);
+            turnWait = false;
+            if (done) done();
+        }, 250);
     }
     function registerDay(k) {
         const idx = get('days', []);
@@ -1187,7 +1213,7 @@ h1 span{color:var(--ink)}
             };
             addEventListener('keydown', this.onKey, true);
             this.render();
-            this.timer = setInterval(() => { if (!this.dragging && this.tab === 'dash' && !this.gateOpen) { flush(); this.render(); } else this.renderFoot(); }, 10000);
+            this.timer = setInterval(() => { if (!this.dragging && this.tab === 'dash' && !this.gateOpen) flushSoon(() => { if (this.host && this.tab === 'dash' && !this.dragging && !this.gateOpen) this.render(); }); else this.renderFoot(); }, 10000);
         },
         close() {
             if (!this.host) return;
@@ -1824,7 +1850,7 @@ h1 span{color:var(--ink)}
         if (applyPendingIfFree() && ui.host) ui.render();
         track(now, dt);
         trackListen(now);
-        if (now - lastFlush > FLUSH_MS) flush();
+        if (now - lastFlush > FLUSH_MS) flushSoon();
         evaluate();
         blocker.tickCountdown();
         hush();

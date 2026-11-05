@@ -26,6 +26,9 @@ tools/                                builders for all of the above
   page sections (Desktop and phone / Desktop / Phone) and its All · Desktop · Phone filter
   (opens on Phone on a phone), the front README's "Where each script runs" table and sections,
   and the "More for…" links on product pages.
+- Adding a script means listing it everywhere the tools look: `S` and `RUNS` in `tools/readmes.py`,
+  `F` in `tools/features.py`, `THEME` in `tools/site_themes.py`, `JOBS` in `tools/screens.py`, and
+  `FIRST` in `tools/carry.py` if its panel has tabs. `tools/check.py` fails until they all agree.
 - Desktop and phone versions of the same app are listed in `PAIR`, which adds the "Phone
   version" / "Desktop version" links and the "Also on your phone" / "Also on desktop" card.
 
@@ -157,8 +160,10 @@ python3 tools/check.py              # release check: everything below, plus the 
   passed". It covers this whole file: header lines, version bumps and fallbacks, panel frame
   rules, static vs live tiles, privacy, version labels on the pages, unpushed commit messages,
   plus the settings and glitch tests for every script that differs from GitHub (`--all` runs
-  them for every script; `--quick` skips the browser tests). When a rule here changes, change
-  the check too.
+  them for every script; `--quick` skips the browser tests). It also rebuilds the pages in a
+  scratch copy and fails if the committed pages differ, so never hand-edit generated files. It
+  fails closed: if GitHub can't be reached, or a test crashes or reports nothing, that's a
+  failure, never a pass. When a rule here changes, change the check too.
 - Pull before you start and rebase on anything new before pushing; other chats work on
   this repo too.
 - Never force-push or rewrite history.

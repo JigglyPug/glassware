@@ -5,6 +5,9 @@
     python3 tools/check.py --all     # glitch and settings tests for every script too (slow)
     python3 tools/check.py --quick   # rules only, no browser tests
 
+Everything fails closed: if GitHub can't be reached, or a test crashes or reports nothing,
+that's a failure, never a pass.
+
 It checks, in order:
   scripts    each script parses, its header lines match CLAUDE.md, its version fallbacks match
              @version, and a changed script has a higher @version than the live one
@@ -14,7 +17,9 @@ It checks, in order:
              or tools
   pages      every page and README shows each script's current version; icons are in place;
              every script has a RUNS entry
+  registry   every script is listed everywhere the tools need it (pages, screenshots, tests)
   commits    commits not yet pushed are by JigglyPug and carry no chat or session links
+  generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes (changed scripts)
 """
@@ -40,9 +45,12 @@ def info(p): plat, slug = p.split('/')[-3:-1]; return plat, slug
 def hdr(src, k):
     m = re.search(r'//\s*@' + k + r'\s+(.+)', src); return m.group(1).strip() if m else None
 
-git('fetch', '-q', 'origin')
-def live(plat, slug):
-    r = git('show', f'origin/main:{plat}/{slug}/{slug}.user.js'); return r.stdout if r.returncode == 0 else None
+import carry   # shares the GitHub lookups, which fail closed
+try: LIVE_SHA = carry.fetch_live()
+except carry.GitError as e:
+    print(f'✗ {e}\n\nCan\'t compare with the live versions, so nothing was checked.'); sys.exit(1)
+print(f'Comparing against GitHub at {LIVE_SHA[:7]}')
+def live(plat, slug): return carry.live_source(f'{plat}/{slug}')
 changed = [f'{info(p)[0]}/{info(p)[1]}' for p in paths if live(*info(p)) != S[p]]
 
 # ------------------------------------------------------------------ scripts
@@ -117,6 +125,23 @@ for p, s in S.items():
     ok(os.path.exists(b) and open(a, 'rb').read() == open(b, 'rb').read(), f'{slug}: site icon is out of date (run python3 tools/pages.py)')
 done(n)
 
+# ------------------------------------------------------------------ registry
+head('registry'); n = 0
+from screens import JOBS
+from features import F
+from site_themes import THEME
+folders = {f'{info(p)[0]}/{info(p)[1]}' for p in paths}
+for name, reg in [('RUNS in tools/readmes.py', RUNS), ('S in tools/readmes.py', ns.get('S', {})), ('JOBS in tools/screens.py', JOBS),
+                  ('F in tools/features.py', F), ('THEME in tools/site_themes.py', THEME)]:
+    n += 2
+    ok(not folders - set(reg), f'{name} is missing {sorted(folders - set(reg))}')
+    ok(not set(reg) - folders, f'{name} lists scripts that don\'t exist: {sorted(set(reg) - folders)}')
+for p in JOBS:
+    n += 1
+    if JOBS[p][3]: ok(p in carry.FIRST, f'{p} has tabs, so tools/carry.py FIRST needs its first tab\'s name')
+for a, b in ns.get('PAIR', {}).items(): n += 1; ok(a in folders and b in folders, f'PAIR {a} <-> {b} names a script that doesn\'t exist')
+done(n)
+
 # ------------------------------------------------------------------ commits
 head('commits'); n = 0
 for line in git('log', '--format=%H%x09%ae%x09%B%x1e', 'origin/main..HEAD').stdout.split('\x1e'):
@@ -132,19 +157,38 @@ if '--quick' not in args:
     head('settings')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
-        import carry
         for p in targets:
-            probs, k = carry.check(p)
+            try: probs, k = carry.check(p)
+            except Exception as e: probs, k = [f'test could not run: {e}'], 0
             for x in probs: ok(False, f'{p.split("/")[1]}: {x}')
             if not probs: print(f'  ✓ {p.split("/")[1]}: {k} settings carry over')
     head('glitches')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
         r = subprocess.run([sys.executable, f'{HERE}/audit.py'] + [p.split('/')[1] for p in targets], capture_output=True, text=True)
-        cur = ''
+        ok(r.returncode == 0, f'the glitch check crashed (exit {r.returncode}): ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+        cur = ''; seen = set()
         for l in r.stdout.splitlines():
-            if l.startswith('== '): cur = l[3:].split(':')[0].split('/')[1]; (print(f'  ✓ {cur}: clean') if l.endswith('clean') else None)
+            if l.startswith('== '): cur = l[3:].split(':')[0].split('/')[1]; seen.add(cur); (print(f'  ✓ {cur}: clean') if l.endswith('clean') else None)
             elif l.strip() and cur: ok(False, f'{cur}: {l.strip()}')
+        for p in targets:   # every script asked about must report back; silence is not a pass
+            ok(p.split('/')[1] in seen, f'{p.split("/")[1]}: the glitch check gave no result')
+
+# ------------------------------------------------------------------ generated
+if '--quick' not in args:
+    head('generated')
+    import shutil, tempfile, filecmp
+    tmp = tempfile.mkdtemp(); copy = f'{tmp}/repo'
+    shutil.copytree(R, copy, ignore=shutil.ignore_patterns('.git', '__pycache__'))
+    r = subprocess.run([sys.executable, f'{copy}/tools/pages.py'], capture_output=True, text=True)
+    if ok(r.returncode == 0, 'tools/pages.py failed: ' + (r.stderr.strip().splitlines() or ['no output'])[-1]):
+        # text outputs only: the link-preview PNGs aren't byte-for-byte repeatable
+        gen = [f for f in glob.glob(f'{copy}/**/*', recursive=True) if re.search(r'(README\.md|\.html|\.css|banner\.svg)$', f)]
+        stale = [os.path.relpath(f, copy) for f in gen
+                 if not os.path.exists(f'{R}/{os.path.relpath(f, copy)}') or not filecmp.cmp(f, f'{R}/{os.path.relpath(f, copy)}', shallow=False)]
+        for f in stale: ok(False, f'{f} doesn\'t match what tools/pages.py builds (hand-edited or not rebuilt; run python3 tools/pages.py)')
+        if not stale: print(f'  ✓ {len(gen)} generated files match')
+    shutil.rmtree(tmp, ignore_errors=True)
 
 print('\n' + ('All checks passed.' if not fails else f'{len(fails)} problem(s) to fix before pushing.'))
 sys.exit(1 if fails else 0)

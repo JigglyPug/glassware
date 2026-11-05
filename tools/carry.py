@@ -28,9 +28,26 @@ OK_FILE = f'{HERE}/settings_ok.txt'
 
 def git(*a): return subprocess.run(['git', '-C', R] + list(a), capture_output=True, text=True)
 
+class GitError(RuntimeError): pass
+
+def fetch_live():
+    """Fetch GitHub's main branch. Raises GitError if that fails, so nothing compares against a
+    stale copy. Returns the commit being compared against."""
+    r = git('fetch', '-q', 'origin', 'main')
+    if r.returncode != 0: raise GitError("couldn't fetch from GitHub (offline or signed out?): " + (r.stderr.strip() or 'git fetch failed'))
+    r = git('rev-parse', '--verify', '-q', 'origin/main')
+    if r.returncode != 0: raise GitError('origin/main is missing after fetching')
+    return r.stdout.strip()
+
 def live_source(p):
-    r = git('show', f'origin/main:{p}/{p.split("/")[1]}.user.js')
-    return r.stdout if r.returncode == 0 else None
+    """The live (origin/main) copy of a script; None only when the script truly isn't on GitHub yet."""
+    path = f'origin/main:{p}/{p.split("/")[1]}.user.js'
+    if git('cat-file', '-e', path).returncode != 0:
+        if git('rev-parse', '--verify', '-q', 'origin/main').returncode != 0: raise GitError('origin/main is missing')
+        return None                                   # really not on GitHub yet: a new script
+    r = git('show', path)
+    if r.returncode != 0: raise GitError(f"couldn't read the live {p}: {r.stderr.strip()}")
+    return r.stdout
 
 def header(src, key):
     m = re.search(r'//\s*@' + key + r'\s+(.+)', src); return m.group(1).strip() if m else None
@@ -48,8 +65,13 @@ def run(script, p, mode, seed=None, seedls=None):
     if tabs: args += ['--tabs', ','.join(tabs)]
     r = subprocess.run(args, capture_output=True, text=True, timeout=240)
     line = next((l for l in r.stdout.splitlines() if l.startswith('CARRY ')), None)
-    if line is None: raise RuntimeError((r.stderr or r.stdout)[-400:])
-    return json.loads(line[6:])
+    # only a run that finished cleanly and reported everything counts
+    if r.returncode != 0 or line is None:
+        raise RuntimeError(f'browser run failed ({mode}, exit {r.returncode}): ' + (r.stderr or r.stdout)[-400:])
+    out = json.loads(line[6:])
+    if not all(k in out for k in ('state', 'gm', 'ls', 'reads')) or not out['state']:
+        raise RuntimeError(f'browser run ({mode}) reported no settings; the panel probably didn\'t open')
+    return out
 
 def check(p):
     """Returns a list of problems (strings) for one script."""
@@ -88,7 +110,7 @@ def check(p):
     return [x for x in probs if f'{slug} | {x}' not in ok], len(a)
 
 def changed():
-    git('fetch', '-q', 'origin')
+    fetch_live()
     out = []
     for p in JOBS:
         slug = p.split('/')[1]; src = live_source(p)
@@ -97,11 +119,14 @@ def changed():
 
 if __name__ == '__main__':
     args = sys.argv[1:]
+    try: print('comparing against GitHub at', fetch_live()[:7])
+    except GitError as e: print('✗', e); sys.exit(1)
     targets = list(JOBS) if '--all' in args else [p for p in JOBS if p.split('/')[1] in args] or changed()
     bad = 0
     if not targets: print('no script differs from GitHub; nothing to check')
     for p in targets:
-        probs, n = check(p)
+        try: probs, n = check(p)
+        except Exception as e: probs, n = [f'test could not run: {e}'], 0
         print(f'== {p}: ' + ('settings carry over' if not probs else f'{len(probs)} problem(s)') + f' ({n} settings checked)')
         for x in probs: print('   ' + x)
         bad += bool(probs)
