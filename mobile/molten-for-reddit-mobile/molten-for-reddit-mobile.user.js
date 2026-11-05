@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.3.3
+// @version      1.3.4
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -76,6 +76,49 @@
       }
     } catch (e) { /* ignore */ }
   }
+
+  // Running totals of what the script did for you, shown under that feature's switch ("Skipped 37
+  // app prompts so far"). Kept per device in Tampermonkey since install, shared by every tab, and
+  // saved a moment after counting so a burst (a long thread opening replies) is one write.
+  const COUNTS = (() => {
+    const KEY = 'counts';
+    const WORDS = {
+      dismissed: ['Answered ', ' prompt', ' so far'],
+      appPrompts: ['Skipped ', ' app prompt', ' so far'],
+      replies: ['Opened ', ' reply thread', ' so far'],
+    };
+    let add = {}, timer = 0;
+    const get = k => ((gmGet(KEY, {}) || {})[k] || 0) + (add[k] || 0);
+    const text = k => { const n = get(k), w = WORDS[k]; return w[0] + n.toLocaleString() + w[1] + (n === 1 ? '' : 's') + w[2]; };
+    function paint() {
+      for (const s of document.querySelectorAll('#ytt-panel [data-ytt-count]')) {
+        const k = s.getAttribute('data-ytt-count');
+        s.textContent = text(k); s.hidden = !get(k);
+      }
+    }
+    function flush() {
+      timer = 0;
+      if (!Object.keys(add).length) return;
+      const c = Object.assign({}, gmGet(KEY, {}));
+      for (const k in add) c[k] = (c[k] || 0) + add[k];
+      add = {};
+      gmSet(KEY, c);
+    }
+    function bump(k) { add[k] = (add[k] || 0) + 1; if (!timer) timer = setTimeout(flush, 2000); paint(); }
+    // the count line for a feature's row (hidden until there's something to count)
+    function line(row, k) {
+      const box = row && row.querySelector('.ytt-label');
+      if (!box) return;
+      const s = document.createElement('span');
+      s.className = 'ytt-hint ytt-count';
+      s.setAttribute('data-ytt-count', k);
+      box.append(s);
+      s.textContent = text(k); s.hidden = !get(k);
+    }
+    addEventListener('pagehide', flush);
+    gmWatch(KEY, paint);
+    return { bump, line };
+  })();
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* ignore */ } }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -1627,6 +1670,7 @@ div.lava-blobs {
         io.unobserve(en.target);
         clicks++;
         en.target.click();
+        COUNTS.bump('replies');
         log('expanded replies', clicks);
       }
     }, { rootMargin: '300px 0px' });
@@ -1884,6 +1928,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;cursor:default}' +
       '#ytt-panel label.ytt-row{cursor:pointer}' +
       '#ytt-panel .ytt-label{flex:1;min-width:0}' +
+      '#ytt-panel .ytt-count{opacity:.9}#ytt-panel .ytt-count[hidden]{display:none}' +
       '#ytt-panel .ytt-hint{display:block;opacity:.65;font-size:11.5px;margin-top:1px}' +
       '#ytt-panel input.ytt-switch{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:10px;' +
       'background:rgba(255,255,255,.22);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0;border:0}' +
@@ -2177,10 +2222,10 @@ div.lava-blobs {
       selectRow(body, 'Default sort', 'Applied when you open a post', [
         ['', "Reddit's choice"], ['confidence', 'Best'], ['top', 'Top'], ['new', 'New'],
         ['controversial', 'Controversial'], ['old', 'Old'], ['qa', 'Q&A']], get('commentSort'), set('commentSort'));
-      toggleRow(body, 'Auto-expand "more replies"', 'Opens collapsed reply threads as you scroll to them', get('autoExpand'), set('autoExpand'));
+      COUNTS.line(toggleRow(body, 'Auto-expand "more replies"', 'Opens collapsed reply threads as you scroll to them', get('autoExpand'), set('autoExpand')), 'replies');
       section(body, 'Mobile');
-      toggleRow(body, 'Hide "Open in app" prompts', 'Banners, buttons and pop-ups pushing the Reddit app (taps "Continue" for you)',
-        get('hideAppPrompts'), v => { rd.hideAppPrompts = v; saveRd(); APP.run(); render(); });
+      COUNTS.line(toggleRow(body, 'Hide "Open in app" prompts', 'Banners, buttons and pop-ups pushing the Reddit app (taps "Continue" for you)',
+        get('hideAppPrompts'), v => { rd.hideAppPrompts = v; saveRd(); APP.run(); render(); }), 'appPrompts');
     }
 
     // ---------------- Search (Arctic Shift) ----------------
@@ -2482,6 +2527,7 @@ div.lava-blobs {
       log('hid app prompt (' + why + '):', e.tagName.toLowerCase() + (e.id ? '#' + e.id : ''));
     };
     function dismiss(e, why) {
+      if (!e.hasAttribute('data-molten-app-hide')) COUNTS.bump('appPrompts');
       const stay = deepButtons(e).find(b => STAY_TEXT.test(label(b)) && !BUTTON_TEXT.test(label(b)));
       if (stay && !clicked.has(stay)) { clicked.add(stay); try { stay.click(); } catch (x) { /* ignore */ } log('tapped "' + label(stay) + '" on an app prompt'); }
       hide(e, why);

@@ -88,6 +88,11 @@ existing ones on it.
   options sit inline on the right. Longer sets stay compact: the row shows the current choice as a
   small pill with a chevron on the right; tapping it opens the segmented buttons underneath (up to 4
   per row) and picking one folds them away. Sliders keep a number box beside them.
+- **Counters** for things a script does for you on its own (prompts answered, app prompts skipped,
+  reply threads opened) go on an extra line under that feature's description, worded
+  "<Did> N <things> so far" ("Skipped 37 app prompts so far"), hidden while it's 0. Counts only,
+  never time-saved estimates or dates; they're kept per device since install under the `counts`
+  key (`COUNTS.bump(key)` to count, `COUNTS.line(row, key)` to show).
 - **Troubleshooting** is always the last section of the tab that holds the script's own settings
   (or of the page), named exactly "Troubleshooting": console logging, diagnostics, layout report.
 - **Footer** (one line, pinned at the bottom): "Open from <launcher> or the Tampermonkey menu ·

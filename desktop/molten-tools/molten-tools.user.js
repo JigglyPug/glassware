@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.6.3
+// @version      3.6.4
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -85,6 +85,49 @@
       }
     } catch (e) { /* ignore */ }
   }
+
+  // Running totals of what the script did for you, shown under that feature's switch ("Skipped 37
+  // app prompts so far"). Kept per device in Tampermonkey since install, shared by every tab, and
+  // saved a moment after counting so a burst (a long thread opening replies) is one write.
+  const COUNTS = (() => {
+    const KEY = 'counts';
+    const WORDS = {
+      dismissed: ['Answered ', ' prompt', ' so far'],
+      appPrompts: ['Skipped ', ' app prompt', ' so far'],
+      replies: ['Opened ', ' reply thread', ' so far'],
+    };
+    let add = {}, timer = 0;
+    const get = k => ((gmGet(KEY, {}) || {})[k] || 0) + (add[k] || 0);
+    const text = k => { const n = get(k), w = WORDS[k]; return w[0] + n.toLocaleString() + w[1] + (n === 1 ? '' : 's') + w[2]; };
+    function paint() {
+      for (const s of document.querySelectorAll('#ytt-panel [data-ytt-count]')) {
+        const k = s.getAttribute('data-ytt-count');
+        s.textContent = text(k); s.hidden = !get(k);
+      }
+    }
+    function flush() {
+      timer = 0;
+      if (!Object.keys(add).length) return;
+      const c = Object.assign({}, gmGet(KEY, {}));
+      for (const k in add) c[k] = (c[k] || 0) + add[k];
+      add = {};
+      gmSet(KEY, c);
+    }
+    function bump(k) { add[k] = (add[k] || 0) + 1; if (!timer) timer = setTimeout(flush, 2000); paint(); }
+    // the count line for a feature's row (hidden until there's something to count)
+    function line(row, k) {
+      const box = row && row.querySelector('.ytt-label');
+      if (!box) return;
+      const s = document.createElement('span');
+      s.className = 'ytt-hint ytt-count';
+      s.setAttribute('data-ytt-count', k);
+      box.append(s);
+      s.textContent = text(k); s.hidden = !get(k);
+    }
+    addEventListener('pagehide', flush);
+    gmWatch(KEY, paint);
+    return { bump, line };
+  })();
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* ignore */ } }
   function lsDel(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } }
@@ -4110,7 +4153,6 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
   const DISMISS = (() => {
     const RX = /continue watching|still watching|are you still there|still listening|video paused/i;
     const DIALOGS = 'ytmusic-you-there-renderer, yt-confirm-dialog-renderer, tp-yt-paper-dialog, yt-dialog-view-model';
-    let count = 0;
     let lastClick = 0;
     const observed = new WeakSet();
 
@@ -4132,7 +4174,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
         if (!yes) continue;
         yes.click();
         lastClick = Date.now();
-        count++;
+        COUNTS.bump('dismissed');
         glog('auto-dismissed:', norm(d.textContent).slice(0, 60));
         // if the player stayed paused, start it again
         setTimeout(() => {
@@ -4152,7 +4194,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       }
     }
 
-    return { check, watchPopups, count: () => count };
+    return { check, watchPopups };
   })();
 
   /* ---------- Title bar color (PWA theme-color) ---------- */
@@ -4512,6 +4554,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel .ytt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;cursor:default}' +
       '#ytt-panel label.ytt-row{cursor:pointer}' +
       '#ytt-panel .ytt-label{flex:1;min-width:0}' +
+      '#ytt-panel .ytt-count{opacity:.9}#ytt-panel .ytt-count[hidden]{display:none}' +
       '#ytt-panel .ytt-hint{display:block;opacity:.65;font-size:11.5px;margin-top:1px}' +
       '#ytt-panel input.ytt-switch{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:10px;' +
       'background:rgba(255,255,255,.22);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0;border:0}' +
@@ -4946,9 +4989,8 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       }
 
       section(body, 'Playback');
-      toggleRow(body, 'Auto-dismiss "Still watching?"',
-        'Answers "Continue watching?" and "Video paused" prompts so playback never stops', get('autoDismiss'), set('autoDismiss'));
-      if (DISMISS.count()) body.append(el('div', 'ytt-info', 'Answered ' + DISMISS.count() + ' prompt' + (DISMISS.count() === 1 ? '' : 's') + ' since this page loaded.'));
+      COUNTS.line(toggleRow(body, 'Auto-dismiss "Still watching?"',
+        'Answers "Continue watching?" and "Video paused" prompts so playback never stops', get('autoDismiss'), set('autoDismiss')), 'dismissed');
 
       const swatch = (parent, color) => {
         const row = el('div', 'ytt-row');
