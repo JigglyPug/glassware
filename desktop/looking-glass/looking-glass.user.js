@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.1.4
+// @version      1.1.5
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.4';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.5';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -88,7 +88,8 @@
        is filed under the IDs it belongs to. A badge then asks "which ID is *this* video?"
        and looks it up, instead of grabbing the first URL on the page.                      */
 
-    const IDX = new Map();           // id -> { hd, sd, rank }
+    const IDX = new Map();           // id -> { hd, sd, rank }, oldest first
+    const IDX_MAX = 3000;            // long feeds keep feeding it; links this old have expired anyway
     let learned = 0;
     const HD_KEYS = ['browser_native_hd_url', 'playable_url_quality_hd', 'hd_src', 'hdSrc', 'hd_src_no_ratelimit', 'hdPlaybackUrl'];
     const SD_KEYS = ['browser_native_sd_url', 'playable_url', 'sd_src', 'sdSrc', 'sd_src_no_ratelimit', 'sdPlaybackUrl', 'video_url', 'videoUrl', 'playAddr', 'downloadAddr', 'playbackUrl'];
@@ -134,7 +135,9 @@
         const e = IDX.get(id);
         if (e && e.rank < rank) return;               // equal or stronger data replaces older data, so refreshed (re-signed) links win
         if (e && e.hd === l.hd && e.sd === l.sd && e.rank === rank) return;
+        IDX.delete(id);                               // re-adding moves it to the newest end
         IDX.set(id, { hd: l.hd, sd: l.sd, rank });
+        while (IDX.size > IDX_MAX) IDX.delete(IDX.keys().next().value);
         learned++;
     }
     // walk any JSON: when an object holds video URLs, file them under the nearest IDs above it

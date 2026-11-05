@@ -45,6 +45,10 @@ tools/                                builders for all of the above
   - `@supportURL https://github.com/JigglyPug/glassware/issues`
   - `@updateURL` and `@downloadURL`: `https://raw.githubusercontent.com/JigglyPug/glassware/main/<platform>/<script>/<script>.user.js`
 - Version text shown inside a panel comes from `GM_info.script.version`, never a hardcoded string.
+- No version numbers anywhere except `@version` (and the `GM_info` fallbacks, which the check keeps
+  in step). Code and logs read `GM_info.script.version`; pages read `@version`. A comment may name
+  a version only as history ("installs from before 1.2.1"), never as a current fact ("same as
+  Kaleidoscope <some version>"): describe what it means instead. `tools/check.py` enforces this.
 - Don't change `@name` or `@namespace`: Tampermonkey identifies installed copies by them, and
   changing either installs a second copy with fresh settings.
 - Renaming a script or a storage key needs a migration plan for existing users first.

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.2.4
+// @version      1.2.5
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -19,8 +19,8 @@
 // @downloadURL  https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js
 // ==/UserScript==
 
-/* Kaleidoscope Mobile: the Kaleidoscope 2.7.5 prompt builder, for phones. It never talks to Claude.
-     - Recommend tab: pick a mode, then Copy / Update / Save / Share. The prompts are the same as Kaleidoscope 2.7.5.
+/* Kaleidoscope Mobile: desktop Kaleidoscope's prompt builder, for phones. It never talks to Claude.
+     - Recommend tab: pick a mode, then Copy / Update / Save / Share. Same modes as desktop; you paste the prompt into Claude yourself.
      - Changes since last prompt: every Copy, Save or Share snapshots your list. Update gets your list fresh
        from AniList and builds an update prompt from what changed, to paste into the same Claude chat.
      - Sequels tab: finds sequels to shows you finished that aren't on your list (no AI needed).

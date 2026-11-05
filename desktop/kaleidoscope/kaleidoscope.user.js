@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.9.2
+// @version      2.9.3
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -883,7 +883,7 @@
       const c = cache.lists.get(k);
       if (c && !force && Date.now() - c.ts < 5 * 60 * 1000) return c;
       const entry = { ts: Date.now(), data: null, err: null };
-      entry.p = fetchList(user, type).then(d => (entry.data = d), e => { entry.err = e; cache.lists.delete(k); throw e; });
+      entry.p = fetchList(user, type).then(d => (entry.data = d), e => { entry.err = e; if (cache.lists.get(k) === entry) cache.lists.delete(k); throw e; }); // a reload may have replaced this entry
       cache.lists.set(k, entry);
       return entry;
     }
@@ -891,7 +891,7 @@
       const c = cache.airing;
       if (c && Date.now() - c.ts < 15 * 60 * 1000) return c;
       const entry = { ts: Date.now(), data: null };
-      entry.p = fetchAiring().then(d => (entry.data = d), e => { cache.airing = null; throw e; });
+      entry.p = fetchAiring().then(d => (entry.data = d), e => { if (cache.airing === entry) cache.airing = null; throw e; });
       cache.airing = entry;
       return entry;
     }

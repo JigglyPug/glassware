@@ -28,6 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 args = sys.argv[1:]
 RAW = 'https://raw.githubusercontent.com/JigglyPug/glassware/main'
+HISTORY = re.compile(r'(?i)\b(before|from|since|until|earlier|older|used to|renamed|migrat\w*)\b')
 STATIC = {'molten-tools', 'molten-for-reddit', 'molten-for-reddit-mobile', 'kaleidoscope', 'kaleidoscope-mobile'}
 LIVE = {'prism', 'hourglass', 'looking-glass'}
 fails = []; section = ''
@@ -85,14 +86,26 @@ for p, src in S.items():
     ok('or the Tampermonkey menu' in src or 'Open from the Tampermonkey menu' in src, f'{slug}: footer should read "Open from … or the Tampermonkey menu · v… "')
     if re.search(r'Log to the console|layout report|Diagnostics', src):
         ok('Troubleshooting' in src and not re.search(r"""label\(\s*'Diagnostics'|section\([^)]*'Diagnostics'""", src), f'{slug}: logging and diagnostics belong in a section named "Troubleshooting"')
+    # No version numbers that someone has to remember to update. Code reads GM_info.script.version;
+    # comments may only name a version as history ("from before 1.2.1", "links from 2.3.0"), which
+    # stays true. A comment like "same as 2.7.5" goes stale the moment either side changes.
     body = src[src.index('==/UserScript=='):]
-    code = re.sub(r'https?://\S+', '', body)                                   # links
-    code = re.sub(r'/\*.*?\*/', '', code, flags=re.S); code = re.sub(r'(?m)//.*$', '', code)   # comments may name old versions
+    code = re.sub(r'https?://\S+', '', body)
+    comments = re.findall(r'/\*.*?\*/|//[^\n]*', code, flags=re.S)
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.S); code = re.sub(r'(?m)//.*$', '', code)
     code = re.sub(r"\|\|\s*'[0-9.]+'", '', code)                               # the checked fallbacks
     m = re.search(r'\b\d+\.\d+\.\d+\b', code)
     ok(not m, f'{slug}: hardcoded version "{m.group(0)}" in the code; read it from GM_info.script.version' if m else '')
+    for c in comments:
+        for line in c.splitlines():
+            m = re.search(r'\b\d+\.\d+\.\d+\b', line)
+            ok(not m or HISTORY.search(line), f'{slug}: comment names version {m.group(0) if m else ""} as if current ("{line.strip()[:70]}"); describe it without a version' if m else '')
     if slug in STATIC: ok('const ICON_SRC = ' in src, f'{slug}: static header tile should embed the app icon (python3 tools/panel_icons.py)')
     if slug in LIVE: ok('ICON_SRC' not in src and 'function glassGlyph(' in src, f'{slug}: live header tile should draw glassGlyph(), never the static icon image')
+for f in ['CLAUDE.md', 'tools/readmes.py', 'tools/features.py', 'tools/site_themes.py']:
+    for i, line in enumerate(open(f'{R}/{f}', encoding='utf-8'), 1):
+        m = re.search(r'\b\d+\.\d+\.\d+\b', re.sub(r'https?://\S+', '', line)); n += 1
+        ok(not m or HISTORY.search(line), f'{f}:{i} names version {m.group(0) if m else ""}; pages take versions from @version, so write it without one' if m else '')
 done(n)
 
 # ------------------------------------------------------------------ privacy
