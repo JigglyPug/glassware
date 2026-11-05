@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.2.3
+// @version      1.2.4
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -1334,6 +1334,6 @@
     if (typeof GM_registerMenuCommand === 'function') {
       try { GM_registerMenuCommand('Open Kaleidoscope Mobile', open); } catch (e) { /* ignore */ }
     }
-    console.log('[Kaleidoscope Mobile] 1.0.1 loaded.');
+    console.log('[Kaleidoscope Mobile] ' + ((typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '') + ' loaded.');
   }
 })();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.3.2
+// @version      1.3.3
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -2439,6 +2439,20 @@ div.lava-blobs {
       '[class*="BottomSheet"], [id*="bottom-sheet"], #blocking-modal, shreddit-experience-tree';
     const clicked = new WeakSet();
     const hidden = new Set();
+    // Pop-ups, sheets and backdrops we hid (not just "Open in app" buttons). Only these can lock the
+    // page, so only these may unlock it; Reddit's own pop-ups (image viewer, login, share) keep theirs.
+    const blockers = new Set();
+    // Buttons whose label was already checked, so each pass only looks at new ones.
+    const checkedBtn = new WeakSet();
+    const POPUPS = '[role="dialog"], dialog[open], faceplate-dialog, faceplate-modal, faceplate-bottom-sheet, #blocking-modal';
+    function otherPopupOpen() {
+      for (const e of document.querySelectorAll(POPUPS)) {
+        if (e.closest('[data-molten-app-hide]') || e.closest('#ytt-panel')) continue;
+        const r = e.getBoundingClientRect();
+        if (r.width * r.height > 0 && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden') return true;
+      }
+      return false;
+    }
     coreStyle('[data-molten-app-hide]{display:none!important}' +
       'html[data-molten-unlock],html[data-molten-unlock] body{overflow-y:auto!important;touch-action:auto!important}');
     const clean = s => (s || '').replace(/\s+/g, ' ').trim();
@@ -2464,6 +2478,7 @@ div.lava-blobs {
       if (e.hasAttribute('data-molten-app-hide')) return;
       e.setAttribute('data-molten-app-hide', '');
       hidden.add(e);
+      if (why !== 'button') blockers.add(e);
       log('hid app prompt (' + why + '):', e.tagName.toLowerCase() + (e.id ? '#' + e.id : ''));
     };
     function dismiss(e, why) {
@@ -2496,11 +2511,12 @@ div.lava-blobs {
     function run() {
       if (!ENABLED || !rd.hideAppPrompts) {
         for (const e of hidden) e.removeAttribute('data-molten-app-hide');
-        hidden.clear();
+        hidden.clear(); blockers.clear();
         document.documentElement.removeAttribute('data-molten-unlock');
         return;
       }
-      const before = hidden.size;
+      for (const e of hidden) if (!e.isConnected) { hidden.delete(e); blockers.delete(e); }
+      const before = blockers.size;
       // 1. by name
       for (const e of document.getElementsByTagName('*')) {
         const tag = e.tagName;
@@ -2516,6 +2532,8 @@ div.lava-blobs {
       }
       for (const e of cands) {
         if (e.hasAttribute('data-molten-app-hide') || e.closest('#ytt-panel') || GATE.test(e.tagName)) continue;
+        // a prompt is short; anything with this much text already can't be one, so skip the deep read
+        if ((e.textContent || '').length >= 700) continue;
         const txt = deepText(e);
         if (txt.length < 700 && SHEET_TEXT.test(txt) && !/nsfw|18\+|mature|age verification|verify your age/i.test(txt)) dismiss(e, 'sheet');
       }
@@ -2523,15 +2541,19 @@ div.lava-blobs {
       const roots = [document];
       for (const h of document.querySelectorAll('reddit-header-large, reddit-header-small, shreddit-post, faceplate-banner')) if (h.shadowRoot) roots.push(h.shadowRoot);
       for (const r of roots) for (const e of r.querySelectorAll('a, button, faceplate-tracker, [role="button"]')) {
-        if (e.hasAttribute('data-molten-app-hide') || (e.closest && e.closest('#ytt-panel'))) continue;
+        if (checkedBtn.has(e) || e.hasAttribute('data-molten-app-hide') || (e.closest && e.closest('#ytt-panel'))) continue;
         const t = label(e);
+        if (t) checkedBtn.add(e);                      // a label can arrive late, so only empty ones are looked at again
         if (t.length < 30 && BUTTON_TEXT.test(t)) hide((e.closest && e.closest('faceplate-tracker')) || e, 'button');
       }
-      if (hidden.size > before || (hidden.size && document.body && document.body.style.position === 'fixed')) unlock();
+      // Unlock only for a pop-up we hid: right after hiding it, or if the page is still locked while it's
+      // on the page and no other pop-up is open (that lock belongs to Reddit's own pop-up).
+      const locked = document.body && document.body.style.position === 'fixed';
+      if (blockers.size > before || (locked && blockers.size && !otherPopupOpen())) unlock();
     }
     return { run };
   })();
   setInterval(() => { if (!document.hidden) APP.run(); }, 1500);
   document.addEventListener('DOMContentLoaded', () => APP.run(), { once: true });
-  log('Molten for Reddit Mobile 1.2.0 loaded');
+  log('Molten for Reddit Mobile ' + ((typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '') + ' loaded');
 })();

@@ -85,6 +85,12 @@ for p, src in S.items():
     ok('or the Tampermonkey menu' in src or 'Open from the Tampermonkey menu' in src, f'{slug}: footer should read "Open from … or the Tampermonkey menu · v… "')
     if re.search(r'Log to the console|layout report|Diagnostics', src):
         ok('Troubleshooting' in src and not re.search(r"""label\(\s*'Diagnostics'|section\([^)]*'Diagnostics'""", src), f'{slug}: logging and diagnostics belong in a section named "Troubleshooting"')
+    body = src[src.index('==/UserScript=='):]
+    code = re.sub(r'https?://\S+', '', body)                                   # links
+    code = re.sub(r'/\*.*?\*/', '', code, flags=re.S); code = re.sub(r'(?m)//.*$', '', code)   # comments may name old versions
+    code = re.sub(r"\|\|\s*'[0-9.]+'", '', code)                               # the checked fallbacks
+    m = re.search(r'\b\d+\.\d+\.\d+\b', code)
+    ok(not m, f'{slug}: hardcoded version "{m.group(0)}" in the code; read it from GM_info.script.version' if m else '')
     if slug in STATIC: ok('const ICON_SRC = ' in src, f'{slug}: static header tile should embed the app icon (python3 tools/panel_icons.py)')
     if slug in LIVE: ok('ICON_SRC' not in src and 'function glassGlyph(' in src, f'{slug}: live header tile should draw glassGlyph(), never the static icon image')
 done(n)

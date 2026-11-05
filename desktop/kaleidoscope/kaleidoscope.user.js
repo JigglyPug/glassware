@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.9.1
+// @version      2.9.2
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -2216,7 +2216,7 @@
     ensureButtons();
     setInterval(ensureButtons, 1500);
     if (job) showJob();
-    console.log('[Kaleidoscope] 2.7.5 loaded. Button in top bar: ' + navHost.isConnected);
+    console.log('[Kaleidoscope] ' + ((typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '') + ' loaded. Button in top bar: ' + navHost.isConnected);
 
     if (typeof GM_registerMenuCommand === 'function') {
       try { GM_registerMenuCommand('Open Kaleidoscope', open); } catch (e) { /* ignore */ }
