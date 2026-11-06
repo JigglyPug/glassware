@@ -135,8 +135,8 @@ __APPLY__
   --edge:__L_EDGE__;--hl:__L_HIGHLIGHT__;--drop:__L_DROP__;--ctl:rgba(0,0,0,.055);--ctl-hi:rgba(0,0,0,.1);--sw-off:rgba(0,0,0,.13);
   --field:rgba(255,255,255,.6);--field-hi:#fff;--knob:#fff;
   --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
-  position:fixed;top:16px;right:16px;z-index:2147483647;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);
-  display:flex;flex-direction:column;overflow:hidden;border-radius:22px;
+  position:fixed;top:16px;right:16px;z-index:2147483647;width:__W_PANEL__px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);
+  display:flex;flex-direction:column;overflow:hidden;border-radius:__R_PANEL__px;
   font:13px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif;
   color:var(--text);text-align:left;white-space:normal;letter-spacing:normal;
   background:radial-gradient(120% 40% at 0% 0%,rgba(var(--a-rgb),.18),transparent 70%),var(--glass);
@@ -155,7 +155,7 @@ button{cursor:pointer}
 .body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:none}
 .body::-webkit-scrollbar{display:none}
 .grab{display:none}
-.head{display:flex;align-items:center;gap:11px;padding:16px 16px 4px}
+.head{display:flex;align-items:center;gap:11px;padding:__I_HEAD__px __I_HEAD__px 4px}
 .logo{position:relative;flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff;overflow:hidden;
   background:linear-gradient(145deg,color-mix(in srgb,var(--a) 72%,#0b0b16),color-mix(in srgb,var(--a) 40%,#0b0b16));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 4px 16px -4px rgba(var(--a-rgb),.95)}
@@ -183,10 +183,10 @@ button{cursor:pointer}
 .ctx b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pill{font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;background:var(--ctl);color:var(--sub);white-space:nowrap}
 .pill.on{background:rgba(var(--a-rgb),.16);color:var(--ink)}
-.tabs{display:flex;gap:2px;margin:0 12px 10px;padding:3px;border-radius:12px;background:var(--ctl)}
+.tabs{display:flex;gap:2px;margin:0 __I_TABS__px 10px;padding:3px;border-radius:__R_CONTROL__px;background:var(--ctl)}
 .tabs button{flex:1;min-width:0;border:0;background:none;padding:7px 4px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--sub)}
 .tabs button.on{background:var(--field-hi);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}
-.card{margin:0 12px 8px;padding:12px 14px;border-radius:14px;background:rgba(var(--a-rgb),.09);border:1px solid rgba(var(--a-rgb),.22)}
+.card{margin:0 __I_TABS__px 8px;padding:12px 14px;border-radius:__R_CARD__px;background:rgba(var(--a-rgb),.09);border:1px solid rgba(var(--a-rgb),.22)}
 .sec{padding:13px 16px;border-top:1px solid var(--line)}
 .card+.sec{border-top:0}
 .label{display:flex;align-items:center;gap:7px;font:600 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:10px}
@@ -210,7 +210,7 @@ button{cursor:pointer}
 .sw:focus-visible,.seg button:focus-visible,.pick:focus-visible,.tabs button:focus-visible{outline:2px solid var(--a);outline-offset:2px}
 .foot{flex:none;padding:10px 16px 12px;border-top:1px solid var(--line);font-size:11px;color:var(--sub);text-align:center}
 @media (max-width:600px){
-  .panel{top:auto;right:0;left:0;bottom:0;width:100%;max-width:none;max-height:86vh;max-height:86dvh;border-radius:22px 22px 0 0;border-bottom:0;
+  .panel{top:auto;right:0;left:0;bottom:0;width:100%;max-width:none;max-height:86vh;max-height:86dvh;border-radius:__R_SHEET__px __R_SHEET__px 0 0;border-bottom:0;
     padding-bottom:env(safe-area-inset-bottom);animation:up .22s cubic-bezier(.2,.8,.2,1)}
   .grab{display:block;width:38px;height:5px;border-radius:3px;background:var(--sw-off);margin:8px auto 0}
   .head{padding-top:10px}

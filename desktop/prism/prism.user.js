@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.3
+// @version      2.2.4
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.3';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.4';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -661,7 +661,7 @@
 @keyframes in{from{opacity:0;transform:translateY(-6px) scale(.98)}}
 @media (prefers-reduced-motion:reduce){.panel,.panel *{animation:none!important;transition:none!important}}
 button{font:inherit;color:inherit;cursor:pointer}
-.head{display:flex;align-items:center;gap:11px;padding:16px 16px 4px}
+.head{display:flex;align-items:center;gap:11px;padding:18px 18px 4px}
 .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--on);flex:none;
   background:linear-gradient(140deg,var(--fill-hi),var(--fill));box-shadow:0 4px 14px -4px rgba(var(--a-rgb),.9),inset 0 1px 0 rgba(255,255,255,.35)}
 /* glass tile like the app icon; the color still follows the script's state */
@@ -693,7 +693,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .siteline{display:flex;align-items:center;gap:8px;padding:6px 16px 12px;font:12px var(--mono);color:var(--sub)}
 .siteline b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pill{font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;background:var(--ctl);color:var(--sub);white-space:nowrap}
-.card{margin:0 12px 6px;padding:12px 14px;border-radius:14px;background:rgba(var(--a-rgb),.09);border:1px solid rgba(var(--a-rgb),.22)}
+.card{margin:0 14px 6px;padding:12px 14px;border-radius:16px;background:rgba(var(--a-rgb),.09);border:1px solid rgba(var(--a-rgb),.22)}
 .sec{padding:13px 16px;border-top:1px solid var(--line)}
 .label{display:flex;align-items:center;gap:7px;font:600 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:10px}
 .label::before{content:"";width:5px;height:5px;transform:rotate(45deg);background:var(--fill);box-shadow:0 0 6px rgba(var(--a-rgb),.9)}
@@ -707,7 +707,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .seg button.on{background:var(--fill);color:var(--on);box-shadow:0 1px 4px rgba(0,0,0,.14),0 0 14px -4px rgba(var(--a-rgb),.8)}
 .hint{font-size:11.5px;color:var(--sub);margin-top:8px}
 .list{display:flex;flex-direction:column;gap:6px}
-.src{display:flex;align-items:center;gap:9px;padding:7px 10px 7px 6px;border-radius:11px;background:var(--field);border:1px solid var(--line);user-select:none;transition:box-shadow .15s,border-color .15s,opacity .15s}
+.src{display:flex;align-items:center;gap:9px;padding:7px 10px 7px 6px;border-radius:10px;background:var(--field);border:1px solid var(--line);user-select:none;transition:box-shadow .15s,border-color .15s,opacity .15s}
 .src.used{border-color:rgba(var(--a-rgb),.6);box-shadow:0 0 0 3px rgba(var(--a-rgb),.13),0 0 18px -6px rgba(var(--a-rgb),.8)}
 .src.failed .nm,.src.skipped .nm{opacity:.45}
 .src.drag{background:var(--bg-solid);box-shadow:0 12px 26px -10px rgba(0,0,0,.35);transform:scale(1.015)}
@@ -715,7 +715,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .grip{border:0;background:none;color:var(--sub);padding:2px;border-radius:6px;cursor:grab;touch-action:none;display:grid}
 .grip:active{cursor:grabbing}
 .grip:focus-visible,.ck:focus-visible,.sw:focus-visible,.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
-.ck{flex:none;width:17px;height:17px;border-radius:5px;border:1.5px solid var(--ck-edge);background:var(--field-hi);display:grid;place-items:center;padding:0;color:var(--on)}
+.ck{flex:none;width:17px;height:17px;border-radius:4px;border:1.5px solid var(--ck-edge);background:var(--field-hi);display:grid;place-items:center;padding:0;color:var(--on)}
 .ck svg{opacity:0}
 .ck.on{background:var(--fill);border-color:var(--fill)}
 .ck.on svg{opacity:1}
@@ -733,7 +733,7 @@ code,.mono{font:12px var(--mono)}
 .link{border:0;background:none;padding:0;color:var(--ink);font-size:11.5px;font-weight:500}
 .link:hover{text-decoration:underline}
 .pick{display:flex;align-items:center;gap:10px}
-.swatch{flex:none;width:48px;height:48px;border-radius:14px;background:var(--a);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.3),0 8px 18px -8px rgba(var(--a-rgb),1)}
+.swatch{flex:none;width:48px;height:48px;border-radius:12px;background:var(--a);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.3),0 8px 18px -8px rgba(var(--a-rgb),1)}
 .swatch.none{background:repeating-linear-gradient(135deg,var(--stripe-a) 0 6px,var(--stripe-b) 6px 12px)}
 .hexcol{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
 .hex{display:flex;align-items:center;height:32px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--field);transition:border-color .15s,box-shadow .15s}
@@ -753,7 +753,7 @@ code,.mono{font:12px var(--mono)}
 .stxt{flex:1;font-size:11.5px;line-height:1.4;color:var(--sub);min-width:0}
 .stxt b{color:var(--text);font-weight:600}
 .stxt code{font-size:11px;color:var(--text)}
-.ibtn{flex:none;width:24px;height:24px;border:0;border-radius:7px;background:none;color:var(--sub);display:grid;place-items:center}
+.ibtn{flex:none;width:24px;height:24px;border:0;border-radius:8px;background:none;color:var(--sub);display:grid;place-items:center}
 .ibtn:hover{background:var(--ctl);color:var(--text)}
 .ibtn.spin svg{animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}

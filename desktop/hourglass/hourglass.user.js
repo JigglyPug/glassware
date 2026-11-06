@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.0
+// @version      1.5.1
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.0';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.1';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -1146,12 +1146,12 @@ h1 span{color:var(--ink)}
 .wkt{display:grid;grid-template-columns:38px 1fr 54px;gap:10px;padding:2px 8px 0}
 .wkt div{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--sub)}
 .days{display:flex;gap:6px;flex-wrap:wrap}
-.day{position:relative;width:44px;height:44px;border-radius:13px;border:1px solid var(--line);background:var(--field);font-weight:600;font-size:13px}
+.day{position:relative;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--field);font-weight:600;font-size:13px}
 .day:hover{background:var(--field-hi)}
 .day.sel{background:var(--fill);color:var(--on);border-color:transparent;box-shadow:0 4px 14px -6px rgba(var(--a-rgb),1)}
 .day.has::after{content:"";position:absolute;left:50%;bottom:5px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--fill)}
 .day.sel.has::after{background:var(--on)}
-.blkc{padding:12px 14px 10px;border-radius:14px;background:var(--field);border:1px solid var(--line)}
+.blkc{padding:12px 14px 10px;border-radius:12px;background:var(--field);border:1px solid var(--line)}
 .blkc+.blkc{margin-top:8px}
 .blkc.pending{border:1.5px dashed var(--ink)}
 .times{display:flex;align-items:center;gap:10px}
@@ -1184,7 +1184,7 @@ h1 span{color:var(--ink)}
 .r1:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--fill)}
 .val{font:600 12px var(--mono);text-align:center;padding:6px 0;border-radius:8px;background:rgba(var(--a-rgb),.12)}
 .addr{display:flex;gap:8px;align-items:center}
-.field{flex:1;display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:11px;border:1px solid var(--line);background:var(--field-hi);transition:border-color .15s,box-shadow .15s}
+.field{flex:1;display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--field-hi);transition:border-color .15s,box-shadow .15s}
 .field:focus-within{border-color:var(--fill);box-shadow:0 0 0 3px rgba(var(--a-rgb),.18)}
 .field.bad{border-color:#ff3b30;box-shadow:0 0 0 3px rgba(255,59,48,.15)}
 .field input{border:0;outline:0;background:none;flex:1;font:13px var(--mono);color:var(--text);min-width:0}

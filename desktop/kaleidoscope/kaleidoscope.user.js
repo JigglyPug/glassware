@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.4
+// @version      2.10.5
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -1129,14 +1129,14 @@
       '#kaleidoscope-panel input.kld-switch:checked::after{transform:translateX(16px)!important}' +
       '#kaleidoscope-panel .kld-mode-sw:focus-visible,#kaleidoscope-panel .kld-x:focus-visible,#kaleidoscope-panel input.kld-switch:focus-visible{outline:2px solid ' + ACCENT + '!important;outline-offset:2px!important}' +
       // glassware:frame end
-      '#kaleidoscope-panel{position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);height:auto;min-height:0;' +
+      '#kaleidoscope-panel{position:fixed;top:16px;right:16px;width:400px;box-sizing:border-box;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);height:auto;min-height:0;' +
       'display:flex;flex-direction:column;z-index:2147483647;background:radial-gradient(120% 40% at 0% 0%,rgba(61,180,242,.16),transparent 64%),var(--k-glass);' +
       '-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);color:var(--k-text);' +
       'border:1px solid var(--k-edge);border-radius:22px;box-shadow:0 0 0 .5px rgba(61,180,242,.35),0 0 40px -12px rgba(61,180,242,.45),0 14px 44px var(--k-drop),inset 0 1px 0 var(--k-hl);' +
       'font:13px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:left;opacity:1;visibility:visible}' +
       '#kaleidoscope-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
       '#kaleidoscope-panel label{color:inherit!important;text-shadow:inherit!important}' +   // sites style <label>
-      '#kaleidoscope-panel .kld-head{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 14px 10px 16px}' +
+      '#kaleidoscope-panel .kld-head{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 18px 10px 18px}' +
       '#kaleidoscope-panel .kld-title{font-weight:800;font-size:17px;color:var(--k-title);line-height:1.2}' +
       '#kaleidoscope-panel .kld-title b{color:' + ACCENT + ';font-weight:800}' +
       '#kaleidoscope-panel .kld-tagline{font-size:12px;color:var(--k-ink);margin:1px 0 2px}' +
@@ -1146,7 +1146,7 @@
       'padding:0;border:0;border-radius:50%;background:transparent;color:var(--k-dim);font-size:13px;line-height:1;cursor:pointer;vertical-align:-3px}' +
       '#kaleidoscope-panel .kld-reload:hover{color:' + ACCENT + ';background:rgba(61,180,242,.12)}' +
       '#kaleidoscope-panel .kld-reload.spin{color:' + ACCENT + ';animation:kld-spin .8s linear infinite}' +
-      '#kaleidoscope-panel .kld-tabs{display:flex;gap:4px;margin:0 12px 6px;padding:4px;background:var(--k-well);border-radius:12px}' +
+      '#kaleidoscope-panel .kld-tabs{display:flex;gap:4px;margin:0 14px 6px;padding:4px;background:var(--k-well);border-radius:12px}' +
       '#kaleidoscope-panel .kld-tab{flex:1;padding:7px 4px;border:0;border-radius:9px;background:transparent;color:var(--k-muted);' +
       'cursor:pointer;font-size:12.5px;font-weight:600}' +
       '#kaleidoscope-panel .kld-tab:hover{color:var(--k-strong)}' +

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.2
+// @version      1.2.3
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.2';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.3';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1193,7 +1193,7 @@ button:disabled{cursor:not-allowed}
 .r1::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:grab}
 .r1:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--fill)}
 .val{font:600 12px var(--mono);text-align:center;padding:6px 0;border-radius:8px;background:rgba(var(--a-rgb),.12)}
-.cp{position:relative;flex:none;width:76px;height:48px;border-radius:11px;background:linear-gradient(160deg,#3a3a44,#16161c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 12px -6px rgba(0,0,0,.5)}
+.cp{position:relative;flex:none;width:76px;height:48px;border-radius:10px;background:linear-gradient(160deg,#3a3a44,#16161c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 4px 12px -6px rgba(0,0,0,.5)}
 .cp::after{content:"";position:absolute;left:50%;top:50%;width:0;height:0;margin:-6px 0 0 -3px;border-left:9px solid rgba(255,255,255,.28);border-top:6px solid transparent;border-bottom:6px solid transparent}
 .cp button{position:absolute;width:24px;height:24px;border:0;border-radius:50%;background:none;display:grid;place-items:center;padding:0}
 .cp button::after{content:"";width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.45);transition:transform .15s,background .15s}

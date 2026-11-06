@@ -9,7 +9,7 @@ const { chromium, devices } = require('playwright');
 const fs = require('fs');
 // design tokens (tools/tokens.json): the audit measures against these, never its own copies
 const TK = JSON.parse(fs.readFileSync(require('path').join(__dirname, 'tokens.json'), 'utf8'));
-const TC = TK.controls, TG = TK.glass;
+const TC = TK.controls, TG = TK.glass, SH = TK.shape;
 
 const args = process.argv.slice(2);
 const [scriptPath, url, out] = args;
@@ -275,6 +275,35 @@ function stubPage() {
         const kids = [...e.children].filter(k => vis(k) && !/absolute|fixed|sticky/.test(getComputedStyle(k).position) && !(k instanceof SVGElement));
         for (let i = 0; i < kids.length; i++) for (let j = i + 1; j < kids.length; j++) { const A = kids[i].getBoundingClientRect(), B = kids[j].getBoundingClientRect();
           const w = Math.min(A.right, B.right) - Math.max(A.left, B.left), h = Math.min(A.bottom, B.bottom) - Math.max(A.top, B.top); if (w > 2 && h > 2) add('overlaps', kids[i], 'with ' + name(kids[j]) + ' by ' + Math.round(w) + 'x' + Math.round(h)); }
+      }
+      // shape (tools/tokens.json): the panel's width and corners, the header's and tab bar's insets from
+      // the panel's edge, and every rounded corner inside the panel on the radius scale (or nested
+      // inside its parent's corner: the parent's radius less its padding)
+      const modeBtn = els.find(e => e.getAttribute('aria-label') === 'Dark mode');
+      let PNL = modeBtn; while (PNL && !(getComputedStyle(PNL).backdropFilter !== 'none' && PNL.getBoundingClientRect().width >= 300)) PNL = parentOf(PNL);
+      if (PNL && PNL.nodeType === 1) {
+        const pc = getComputedStyle(PNL), pr = PNL.getBoundingClientRect(), inL = pr.left + (parseFloat(pc.borderLeftWidth) || 0), inR = pr.right - (parseFloat(pc.borderRightWidth) || 0);
+        const sheet = Math.abs(pr.bottom - vh) < 2 && parseFloat(pc.borderBottomLeftRadius) < 1, want = sheet ? ${SH.panel.sheet} : ${SH.panel.radius};
+        if (Math.abs(parseFloat(pc.borderTopLeftRadius) - want) > .5) add('shape', PNL, (sheet ? 'phone sheet' : 'panel') + ' corners are ' + pc.borderTopLeftRadius + ', should be ' + want + 'px');
+        if (!sheet && vw >= 1000 && Math.abs(pr.width - ${SH.panel.width}) > .5 && Math.abs(pr.width - 760) > .5) add('shape', PNL, 'panel is ' + Math.round(pr.width * 10) / 10 + 'px wide, should be ${SH.panel.width}px (Hourglass: 760px)');
+        const head = modeBtn.parentElement, close = modeBtn.nextElementSibling;
+        const tile = head && [...head.querySelectorAll('*')].find(x => { const q = x.getBoundingClientRect(); return q.width >= 24 && q.width <= 48 && Math.abs(q.width - q.height) < 1 && q.right < modeBtn.getBoundingClientRect().left - 60; });
+        if (tile && Math.abs(tile.getBoundingClientRect().left - inL - ${SH.inset.head}) > .5) add('shape', tile, 'icon tile is ' + Math.round(tile.getBoundingClientRect().left - inL) + 'px from the panel edge, should be ${SH.inset.head}px');
+        if (close && close.tagName === 'BUTTON' && Math.abs(inR - close.getBoundingClientRect().right - ${SH.inset.head}) > .5) add('shape', close, 'close button is ' + Math.round(inR - close.getBoundingClientRect().right) + 'px from the panel edge, should be ${SH.inset.head}px');
+        for (const t of els.filter(x => PNL.contains(x) && String(x.className).split(' ').some(c => /tabs$/.test(c)))) {
+          const q = t.getBoundingClientRect(); if (q.width < pr.width * .6) continue;
+          if (Math.abs(q.left - inL - ${SH.inset.tabs}) > .5 || Math.abs(inR - q.right - ${SH.inset.tabs}) > .5) add('shape', t, 'tab bar is ' + Math.round(q.left - inL) + '/' + Math.round(inR - q.right) + 'px from the panel edges, should be ${SH.inset.tabs}px');
+        }
+        const scale = ${JSON.stringify([...new Set(Object.values(SH.radius))].sort((a, b) => b - a))};
+        for (const e of els) {
+          if (e === PNL || !PNL.contains(e)) continue;
+          const c = getComputedStyle(e), v = c.borderTopLeftRadius; if (!v || /%/.test(v)) continue;
+          const rad = parseFloat(v), q = e.getBoundingClientRect(); if (!(rad > ${SH.radius.tiny}) || rad >= Math.min(q.width, q.height) / 2 - .5) continue;
+          if (scale.some(x => Math.abs(x - rad) < .01)) continue;
+          const p = parentOf(e), ppc = p && p.nodeType === 1 ? getComputedStyle(p) : null;
+          if (ppc && Math.abs(parseFloat(ppc.borderTopLeftRadius) - Math.min(parseFloat(ppc.paddingTop), parseFloat(ppc.paddingLeft)) - parseFloat(ppc.borderTopWidth || 0) - rad) <= 1) continue;
+          add('shape', e, 'corners are ' + rad + 'px, off the radius scale (' + scale.join(', ') + 'px)');
+        }
       }
       return out;
     };

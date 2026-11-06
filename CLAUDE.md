@@ -82,7 +82,7 @@ Every panel shares the same bones and the same glass; each script keeps only its
 (accent color, icon, tagline, font: Kaleidoscope keeps AniList's font). Build new panels on this
 and keep existing ones on it.
 
-- **Shell.** Desktop: top right, 16px from the edges, 400px wide, 22px corners, scrolling inside
+- **Shell.** Desktop: top right, 16px from the edges, 400px wide, 22px corners (panel shape below), scrolling inside
   (Hourglass stays at its fixed 760px top-right size for the dashboard; don't change it).
   Phones: a bottom sheet with a grab handle.
 - **Header.** Icon tile (the script's glyph on its own colors), then name and tagline, then the
@@ -204,7 +204,20 @@ and keep existing ones on it.
 ## Design tokens
 
 `tools/tokens.json` is the one place the design numbers live: the glass recipe (both themes, blur,
-saturation, opacity), control sizes, the contrast minimums and the prism cut's diagonal and seam.
+saturation, opacity), control sizes, the panel's shape (below), the contrast minimums and the prism
+cut's diagonal and seam.
+
+**Panel shape** (the `shape` tokens; the audit measures every panel against them):
+
+| | |
+|---|---|
+| panel | 400px wide (Hourglass 760px), 22px corners; phone sheets 24px top corners |
+| insets | icon tile and close button 18px from the panel's edges; tab bar 14px from each side |
+| corner scale | 22 panel · 24 sheet · 16 card · 12 control · 10 field · 9 small · 8 button · 6 chip · 4 tiny |
+
+Every rounded corner inside a panel is on the scale, fully round, 4px or less, or nested inside its
+parent's corner (the parent's radius less its padding, so a segment inside a 12px bar with 3px of
+padding is 9px). The kit's template takes these from the tokens too.
 `tools/frame.py` stamps the controls from it, the audit (`tools/shot.js`) measures against it, the
 kit fills its template's glass from it, and the cut and banners take their diagonal from it. To
 change a number: edit `tools/tokens.json`, run `python3 tools/frame.py` and `python3 tools/pages.py`,

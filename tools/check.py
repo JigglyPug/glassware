@@ -176,18 +176,24 @@ ROWS = {'glass': 'glass', 'edge': 'edge', 'top highlight (inset)': 'highlight', 
 for row, key in ROWS.items():
     n += 1; want = f"| {row} | `{G['light'][key]}` | `{G['dark'][key]}` |"
     ok(want in doc, f'CLAUDE.md glass table: the "{row}" row should read {want} (tools/tokens.json)')
-C = TOKENS['controls']; tg = C['toggle']
+C = TOKENS['controls']; tg = C['toggle']; SH = TOKENS['shape']
 for want in [f"backdrop-filter: blur({G['blur']}px) saturate({G['saturate']}%)", f"{round(G['opacity']['light'] * 100)}% light, {round(G['opacity']['dark'] * 100)}% dark",
              f"| icon tile | {C['tile']['size']}×{C['tile']['size']}, {C['tile']['radius']}px corners |",
              f"| name / tagline | {C['name']}px semibold / {C['tagline']}px",
              f"| sun/moon switch | {C['mode']['w']}×{C['mode']['h']} track, {C['mode']['knob']}px knob",
              f"| close button | {C['close']['desktop']}×{C['close']['desktop']} round, {C['close']['gap']}px after the switch | {C['close']['phone']}×{C['close']['phone']} |",
              f"| toggle | {tg['desktop']['w']}×{tg['desktop']['h']} track, {tg['desktop']['knob']}px knob, 2px in | {tg['phone']['w']}×{tg['phone']['h']}, {tg['phone']['knob']}px knob |",
+             f"| panel | {SH['panel']['width']}px wide (Hourglass 760px), {SH['panel']['radius']}px corners; phone sheets {SH['panel']['sheet']}px top corners |",
+             f"| insets | icon tile and close button {SH['inset']['head']}px from the panel's edges; tab bar {SH['inset']['tabs']}px from each side |",
+             "| corner scale | " + ' · '.join(f"{v} {k}" for k, v in SH['radius'].items()) + " |",
              f"text under {TOKENS['contrast']['text']}:1", f"marks under\n  {TOKENS['contrast']['mark']}:1".replace('\\n', '\n')]:
     n += 1; ok(want.replace('\n  ', ' ') in doc.replace('\n  ', ' '), f'CLAUDE.md should say "{want.strip()}" (tools/tokens.json)')
 for m in ('light', 'dark'):   # the glass color and the opacity token must agree
     n += 1; a = re.search(r',\s*([\d.]+)\)$', G[m]['glass'])
     ok(a and abs(float(a.group(1)) - G['opacity'][m]) < 1e-9, f"tools/tokens.json: {m} glass {G[m]['glass']} doesn't match its opacity {G['opacity'][m]}")
+tpl = open(f'{R}/tools/kit/template.js', encoding='utf-8').read()
+for ph in ('__W_PANEL__', '__R_PANEL__', '__R_SHEET__', '__R_CARD__', '__I_HEAD__', '__I_TABS__'):
+    n += 1; ok(ph in tpl, f'tools/kit/template.js should take the panel shape from the tokens ({ph})')
 copies = [G[m][k] for m in ('light', 'dark') for k in ('glass', 'sub')] + [f"blur({G['blur']}px)"]
 # (the tools that build or test panels; the README banners have their own page palettes)
 for f in ['tools/frame.py', 'tools/shot.js', 'tools/prismcut.py', 'tools/new_script.py', 'tools/kit/template.js', 'tools/audit.py', 'tools/live.py']:

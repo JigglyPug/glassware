@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.3.4
+// @version      1.3.5
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -552,13 +552,13 @@
       // glassware:frame end
       '#kaleidoscope-panel{position:fixed;left:0;right:0;bottom:0;margin:0 auto;width:100%;box-sizing:border-box;max-width:560px;max-height:88vh;max-height:88dvh;' +
       'display:flex;flex-direction:column;z-index:2147483647;background:radial-gradient(120% 40% at 0% 0%,rgba(61,180,242,.16),transparent 64%),var(--k-glass);-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);color:var(--k-text);' +
-      'border:1px solid var(--k-edge);border-bottom:0;border-radius:18px 18px 0 0;box-shadow:0 0 0 .5px rgba(61,180,242,.35),0 -10px 40px var(--k-drop),inset 0 1px 0 var(--k-hl);' +
+      'border:1px solid var(--k-edge);border-bottom:0;border-radius:24px 24px 0 0;box-shadow:0 0 0 .5px rgba(61,180,242,.35),0 -10px 40px var(--k-drop),inset 0 1px 0 var(--k-hl);' +
       'font:14px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:left;animation:kld-up .22s ease;' +
       '-webkit-tap-highlight-color:transparent}' +
       '#kaleidoscope-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
       '#kaleidoscope-panel label{color:inherit!important;text-shadow:inherit!important}' +   // sites style <label>
       '#kaleidoscope-panel .kld-grab{width:38px;height:4px;border-radius:2px;background:var(--k-sw-off);margin:8px auto 0;flex:none}' +
-      '#kaleidoscope-panel .kld-head{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 14px 10px 18px;flex:none}' +
+      '#kaleidoscope-panel .kld-head{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 18px 10px 18px;flex:none}' +
       '#kaleidoscope-panel .kld-title{font-weight:800;font-size:19px;color:var(--k-title);line-height:1.2;display:flex;align-items:center;gap:7px}' +
       '#kaleidoscope-panel .kld-title b{color:' + ACCENT + ';font-weight:800}' +
       '#kaleidoscope-panel .kld-tag{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:' + ACCENT + ';' +
@@ -570,7 +570,7 @@
       'padding:0;border:0;border-radius:50%;background:transparent;color:var(--k-dim);font-size:15px;line-height:1;cursor:pointer;vertical-align:middle}' +
       '#kaleidoscope-panel .kld-reload:active{color:' + ACCENT + ';background:rgba(61,180,242,.12)}' +
       '#kaleidoscope-panel .kld-reload.spin{color:' + ACCENT + ';animation:kld-spin .8s linear infinite}' +
-      '#kaleidoscope-panel .kld-tabs{display:flex;gap:4px;margin:0 12px 4px;padding:4px;background:var(--k-well);border-radius:12px;flex:none}' +
+      '#kaleidoscope-panel .kld-tabs{display:flex;gap:4px;margin:0 14px 4px;padding:4px;background:var(--k-well);border-radius:12px;flex:none}' +
       '#kaleidoscope-panel .kld-tab{flex:1;padding:10px 4px;border:0;border-radius:9px;background:transparent;color:var(--k-muted);' +
       'cursor:pointer;font-size:13.5px;font-weight:600}' +
       '#kaleidoscope-panel .kld-tab.on{background:rgba(61,180,242,.16);color:' + ACCENT + '}' +
