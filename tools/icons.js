@@ -1,6 +1,7 @@
 // Script icons: dark glass tiles with a tinted body, a lit rim and glass-tube glyphs.
 // Renders assets/icons/<script>.png at 512px (scale them down to 256 afterwards).
-//   node tools/icons.js
+//   node tools/icons.js            (every icon)
+//   node tools/icons.js <script>   (one; tools/new_script.py uses this)
 const { chromium } = require('playwright');
 const path = require('path');
 
@@ -101,7 +102,9 @@ ICONS['parts/hourglass-glyph'] = icon(HG, 'glyph');
 (async () => {
   const out = path.join(__dirname, '..', 'assets', 'icons');
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 512, height: 512 } });
+  const only = process.argv.slice(2);   // node tools/icons.js <name> draws just that one
   for (const [k, svg] of Object.entries(ICONS)) {
+    if (only.length && !only.includes(k)) continue;
     await p.setContent(`<html><body style="margin:0;background:transparent">${svg}</body></html>`);
     await p.locator('svg').first().screenshot({ path: path.join(out, `${k}.png`), omitBackground: true });
   }

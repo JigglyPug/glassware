@@ -1,0 +1,141 @@
+{
+  "slug": "gauge",
+  "name": "Gauge",
+  "folder": "desktop",
+  "runs": "both",
+  "tagline": "How far you are, and how long is left.",
+  "description": "A thin reading-progress bar for every long page, with the time left to read. Frosted settings panel; works on phones too.",
+  "intro": "Gauge adds a thin progress bar to long pages and shows roughly how many minutes of reading are left, so you always know how far you are.",
+  "sites": "Every site",
+  "match": [
+    "*://*/*"
+  ],
+  "url": "https://example.com/",
+  "accent": "#19b394",
+  "theme": "frost",
+  "icon": {
+    "a": "#22c7a4",
+    "b": "#0f5e7a",
+    "deep": "#04161a",
+    "rimA": "#b8f5e6",
+    "rimB": "#8fd9ff",
+    "glow": "#3fe0bb",
+    "tube": "#a6f2df",
+    "glyph": "tube('M28 62 A23 23 0 1 1 72 62', { glow: g, w: 4.2, core: 1.5 }) + tube('M50 58 L63 41', { glow: g, w: 4.6, core: 1.7 }) + tube('M46 58 A4 4 0 1 0 54 58 A4 4 0 1 0 46 58', { glow: g, w: 2.4, core: 1, fill: .2 })"
+  },
+  "master": true,
+  "tabs": [],
+  "sections": [
+    {
+      "title": "Progress bar",
+      "rows": [
+        {
+          "key": "bar",
+          "type": "toggle",
+          "title": "Show the progress bar",
+          "desc": "A thin bar that fills as you scroll",
+          "default": true
+        },
+        {
+          "key": "edge",
+          "type": "choice",
+          "title": "Where",
+          "desc": "Edge of the window",
+          "options": [
+            [
+              "top",
+              "Top"
+            ],
+            [
+              "bottom",
+              "Bottom"
+            ]
+          ],
+          "default": "top"
+        },
+        {
+          "key": "thick",
+          "type": "slider",
+          "title": "Thickness",
+          "desc": "Height of the bar",
+          "unit": "px",
+          "min": 2,
+          "max": 8,
+          "step": 1,
+          "default": 3
+        }
+      ]
+    },
+    {
+      "title": "Time left",
+      "rows": [
+        {
+          "key": "time",
+          "type": "toggle",
+          "title": "Show time left",
+          "desc": "A small chip with the minutes still to read",
+          "default": true
+        },
+        {
+          "key": "speed",
+          "type": "choice",
+          "title": "Reading speed",
+          "desc": "Words per minute",
+          "options": [
+            [
+              "180",
+              "Relaxed"
+            ],
+            [
+              "230",
+              "Average"
+            ],
+            [
+              "300",
+              "Quick"
+            ],
+            [
+              "400",
+              "Skimming"
+            ]
+          ],
+          "default": "230"
+        }
+      ]
+    }
+  ],
+  "counters": [
+    {
+      "key": "finished",
+      "row": "bar",
+      "did": "Finished",
+      "one": "long page",
+      "many": "long pages"
+    }
+  ],
+  "seed": {
+    "counts": {
+      "finished": 128
+    }
+  },
+  "features": [
+    [
+      "A bar that fills as you read",
+      "A thin bar in your chosen color fills from left to right as you scroll a long page."
+    ],
+    [
+      "Minutes left, not pages",
+      "A small chip shows roughly how long the rest of the page takes at your reading speed."
+    ],
+    [
+      "Only where it helps",
+      "Short pages stay untouched; the bar and chip appear only when there's real reading to do."
+    ],
+    [
+      "Light or dark",
+      "The panel follows your device's light or dark setting, or pick one with the switch at the top."
+    ]
+  ],
+  "start": "const layer = document.createElement('gauge-bar');\nconst root = layer.attachShadow({ mode: 'closed' });\nconst bar = document.createElement('div'), chip = document.createElement('div');\nroot.append(Object.assign(document.createElement('style'), { textContent: ':host{all:initial}div{position:fixed;left:0;z-index:2147483646;pointer-events:none}.b{height:var(--t);background:' + APP.accent + ';box-shadow:0 0 10px rgba(' + APP.rgb + ',.7);transition:width .1s linear}.c{right:12px;padding:4px 9px;border-radius:9px;font:600 11px/1.2 system-ui,sans-serif;backdrop-filter:blur(10px)}' }), bar, chip);\nbar.className = 'b'; chip.className = 'c';\ndocument.documentElement.append(layer);\nlet done = false;\nFEATURES.paint = () => {\n    const s = S.settings, el = document.scrollingElement || document.documentElement;\n    const room = el.scrollHeight - innerHeight, words = (document.body?.innerText || '').split(/\\s+/).length;\n    const long = s.enabled && room > innerHeight && words > 400, f = long ? Math.min(1, el.scrollTop / room) : 0;\n    bar.hidden = !(long && s.bar); chip.hidden = !(long && s.time);\n    bar.style.cssText = `--t:${s.thick}px;width:${f * 100}%;${s.edge}:0`;\n    chip.style.cssText = `${s.edge}:${s.thick + 8}px;background:${isDark() ? 'rgba(22,22,28,.8)' : 'rgba(255,255,255,.84)'};color:${isDark() ? '#f2f2f5' : '#1d1d1f'}`;\n    chip.textContent = Math.max(1, Math.round(words * (1 - f) / +s.speed)) + ' min left';\n    if (long && f > .98 && !done) { done = true; COUNTS.bump('finished'); }\n};\naddEventListener('scroll', () => FEATURES.paint(), { passive: true });\naddEventListener('resize', () => FEATURES.paint());",
+  "apply": "FEATURES.paint?.();\nlog('settings', s);"
+}
