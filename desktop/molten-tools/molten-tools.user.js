@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.7.3
+// @version      3.7.4
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -139,6 +139,8 @@
       p.setAttribute('data-theme', this.dark() ? 'dark' : 'light');
       const m = p.querySelector('.ytt-mode');
       if (m) m.setAttribute('aria-checked', String(this.dark()));
+      // "Match my device" follows along when the switch up top (or another tab) picks a theme
+      for (const i of p.querySelectorAll('input[data-gw-match]')) i.checked = this.get() === 'auto';
     },
     // the sun/moon switch for the panel header
     toggle(onChange) {
@@ -703,7 +705,12 @@
       load: v => { Object.assign(priv, PRIV_DEFAULTS, v || {}); refresh(); },
     };
   })();
-  gmWatch('privacy', v => PRIV.load(v));
+  // another tab changed the Account tab's settings: an open panel here shows them too
+  // (the panel may not exist yet, or ever on this page: then there's nothing to refresh)
+  const uiRefresh = () => { try { UI.refresh(); } catch (e) { /* no panel here */ } };
+  gmWatch('privacy', v => { PRIV.load(v); uiRefresh(); });
+  gmWatch('acctDebug', uiRefresh);
+  addEventListener('storage', e => { if (e.key === 'acctSwitch.config') uiRefresh(); });
   PRIV.start();
 
   if (ENABLED && ACCT.start()) return;
@@ -4434,11 +4441,14 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
     );
 
     // one art color drives both the title bar and the seek bar
+    // an open panel's color swatches follow along (they show the color being faded to, not a frame of the fade)
+    const told = () => document.dispatchEvent(new CustomEvent('ytt-colors'));
     function apply(col) {
       if (gen.titleColor) show(tone(col)); else if (wanted || shown) show(null);
       setSeek(gen.seekColor ? seekTone(col) : null);
+      told();
     }
-    function clear() { show(null); setSeek(null); }
+    function clear() { show(null); setSeek(null); told(); }
 
     async function fromUrl(url) {
       if (!active() || !url) return;
@@ -4483,7 +4493,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
     function off() { source = ''; lastVideo = ''; clear(); }
 
-    return { fromUrl, tick, refresh, off, color: () => (shown ? css(shown) : ''), seek: () => (seekShown ? css(seekShown) : '') };
+    return { fromUrl, tick, refresh, off, color: () => (wanted ? css(wanted) : ''), seek: () => (seekShown ? css(seekShown) : '') };
   })();
 
   function generalInit() {
@@ -4546,6 +4556,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '--mt-sw-off:rgba(0,0,0,.16);--mt-input:rgba(255,255,255,.75);--mt-input-edge:rgba(0,0,0,.12);--mt-ink:#a8550a;--mt-good:#1f7a3a;--mt-bad:#b4271b;--mt-knob:#fff;color-scheme:light}' +
       // sun/moon switch: light or dark glass (the device's choice until it's flipped)
       // glassware:frame start: shared controls, stamped by tools/frame.py; edit them there
+      '#ytt-panel button{display:inline-block;height:auto;min-height:0;align-items:center;line-height:inherit;vertical-align:middle}' +
       '#ytt-panel .ytt-mode{position:relative!important;flex:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;width:50px!important;height:28px!important;margin:0 0 0 auto!important;padding:0 7px!important;border:0!important;border-radius:14px!important;background:var(--mt-ctl-hi)!important;color:var(--mt-sub)!important;cursor:pointer!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important}' +
       '#ytt-panel .ytt-mode svg{position:relative!important;z-index:1!important;flex:none!important;display:block!important;width:13px!important;height:13px!important;transition:color .18s!important}' +
       '#ytt-panel .ytt-mode .ytt-knob{position:absolute!important;top:3px!important;left:3px!important;width:22px!important;height:22px!important;border-radius:50%!important;background:var(--mt-knob)!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transition:transform .2s cubic-bezier(.3,.7,.3,1)!important}' +
@@ -4855,13 +4866,15 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       body.append(f);
 
       let enabled = saved ? saved.enabled !== false : true;
-      toggleRow(body, 'Auto-switch when this app launches', 'One try per launch; manual switches are respected until refresh',
+      const auto = toggleRow(body, 'Auto-switch when this app launches', saved ? 'One try per launch; manual switches are respected until refresh' : 'Save a default account below first',
         () => enabled,
         v => {
           enabled = v;
           const c = ACCT.loadCfg();
           if (c) { c.enabled = v; ACCT.saveCfg(c); say(v ? 'Auto-switch on.' : 'Auto-switch off.'); }
         });
+      // without a saved default there's nothing to switch to, so the switch can't be flipped (it wouldn't stick)
+      if (!saved) { auto.querySelector('input').disabled = true; auto.classList.add('ytt-off'); }
 
       const status = el('div', 'ytt-status');
       const say = (msg, err) => { status.textContent = msg; status.classList.toggle('err', !!err); };
@@ -5048,11 +5061,16 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       COUNTS.line(toggleRow(body, 'Auto-dismiss "Still watching?"',
         'Answers "Continue watching?" and "Video paused" prompts so playback never stops', get('autoDismiss'), set('autoDismiss')), 'dismissed');
 
-      const swatch = (parent, color) => {
+      const swatch = (parent, get) => {
         const row = el('div', 'ytt-row');
         const chip = el('span', 'ytt-swatch');
-        chip.style.background = color || 'transparent';
-        row.append(labelBlock('Current color', color || 'Nothing playing yet (site default)'), chip);
+        const lb = labelBlock('Current color', ' ');
+        const show = () => { const c = get(); chip.style.background = c || 'transparent'; lb.lastChild.textContent = c || 'Nothing playing yet (site default)'; };
+        show();
+        // follow the color live while the panel is open
+        const on = () => { if (!row.isConnected) return document.removeEventListener('ytt-colors', on); show(); };
+        document.addEventListener('ytt-colors', on);
+        row.append(lb, chip);
         parent.append(row);
       };
       const from = IS_MUSIC ? 'the current album art' : 'the current video\'s thumbnail';
@@ -5061,14 +5079,14 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       toggleRow(body, 'Match the title bar to the art', 'Takes the color from ' + from, get('titleColor'), set('titleColor'));
       const t = el('div', gen.titleColor ? '' : 'ytt-off');
       selectRow(t, 'Tone', 'Dark is easiest to read', [['dark', 'Dark'], ['vivid', 'Vivid'], ['muted', 'Muted']], get('titleTone'), set('titleTone'));
-      swatch(t, TITLE.color());
+      swatch(t, TITLE.color);
       body.append(t);
 
       section(body, 'Seek bar');
       toggleRow(body, 'Match the seek bar to the art', 'Uses the same art color as the title bar', get('seekColor'), set('seekColor'));
       const k = el('div', gen.seekColor ? '' : 'ytt-off');
       selectRow(k, 'Tone', 'Bright is easiest to see', [['bright', 'Bright'], ['title', 'Match title bar']], get('seekTone'), set('seekTone'));
-      swatch(k, TITLE.seek());
+      swatch(k, TITLE.seek);
       body.append(k);
 
       body.append(el('div', 'ytt-note',
@@ -5076,7 +5094,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
       section(body, 'Appearance');
       toggleRow(body, 'Match my device', 'Light or dark follows your device until you flip the switch up top',
-        () => LOOK.get() === 'auto', v => { gmSet('appearance', v ? 'auto' : (LOOK.dark() ? 'dark' : 'light')); LOOK.apply(); render(); });
+        () => LOOK.get() === 'auto', v => { gmSet('appearance', v ? 'auto' : (LOOK.dark() ? 'dark' : 'light')); LOOK.apply(); render(); }).querySelector('input').setAttribute('data-gw-match', '');
 
       section(body, 'Troubleshooting');
       toggleRow(body, 'Log to the console', 'Lines start with [LavaLamp] / [yt-hd] / [molten] (F12)', () => lava.debug, v => { lavaSet('debug', v); render(); });

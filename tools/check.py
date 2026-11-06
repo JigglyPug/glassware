@@ -28,6 +28,8 @@ It checks, in order:
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
              recipe, nothing faint or hard to see, in both themes (changed scripts)
+  live       tools/live.py: every control updates the panel on the spot, in the same tab and in a
+             second open tab, with nothing waiting for a reopen (changed scripts)
   screenshots the committed panel screenshots still match the panels (changed scripts)
 """
 import glob, os, re, subprocess, sys
@@ -252,6 +254,15 @@ if '--quick' not in args:
 
 # ------------------------------------------------------------------ screenshots
 if '--quick' not in args:
+    head('live')
+    if not targets: print('  ✓ no script differs from GitHub')
+    else:
+        r = subprocess.run([sys.executable, f'{HERE}/live.py'] + [p.split('/')[1] for p in targets], capture_output=True, text=True)
+        cur = ''; seen = 0
+        for l in r.stdout.splitlines():
+            if l.startswith('== '): cur = l[3:].split(':')[0].split('/')[-1]; seen += 1; (print(f'  ✓ {cur}: updates live') if l.endswith('clean') else None)
+            elif l.strip(): ok(False, f'{cur}: {l.strip()}')
+        ok(seen == 2 * len(targets), f'the live-update test reported {seen} of {2 * len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
     head('screenshots')
     # Recapture each panel in a scratch folder and compare with the committed image. Captures repeat
     # exactly (fixed clock, demo data, animations stopped), so any difference means the panel changed

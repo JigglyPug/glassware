@@ -133,7 +133,13 @@ and keep existing ones on it.
   "Turn <Name> on/off" if it has a master switch, then extras worded the same way: "Turn lava on/off",
   "Turn screenshot safe on/off", "Turn badges on/off for this site".
 - **Behaviour.** Esc closes the panel; changes apply live; clicks and keys inside the panel never
-  reach the site. No new keyboard shortcuts (Prism's Alt+Shift+P is the only one).
+  reach the site. Everything the panel shows updates on the spot, never only after switching tabs,
+  reopening or refreshing: a control and anything it affects (the sun/moon switch and "Match my
+  device", a tone and its color swatch, a status line), in this tab and in every other open tab of
+  the site, plus readouts that change on their own (a color that fades in, a count). An open panel
+  re-renders when another tab saves, unless someone is typing in it. `tools/live.py` tests this:
+  it changes every control there and back, compares the panel with a freshly opened one, then does
+  the same from a second tab. No new keyboard shortcuts (Prism's Alt+Shift+P is the only one).
 - **Light and dark.** Every panel follows the device's light or dark setting by default. The header
   switch picks one and keeps it; turning "Match my device" back on returns to following the device.
   The choice is saved as `appearance` (`auto`, `light` or `dark`, default `auto`), follows device
@@ -201,6 +207,7 @@ python3 tools/pages.py              # rebuild every README, banner, site page an
 python3 tools/audit.py [script]     # check panels for small visual glitches (run after panel changes)
 python3 tools/carry.py [script]     # check settings and saved data carry over from the live version
 python3 tools/sheet.py              # every changed screenshot, dark next to light, on one sheet per script
+python3 tools/live.py [script]      # every control updates the panel live, in this tab and in another open tab
 python3 tools/check.py              # release check: everything below, plus the two above for changed scripts
 ```
 
@@ -216,7 +223,10 @@ python3 tools/check.py              # release check: everything below, plus the 
   the way browsers that darken pages themselves show it, to look at by eye. Fix what it finds before shipping; it should print
   "clean" for every script.
 - Panels that live in the page (not a shadow root) inherit the site's CSS: undo text rules like
-  `white-space` on the panel itself. Picker grids use equal columns
+  `white-space` on the panel itself. Their buttons get one reset in the stamped frame (normal
+  display, auto height, centered content), because sites like Reddit give every button a fixed
+  height with its text pushed to the bottom; the audit's site CSS does the same and flags any
+  button whose text isn't centered. Picker grids use equal columns
   (`minmax(0,1fr)`) and drop to 3 per row when a label is long, so labels wrap instead of
   spilling. Phone sheets size with `dvh` (after a `vh` fallback) so the address and tool bars
   never cover the top.

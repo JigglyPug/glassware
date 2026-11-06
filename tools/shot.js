@@ -50,6 +50,8 @@ function stubPage() {
   button{white-space:nowrap;line-height:1;font:inherit;text-transform:none;letter-spacing:normal;min-width:0}
   p,h1,h2,h3,h4,ul{margin:0;padding:0}a{color:inherit;text-decoration:none}svg{fill:currentColor}img,video{max-width:100%;height:auto}
   input,select,textarea{line-height:1;font:inherit}label{white-space:nowrap}
+  /* Reddit: buttons get a fixed height with their content pushed to the bottom */
+  button{display:inline-flex;align-items:flex-end;height:40px}
   /* ...and text colors from the site's own theme, which can be the opposite of the panel's
      (Reddit in dark mode on a phone set to light colors every <label> near-white) */
   label,p,h1,h2,h3,h4,li,small,strong{color:${dark ? '#1a1a1b' : '#d7dadc'}}
@@ -82,7 +84,10 @@ function stubPage() {
       window.__cmds = [];
       const W = window;
       W.GM_getValue = (k, d) => { W.__reads.add('gm:' + k); return k in store ? store[k] : d; };
-      W.GM_setValue = (k, v) => { const o = store[k]; store[k] = v; ls.forEach(l => l.k === k && l.f(k, o, v, false)); };
+      // other tabs of the same page hear every change, as Tampermonkey's value listeners do (remote = true)
+      const bc = (() => { try { return new BroadcastChannel('glassware-gm'); } catch (e) { return null; } })();
+      W.GM_setValue = (k, v) => { const o = store[k]; store[k] = v; ls.forEach(l => l.k === k && l.f(k, o, v, false)); try { bc && bc.postMessage({ k, v: v === undefined ? null : JSON.parse(JSON.stringify(v)) }); } catch (e) {} };
+      if (bc) bc.onmessage = e => { const { k, v } = e.data || {}; const o = store[k]; store[k] = v; ls.forEach(l => l.k === k && l.f(k, o, v, true)); };
       W.GM_deleteValue = k => { delete store[k]; };
       W.GM_listValues = () => Object.keys(store);
       W.GM_addValueChangeListener = (k, f) => { ls.push({ k, f }); return ls.length; };
@@ -195,6 +200,22 @@ function stubPage() {
             if (off > 1.5) add('knob off center', e, Math.round(off) + 'px from the middle of a ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' track');
             if (k.height > r.height + 0.5) add('knob off center', e, 'knob taller than its track'); }
         }
+        // text centered in its button: vertically always, horizontally when the button centers it
+        // (only buttons with a visible box: a filled or outlined button; a bare text row has no middle to miss)
+        // (a segment or tab inside a filled bar counts too: the bar is its box)
+        const par = parentOf(e), pcs = par && par.nodeType === 1 ? getComputedStyle(par) : null, pr2 = par && par.getBoundingClientRect ? par.getBoundingClientRect() : null;
+        const boxedBtn = rgba(cs.backgroundColor)[3] > 0.02 || cs.backgroundImage !== 'none' || ['Top', 'Right', 'Bottom', 'Left'].every(sd => parseFloat(cs['border' + sd + 'Width']) > 0 && cs['border' + sd + 'Style'] !== 'none')
+          || (pcs && rgba(pcs.backgroundColor)[3] > 0.02 && pr2 && r.height >= pr2.height - 10);
+        if ((e.tagName === 'BUTTON' || e.getAttribute('role') === 'tab' || e.getAttribute('role') === 'radio') && r.height > 0 && r.height < 80 && boxedBtn) {
+          const tn = [...e.childNodes].filter(n => n.nodeType === 3 && n.nodeValue.trim());
+          if (tn.length) { const rg = document.createRange(); rg.setStartBefore(tn[0]); rg.setEndAfter(tn[tn.length - 1]); const q = rg.getBoundingClientRect();
+            const pt = parseFloat(cs.paddingTop) + parseFloat(cs.borderTopWidth), pb = parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth);
+            const boxMid = r.top + r.height / 2, textMid = q.top + q.height / 2, padSkew = 0;   // measured against the whole button: uneven padding (often a site rule) counts too
+            if (q.height > 0 && q.height < r.height && Math.abs(textMid - boxMid - padSkew) > 2.5) add('text off center', e, (textMid > boxMid ? 'sits ' : 'rides ') + Math.round(Math.abs(textMid - boxMid)) + 'px ' + (textMid > boxMid ? 'low' : 'high') + ' in a ' + Math.round(r.height) + 'px button');
+            const centered = cs.textAlign === 'center' || (/flex/.test(cs.display) && cs.justifyContent === 'center');
+            if (centered && e.children.length === 0 && q.width < r.width - 4 && Math.abs((q.left + q.width / 2) - (r.left + r.width / 2)) > 2.5) add('text off center', e, Math.round(Math.abs((q.left + q.width / 2) - (r.left + r.width / 2))) + 'px off the middle sideways');
+          }
+        }
         // the shared controls are the same size in every script (CLAUDE.md: control sizes)
         const sz = (x, w, h) => Math.abs(x.width - w) <= 0.5 && Math.abs(x.height - h) <= 0.5;
         if (e.getAttribute('aria-label') === 'Dark mode') {
@@ -292,6 +313,83 @@ function stubPage() {
       }
     };
     window.__dump = () => { const ls = {}; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); ls[k] = localStorage.getItem(k); } return { gm: JSON.parse(JSON.stringify(__gm)), ls, reads: [...__reads] }; };`;
+  // --live: every control must update the panel on the spot. Change each control in turn, read what
+  // every control (and the panel's text) shows, then close and reopen the panel and read it again: any
+  // difference is something that only caught up after a reopen (or a tab switch, or a refresh).
+  if (has('--live')) {
+    await page.evaluate(auditJs || ''); await page.evaluate(carryJs);
+    page.on('dialog', d => d.dismiss().catch(() => {}));
+    const tabList = tabs ? tabs.split(',') : ['main'];
+    const goTab = async t => { if (t !== 'main') { await page.evaluate(t => __clickTab(t), t); await page.waitForTimeout(450); } };
+    const read = (t, pg = page) => pg.evaluate(t => {
+      const st = __state(t).map(x => [x.pos + ' (' + x.key.split(' | ').pop() + ')', String(x.value)]);
+      // the panel's words too (numbers and times left out: clocks and counters move on their own)
+      const host = __all().find(e => e.getAttribute && e.getAttribute('aria-label') === 'Dark mode');
+      let root = host; while (root && root.getBoundingClientRect().width < 300) root = root.parentElement || (root.getRootNode() && root.getRootNode().host);
+      // (color values are kept: a stale color is a stale panel)
+      const text = root ? (root.innerText || '').split('\n').map(l => l.replace(/(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}\b)|[0-9]+([.:,][0-9]+)*/g, (m, col) => col || '#').trim()).filter(Boolean) : [];
+      // color swatches (the title bar or seek bar color, a hex preview, a status dot) and typed values
+      if (root) { const n = {};
+        for (const e of [root, ...root.querySelectorAll('*')]) { const r = e.getBoundingClientRect(); if (!r.width) continue;
+          const cls = (typeof e.className === 'string' ? e.className : '').trim().split(/\s+/)[0] || e.tagName.toLowerCase();
+          if (e.matches('input[type=text],input[type=number],input:not([type])')) { n[cls] = (n[cls] || 0) + 1; st.push(['field ' + cls + ' #' + n[cls], e.value]); continue; }
+          if (r.width > 80 || r.height > 80 || r.width < 6 || r.height < 6 || e.childElementCount || (e.textContent || '').trim()) continue;
+          const bg = getComputedStyle(e).backgroundColor; if (bg === 'rgba(0, 0, 0, 0)') continue;
+          n[cls] = (n[cls] || 0) + 1; st.push(['swatch ' + cls + ' #' + n[cls], bg]); } }
+      return { st, text };
+    }, t);
+    const reopen = async (t, pg = page) => {
+      await pg.keyboard.press('Escape'); await pg.waitForTimeout(300);
+      await pg.evaluate(n => { const c = window.__cmds.find(c => c.n.startsWith(n)); if (c) c.f(); }, cmdName); await pg.waitForTimeout(600);
+      if (t !== 'main') { await pg.evaluate(t => __clickTab(t), t); await pg.waitForTimeout(450); }
+    };
+    const issues = [];
+    // --twotab: the change is made in one tab and checked in a second open tab of the same site
+    const two = has('--twotab'); let other = null;
+    const openOther = async () => {
+      if (other) await other.close();
+      other = await ctx.newPage(); await other.goto(url, { waitUntil: 'load' }); await other.waitForTimeout(1200);
+      if (cmdName !== 'none') await other.evaluate(n => { const c = window.__cmds.find(c => c.n.startsWith(n)); if (c) c.f(); }, cmdName);
+      await other.waitForTimeout(800); await other.evaluate(helpers); await other.evaluate(auditJs || ''); await other.evaluate(carryJs);
+    };
+    // each tab starts from a fresh page (the demo data again), so what one tab's test changed can't hide
+    // a problem in the next
+    const fresh = async () => {
+      await page.reload({ waitUntil: 'load' }); await page.waitForTimeout(1200);
+      if (cmdName !== 'none') await page.evaluate(n => { const c = window.__cmds.find(c => c.n.startsWith(n)); if (c) c.f(); }, cmdName);
+      await page.waitForTimeout(800);
+      await page.evaluate(helpers); await page.evaluate(auditJs || ''); await page.evaluate(carryJs);
+    };
+    for (const t of tabList) {
+      if (t !== tabList[0] || two) await fresh();
+      await goTab(t);
+      if (two) { await openOther(); if (t !== 'main') { await other.evaluate(t => __clickTab(t), t); await other.waitForTimeout(450); } }
+      const n = await page.evaluate(() => __ctl().length);
+      if (has('--verbose')) console.log('CTL ' + t + ' ' + JSON.stringify(await page.evaluate(() => __ctl().map(c => c.kind + ':' + c.label + '=' + c.value))));
+      for (let j = 0; j < 2 * n; j++) {   // each control twice: there and back, so both directions are seen
+        const i = j >> 1;
+        const what = await page.evaluate(i => { const c = __ctl()[i]; if (!c) return null;
+          if (c.kind === 'toggle') { if (/Everything is (on|off)/.test(c.label)) return null; c.el.click(); return c.label; }
+          if (c.kind === 'choice') { const b = c.buttons.filter(b => !(b.classList.contains('on') || b.getAttribute('aria-pressed') === 'true' || b.getAttribute('aria-checked') === 'true')).pop(); if (!b) return null; b.click(); return c.label + ' → ' + b.textContent.trim(); }
+          if (c.kind === 'slider') { const el = c.el, mx = +el.max || 100, st = +el.step || 1, v = +el.value === mx ? mx - st : Math.min(mx, +el.value + st);
+            Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, String(v)); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); return c.label; }
+          return null; }, i);
+        if (!what) continue;
+        await page.waitForTimeout(1200);   // long enough for a fade or a color pick to land
+        const pg = two ? other : page;
+        const live = await read(t, pg); await reopen(t, pg); const fresh = await read(t, pg);
+        if (has('--verbose')) console.log('READ ' + what.slice(0, 40) + ' :: ' + JSON.stringify(live.st.filter(x => /^swatch|^field/.test(x[0]))));
+        const F = Object.fromEntries(fresh.st);
+        const where = two ? ' in another open tab' : '';
+        for (const [k, v] of live.st) if (k in F && F[k] !== v) issues.push(`${t} | after "${what.slice(0, 50)}"${where}: ${k.slice(0, 70)} showed ${v} until the panel was reopened (then ${F[k]})`);
+        const lt = new Set(live.text), ft = new Set(fresh.text);
+        const gone = [...ft].filter(x => !lt.has(x)).slice(0, 2);
+        for (const x of gone) issues.push(`${t} | after "${what.slice(0, 50)}"${where}: the text "${x.slice(0, 60)}" only appeared after reopening`);
+      }
+    }
+    console.log('LIVE ' + JSON.stringify([...new Set(issues)]));
+    await browser.close(); return;
+  }
   if (has('--exercise') || has('--state')) {
     await page.evaluate(auditJs || ''); await page.evaluate(carryJs);
     page.on('dialog', d => d.dismiss().catch(() => {}));

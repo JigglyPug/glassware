@@ -86,10 +86,16 @@ def rules(f, size):
     ]
     return out
 
+# Panels in the page meet the site's own button rules (Reddit gives buttons a fixed height and
+# bottom-aligned content). One reset for every button in the panel, at #id specificity so it beats a
+# site's tag and class rules but not the panel's own class rules (which keep their sizes).
+def page_reset(f):
+    return [(f"{f['root']} button", "display:inline-block;height:auto;min-height:0;align-items:center;line-height:inherit;vertical-align:middle")] if f['page'] else []
+
 def css(f):
     imp = lambda decl: ';'.join(d + ('!important' if f['page'] and d and not d.endswith('!important') else '') for d in decl.split(';'))
     fmt = lambda sel, decl: f'{sel}{{{imp(decl)}}}'
-    lines = [fmt(*r) for r in rules(f, 'phone' if f['phone'] == 'always' else 'desktop')]
+    lines = [f'{sel}{{{decl}}}' for sel, decl in page_reset(f)] + [fmt(*r) for r in rules(f, 'phone' if f['phone'] == 'always' else 'desktop')]
     ph = f['phone']
     if ph and ph != 'always':
         phone = [r for r in rules(f, 'phone') if f['x'] in r[0].split(':')[0].split(',')[0] or f['toggle'][1] in r[0]]

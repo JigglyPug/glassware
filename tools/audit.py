@@ -11,7 +11,8 @@ also checked at small and large phone sizes. Prints one line per problem; no out
 script means it's clean. It also checks the glass recipe (blur 28px, saturate 170%, light glass
 at 84%, dark at 80%), flags text fainter than 3:1 (SVG chart text too) and marks, dashed lines and
 outlines under 1.8:1 against what's behind them ("hard to see"), and taps a chart bar to check the
-selected state. What a script draws outside its panel (SURFACES below: Hourglass's block screen
+selected state, and flags button text that isn't centered (the site CSS gives buttons a fixed
+height with bottom-aligned content, as Reddit does). What a script draws outside its panel (SURFACES below: Hourglass's block screen
 and late-night nudge, Looking-Glass's badge menu) gets the same checks. Every size runs in dark
 on a plain page and with the global CSS big sites ship ("with site CSS"), which panels outside a
 shadow root inherit, in both themes. The site CSS also colors labels, paragraphs and headings in the

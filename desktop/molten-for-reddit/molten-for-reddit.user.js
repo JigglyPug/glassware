@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.4.3
+// @version      2.4.4
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -128,6 +128,8 @@
       p.setAttribute('data-theme', this.dark() ? 'dark' : 'light');
       const m = p.querySelector('.ytt-mode');
       if (m) m.setAttribute('aria-checked', String(this.dark()));
+      // "Match my device" follows along when the switch up top (or another tab) picks a theme
+      for (const i of p.querySelectorAll('input[data-gw-match]')) i.checked = this.get() === 'auto';
     },
     // the sun/moon switch for the panel header
     toggle(onChange) {
@@ -1569,11 +1571,14 @@ div.lava-blobs {
       return hslToRgb(h, Math.min(1, Math.max(s, 0.55)), Math.min(0.7, Math.max(0.55, l)));
     }
     function setSeekCol(c) { seekShown = c; SHADOW.setSeek(c ? css(c) : ''); }
+    // an open panel's color swatches follow along (they show the color being faded to, not a frame of the fade)
+    const told = () => document.dispatchEvent(new CustomEvent('ytt-colors'));
     function apply(col) {
       if (gen.titleColor) show(tone(col)); else if (wanted || shown) show(null);
       setSeekCol(gen.seekColor ? seekTone(col) : null);
+      told();
     }
-    function clear() { show(null); setSeekCol(null); }
+    function clear() { show(null); setSeekCol(null); told(); }
     // a readable copy of any image (direct if allowed, otherwise fetched through the userscript manager)
     async function image(url) {
       try {
@@ -1634,7 +1639,7 @@ div.lava-blobs {
     }
     function off() { source = ''; clear(); }
 
-    return { fromUrl, tick, refresh, off, image, yielded: () => yielded, color: () => (shown ? css(shown) : ''), seek: () => (seekShown ? css(seekShown) : '') };
+    return { fromUrl, tick, refresh, off, image, yielded: () => yielded, color: () => (wanted ? css(wanted) : ''), seek: () => (seekShown ? css(seekShown) : '') };
   })();
   gmWatch('general', v => { Object.assign(gen, GEN_DEFAULTS, v || {}); TITLE.refresh(); UI.refresh(); });
 
@@ -1913,6 +1918,7 @@ div.lava-blobs {
       '--mt-sw-off:rgba(0,0,0,.16);--mt-input:rgba(255,255,255,.75);--mt-input-edge:rgba(0,0,0,.12);--mt-ink:#a8550a;--mt-good:#1f7a3a;--mt-bad:#b4271b;--mt-knob:#fff;color-scheme:light}' +
       // sun/moon switch: light or dark glass (the device's choice until it's flipped)
       // glassware:frame start: shared controls, stamped by tools/frame.py; edit them there
+      '#ytt-panel button{display:inline-block;height:auto;min-height:0;align-items:center;line-height:inherit;vertical-align:middle}' +
       '#ytt-panel .ytt-mode{position:relative!important;flex:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;width:50px!important;height:28px!important;margin:0 0 0 auto!important;padding:0 7px!important;border:0!important;border-radius:14px!important;background:var(--mt-ctl-hi)!important;color:var(--mt-sub)!important;cursor:pointer!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important}' +
       '#ytt-panel .ytt-mode svg{position:relative!important;z-index:1!important;flex:none!important;display:block!important;width:13px!important;height:13px!important;transition:color .18s!important}' +
       '#ytt-panel .ytt-mode .ytt-knob{position:absolute!important;top:3px!important;left:3px!important;width:22px!important;height:22px!important;border-radius:50%!important;background:var(--mt-knob)!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transition:transform .2s cubic-bezier(.3,.7,.3,1)!important}' +
@@ -2162,11 +2168,16 @@ div.lava-blobs {
          Video    quality · see-through bars · playing videos in the lava
          Reddit   comments · layout
          Search   Arctic Shift lookup for profiles                                                */
-    function swatchRow(parent, color) {
+    function swatchRow(parent, get) {
       const row = el('div', 'ytt-row');
       const chip = el('span', 'ytt-swatch');
-      chip.style.background = color || 'transparent';
-      row.append(labelBlock('Current color', color || 'Nothing yet (site default)'), chip);
+      const lb = labelBlock('Current color', ' ');
+      const show = () => { const c = get(); chip.style.background = c || 'transparent'; lb.lastChild.textContent = c || 'Nothing yet (site default)'; };
+      show();
+      // follow the color live while the panel is open
+      const on = () => { if (!row.isConnected) return document.removeEventListener('ytt-colors', on); show(); };
+      document.addEventListener('ytt-colors', on);
+      row.append(lb, chip);
       parent.append(row);
     }
 
@@ -2189,7 +2200,7 @@ div.lava-blobs {
       toggleRow(body, 'Match the title bar to the art', 'Same picture or video the lava is showing', get('titleColor'), set('titleColor'));
       const t = el('div', gen.titleColor ? '' : 'ytt-off');
       selectRow(t, 'Tone', 'Dark is easiest to read', [['dark', 'Dark'], ['vivid', 'Vivid'], ['muted', 'Muted']], get('titleTone'), set('titleTone'));
-      swatchRow(t, TITLE.color());
+      swatchRow(t, TITLE.color);
       body.append(t);
       if (TITLE.yielded()) body.append(el('div', 'ytt-note', 'Another script is also setting the title bar color, so Molten stepped back ' +
         'to stop the flashing. Turn the other script off for Reddit, then refresh, to use this.'));
@@ -2198,12 +2209,12 @@ div.lava-blobs {
       toggleRow(body, 'Match the seek bar to the art', 'The played part and the ball, same color as the title bar', get('seekColor'), set('seekColor'));
       const k = el('div', gen.seekColor ? '' : 'ytt-off');
       selectRow(k, 'Tone', 'Bright is easiest to see', [['bright', 'Bright'], ['title', 'Match title bar']], get('seekTone'), set('seekTone'));
-      swatchRow(k, TITLE.seek());
+      swatchRow(k, TITLE.seek);
       body.append(k);
 
       section(body, 'Appearance');
       toggleRow(body, 'Match my device', 'Light or dark follows your device until you flip the switch up top',
-        () => LOOK.get() === 'auto', v => { gmSet('appearance', v ? 'auto' : (LOOK.dark() ? 'dark' : 'light')); LOOK.apply(); render(); });
+        () => LOOK.get() === 'auto', v => { gmSet('appearance', v ? 'auto' : (LOOK.dark() ? 'dark' : 'light')); LOOK.apply(); render(); }).querySelector('input').setAttribute('data-gw-match', '');
 
       section(body, 'Troubleshooting');
       toggleRow(body, 'Log to the console', 'Lines start with [molten] (F12)', () => lava.debug, v => { lavaSet('debug', v); render(); });

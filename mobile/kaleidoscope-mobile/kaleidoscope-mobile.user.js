@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.3.3
+// @version      1.3.4
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -535,6 +535,7 @@
       // accent text on light glass uses the deeper blue so it stays readable
       '#kaleidoscope-panel[data-theme=light] .kld-tab.on,#kaleidoscope-panel[data-theme=light] .kld-reload:hover,#kaleidoscope-panel[data-theme=light] .kld-more:hover,#kaleidoscope-panel[data-theme=light] .kld-item:hover .kld-it,#kaleidoscope-panel[data-theme=light] .kld-title b,#kaleidoscope-panel[data-theme=light] .kld-tag{color:var(--k-ink)}' +
       // glassware:frame start: shared controls, stamped by tools/frame.py; edit them there
+      '#kaleidoscope-panel button{display:inline-block;height:auto;min-height:0;align-items:center;line-height:inherit;vertical-align:middle}' +
       '#kaleidoscope-panel .kld-mode-sw{position:relative!important;flex:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;width:50px!important;height:28px!important;margin:0 0 0 auto!important;padding:0 7px!important;border:0!important;border-radius:14px!important;background:var(--k-well)!important;color:var(--k-muted)!important;cursor:pointer!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important}' +
       '#kaleidoscope-panel .kld-mode-sw svg{position:relative!important;z-index:1!important;flex:none!important;display:block!important;width:13px!important;height:13px!important;transition:color .18s!important}' +
       '#kaleidoscope-panel .kld-mode-sw .kld-knob{position:absolute!important;top:3px!important;left:3px!important;width:22px!important;height:22px!important;border-radius:50%!important;background:var(--k-knob)!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transition:transform .2s cubic-bezier(.3,.7,.3,1)!important}' +
@@ -705,6 +706,8 @@
       for (const n of [panelEl, jobEl]) if (n) n.setAttribute('data-theme', isDark() ? 'dark' : 'light');
       const m = panelEl && panelEl.querySelector('.kld-mode-sw');
       if (m) m.setAttribute('aria-checked', String(isDark()));
+      // "Match my device" follows along when the switch up top (or another tab) picks a theme
+      if (panelEl) for (const i of panelEl.querySelectorAll('input[data-gw-match]')) i.checked = cfg.appearance === 'auto';
     }
     // the sun/moon switch for the panel header
     function lookSwitch() {
@@ -1270,7 +1273,7 @@
 
       section(body, 'Appearance');
       toggleRow(body, 'Match my device', 'Light or dark follows your device until you flip the switch up top',
-        () => cfg.appearance === 'auto', v => { cfg.appearance = v ? 'auto' : (isDark() ? 'dark' : 'light'); save(); applyLook(); render(); });
+        () => cfg.appearance === 'auto', v => { cfg.appearance = v ? 'auto' : (isDark() ? 'dark' : 'light'); save(); applyLook(); render(); }).querySelector('input').setAttribute('data-gw-match', '');
 
       body.append(el('div', 'kld-note',
         'Works on any profile: open someone\'s page and Kaleidoscope uses their list. Copy, Save and Share all put the prompt on your clipboard. ' +

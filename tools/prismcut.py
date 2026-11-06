@@ -5,8 +5,8 @@
 
 The light capture fills the upper left and the dark one the lower right, split along a diagonal.
 The seam is a thin line in the script's accent color with a faint glow, kept light enough that
-text under it stays readable. --lava (the Molten scripts) makes the edge wavy with a few bubbles
-drifting across it, each showing the other theme, like wax in a lava lamp. Both captures must be
+text under it stays readable. --lava (the Molten scripts) makes the edge wavy with drops of the light
+side melting off it into the dark, like wax in a lava lamp (the same look as the README banners). Both captures must be
 the same size: same panel, same demo data, only the theme differs.
 """
 import sys
@@ -28,20 +28,21 @@ def cut(light, dark, out=None, accent='#ffffff', lava=False):
     t = ((xs - x0) * dx + (ys - y0) * dy) / (L * L)               # 0 at the top of the line, 1 at the bottom
     s = w / 1000                                                  # keeps the seam's look at any width (tall heroes too)
     if lava:
-        # a slow wave along the edge, and wax bubbles that merge into it (smooth minimum)
+        # a slow wave along the edge
         wave = (np.sin(t * 2 * np.pi * 2.1 + .6) * 16 + np.sin(t * 2 * np.pi * 4.7 + 2) * 6) * s
         field = d - wave
-        rng = np.random.default_rng(7)
-        k = 14 * s
-        # only near the ends of the edge, so no wax drop sits on top of the panel's text
-        for tt, side in [(rng.uniform(.03, .08), 1), (rng.uniform(.1, .14), -1), (rng.uniform(.86, .9), 1), (rng.uniform(.92, .97), -1)]:
-            off = rng.uniform(26, 44) * s * side; r = rng.uniform(10, 16) * s
+        # wax drops of light glass melting off the edge into the dark, like the README banners: near the
+        # ends of the edge only (never over the panel's text), each joined to the edge by a smooth
+        # union wide enough that it reads as one melting blob, not a separate circle
+        k = 40 * s
+        # placed by distance from the top and bottom of the picture (the margin around the panel and its
+        # header and footer edges), not by fraction, so tall screenshots don't get drops over their text
+        for y_at, r, gap in [(26, 30, 6), (70, 17, 26), (-80, 34, 4), (-30, 19, 30)]:
+            tt = ((y_at if y_at > 0 else h / s + y_at) * s) / h
+            off = (r + gap) * s; r = r * s
             cx, cy = x0 + dx * tt + dy / L * off, y0 + dy * tt - dx / L * off
             blob = np.sqrt((xs - cx) ** 2 + (ys - cy) ** 2) - r
-            if side > 0:   # a light bubble out on the dark side: smooth union with the light region (field < 0)
-                hh = np.clip(.5 + .5 * (blob - field) / k, 0, 1); field = blob * (1 - hh) + field * hh - k * hh * (1 - hh)
-            else:          # a dark bubble on the light side: smooth cut out of the light region
-                hh = np.clip(.5 - .5 * (-blob - field) / k, 0, 1); field = (-blob) * (1 - hh) + field * hh + k * hh * (1 - hh)
+            hh = np.clip(.5 + .5 * (blob - field) / k, 0, 1); field = blob * (1 - hh) + field * hh - k * hh * (1 - hh)
         d = field
     m = np.clip(.5 - d / (1.1 * s), 0, 1)[..., None]              # 1 = light side, soft 1px edge
     img = A * m + B * (1 - m)

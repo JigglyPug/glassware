@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.4.3
+// @version      1.4.4
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.4.3';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.4.4';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -1887,13 +1887,15 @@ h1 span{color:var(--ink)}
 
     try { GM_registerMenuCommand('Open Hourglass', () => ui.open()); } catch {}
 
-    const KEYS = ['settings', 'schedule', 'schedPending', 'sites', 'sitesPending', 'ignored', 'music', 'passes', 'appearance'];
+    const KEYS = ['settings', 'schedule', 'schedPending', 'sites', 'sitesPending', 'ignored', 'music', 'passes', 'appearance', 'layout'];
     try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { blocker.retheme(); if (ui.host) ui.render(); }); } catch {}
     try {
         for (const k of KEYS) GM_addValueChangeListener(k, (name, oldV, newV, remote) => {
             if (!remote) return;
             load(); evaluate(); if (name === 'appearance') blocker.retheme();
-            if (ui.host && !ui.dragging && document.activeElement?.tagName !== 'HOURGLASS-UI') ui.render();
+            // re-render unless someone is typing in this panel (a focused panel alone isn't a reason to stay stale)
+            const typing = (() => { try { const a = ui.root && ui.root.activeElement; return !!a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && !/^(range|checkbox|radio|button)$/.test(a.type); } catch { return false; } })();
+            if (ui.host && !ui.dragging && !typing) ui.render();
         });
     } catch {}
 
