@@ -225,6 +225,17 @@ function stubPage() {
           if (!sz(r, ${TC.mode.w}, ${TC.mode.h})) add('control size', e, 'sun/moon switch is ' + Math.round(r.width) + 'x' + Math.round(r.height) + ', should be ${TC.mode.w}x${TC.mode.h}');
           const k = [...e.querySelectorAll('*')].find(k => getComputedStyle(k).position === 'absolute');
           if (k && !sz(k.getBoundingClientRect(), ${TC.mode.knob}, ${TC.mode.knob})) add('control size', e, 'sun/moon knob should be ${TC.mode.knob}x${TC.mode.knob}');
+          // the header around it: icon tile, name and tagline sizes (tools/tokens.json)
+          const head = e.parentElement;
+          if (head) {
+            const tile = [...head.querySelectorAll('*')].find(x => { const q = x.getBoundingClientRect(); return q.width >= 24 && q.width <= 48 && Math.abs(q.width - q.height) < 1 && q.right < r.left - 60; });
+            if (tile && !sz(tile.getBoundingClientRect(), ${TC.tile.size}, ${TC.tile.size})) add('control size', tile, 'icon tile is ' + Math.round(tile.getBoundingClientRect().width) + 'px, should be ${TC.tile.size}px');
+            const words = [...head.querySelectorAll('*')].filter(x => [...x.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim().length > 2) && x.getBoundingClientRect().right < r.left);
+            const name = words.find(x => +getComputedStyle(x).fontWeight >= 600), tag = words.find(x => +getComputedStyle(x).fontWeight < 600 && x !== name);
+            // (a wordmark at 800 weight, Kaleidoscope's, is the script's own skin)
+            if (name && +getComputedStyle(name).fontWeight < 800 && parseFloat(getComputedStyle(name).fontSize) !== ${TC.name}) add('control size', name, 'name is ' + getComputedStyle(name).fontSize + ', should be ${TC.name}px');
+            if (tag && parseFloat(getComputedStyle(tag).fontSize) !== ${TC.tagline}) add('control size', tag, 'tagline is ' + getComputedStyle(tag).fontSize + ', should be ${TC.tagline}px');
+          }
           const nx = e.nextElementSibling;
           if (nx && nx.tagName === 'BUTTON') { const q = nx.getBoundingClientRect(); const gap = Math.round(q.left - r.right);
             if (!(sz(q, ${TC.close.desktop}, ${TC.close.desktop}) || sz(q, ${TC.close.phone}, ${TC.close.phone}))) add('control size', nx, 'close button is ' + Math.round(q.width) + 'x' + Math.round(q.height) + ', should be ${TC.close.desktop}x${TC.close.desktop} (${TC.close.phone}x${TC.close.phone} on phones)');
