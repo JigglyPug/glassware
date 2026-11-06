@@ -87,7 +87,8 @@ and keep existing ones on it.
   Phones: a bottom sheet with a grab handle.
 - **Header.** Icon tile (the script's glyph on its own colors), then name and tagline, then the
   sun/moon switch (`aria-label` "Dark mode"), then a round close button on the right.
-- **Control sizes** (the same in every panel; the audit measures them):
+- **Control sizes** (the same in every panel; design tokens in `tools/tokens.json`, which the frame,
+  the kit and the audit read; the table below must match them):
 
   | | desktop | phone |
   |---|---|---|
@@ -147,8 +148,9 @@ and keep existing ones on it.
   draws flips, not just the panel: menus, toasts, the block screen and lockdown card, the late-night
   nudge, the badge menu. Only accents stay the same; accent-colored text uses a darker ink of the
   accent on light glass so it stays readable.
-- **The glass recipe.** Every frosted surface (panel, menus, cards, toasts) uses the same numbers;
-  neutrals swap between themes and accents don't:
+- **The glass recipe.** Every frosted surface (panel, menus, cards, toasts) uses the same numbers
+  (design tokens in `tools/tokens.json`; the table below must match them); neutrals swap between
+  themes and accents don't:
 
   | | light | dark |
   |---|---|---|
@@ -198,6 +200,16 @@ and keep existing ones on it.
   - After redrawing the icons: `node tools/icons.js`, scale them to 256px,
     `python3 tools/panel_icons.py`, update the shapes in `tools/live_glyphs.py` and run it, raise `?v=N`
     on every `@icon`, bump the versions, recapture, and run `python3 tools/pages.py`.
+
+## Design tokens
+
+`tools/tokens.json` is the one place the design numbers live: the glass recipe (both themes, blur,
+saturation, opacity), control sizes, the contrast minimums and the prism cut's diagonal and seam.
+`tools/frame.py` stamps the controls from it, the audit (`tools/shot.js`) measures against it, the
+kit fills its template's glass from it, and the cut and banners take their diagonal from it. To
+change a number: edit `tools/tokens.json`, run `python3 tools/frame.py` and `python3 tools/pages.py`,
+update the scripts' own glass where the recipe changed, recapture, and ship. `tools/check.py`
+fails if CLAUDE.md's tables disagree with the file or a tool keeps its own copy of a token value.
 
 ## After any change: rebuild the pages
 

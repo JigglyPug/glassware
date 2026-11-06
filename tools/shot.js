@@ -7,6 +7,9 @@
 // spills out of its box, things clipped or pushed off screen, and overlapping controls. tools/audit.py runs it.
 const { chromium, devices } = require('playwright');
 const fs = require('fs');
+// design tokens (tools/tokens.json): the audit measures against these, never its own copies
+const TK = JSON.parse(fs.readFileSync(require('path').join(__dirname, 'tokens.json'), 'utf8'));
+const TC = TK.controls, TG = TK.glass;
 
 const args = process.argv.slice(2);
 const [scriptPath, url, out] = args;
@@ -135,14 +138,14 @@ function stubPage() {
       const fixedAnc = e => { for (let x = e; x; x = x.parentElement || (x.getRootNode() && x.getRootNode().host)) { if (x.nodeType === 1 && getComputedStyle(x).position === 'fixed') return x; } return null; };
       const parentOf = x => x.parentElement || (x.getRootNode && x.getRootNode().host) || null;
       const els = __all().filter(e => e.nodeType === 1 && !/^(STYLE|SCRIPT|svg|path|defs|g|circle|rect|line|polyline|polygon|ellipse|stop|linearGradient|radialGradient|filter|feGaussianBlur|feMerge|feMergeNode|feColorMatrix|use|clipPath|mask)$/i.test(e.tagName) && !(e instanceof SVGElement) && fixedAnc(e) && vis(e));
-      // The glass recipe (CLAUDE.md): every frosted surface is blur(28px) saturate(170%), light glass
-      // at 84% and dark at 80%. Only big surfaces count (panel, menus, cards, toasts), not chips.
+      // The glass recipe (tools/tokens.json): every frosted surface has the token blur and saturation,
+      // light and dark glass at their token opacities. Only big surfaces count (panel, menus, cards, toasts), not chips.
       const rgba = c => { const m = (c || '').match(/[\\d.]+/g) || [0, 0, 0, 0]; return [+m[0], +m[1], +m[2], m[3] === undefined ? 1 : +m[3]]; };
-      const glassA = window.__theme === 'light' ? 0.84 : 0.8;
+      const glassA = window.__theme === "light" ? ${TG.opacity.light} : ${TG.opacity.dark};
       for (const e of els) { const cs = getComputedStyle(e), f = cs.backdropFilter || cs.webkitBackdropFilter || '';
         if (!/saturate/.test(f)) continue; const r = e.getBoundingClientRect(); if (r.width * r.height < 12000) continue;
         if (r.width >= vw && r.height >= vh) continue;   // a full-screen veil isn't glass (CLAUDE.md)
-        if (f.replace(/\\s+/g, ' ') !== 'blur(28px) saturate(1.7)') add('glass off recipe', e, 'backdrop-filter ' + f + ', should be blur(28px) saturate(170%)');
+        if (f.replace(/\\s+/g, ' ') !== 'blur(${TG.blur}px) saturate(${TG.saturate / 100})') add('glass off recipe', e, 'backdrop-filter ' + f + ', should be blur(${TG.blur}px) saturate(${TG.saturate}%)');
         const a = rgba(cs.backgroundColor)[3]; if (Math.abs(a - glassA) > 0.005) add('glass off recipe', e, 'glass at ' + Math.round(a * 100) + '%, should be ' + Math.round(glassA * 100) + '% in ' + (window.__theme || 'dark')); }
       // Things too faint to see on their own background, in this theme. Dimmed rows (an off feature,
       // a disabled control) are faint on purpose and skipped, and so is anything over a gradient or
@@ -173,16 +176,16 @@ function stubPage() {
         for (let x = e; x && x.nodeType === 1; x = parentOf(x)) { const b = rgba(getComputedStyle(x).backgroundColor); if (b[3] > 0) layers.push(b); if (b[3] >= 0.99) break; }
         for (const b of layers.reverse()) bg = over(b, bg);
         const ratio = ratioOf(over(rgba(getComputedStyle(e).color), bg), bg);
-        if (ratio < 3) add('faint text', e, 'contrast ' + ratio.toFixed(1) + ':1 in ' + T);
+        if (ratio < ${TK.contrast.text}) add('faint text', e, 'contrast ' + ratio.toFixed(1) + ':1 in ' + T);
       }
       const svgs = __all().filter(e => e instanceof SVGElement && fixedAnc(e) && e.getBoundingClientRect().width > 0);
       for (const e of svgs.filter(e => e.tagName.toLowerCase() === 'text' && e.textContent.trim().length > 1)) {
         const c = getComputedStyle(e), bg = behind(e.ownerSVGElement || e, false); if (!bg) continue;
         const f = rgba(c.fill); f[3] *= +c.fillOpacity * +c.opacity; const ratio = ratioOf(over(f, bg), bg);
-        if (ratio < 3) add('faint text', e, 'contrast ' + ratio.toFixed(1) + ':1 in ' + T);
+        if (ratio < ${TK.contrast.text}) add('faint text', e, 'contrast ' + ratio.toFixed(1) + ':1 in ' + T);
       }
       const mark = (e, color, bg, what) => { if (!bg || color[3] === 0) return; const r = ratioOf(over(color, bg), bg);
-        if (r < 1.8) add('hard to see', e, what + ' ' + 'rgb(' + color.slice(0, 3).map(Math.round).join(',') + ') at ' + r.toFixed(1) + ':1 in ' + T + ' (in ' + name(parentOf(e)).slice(0, 40) + ')'); };
+        if (r < ${TK.contrast.mark}) add('hard to see', e, what + ' ' + 'rgb(' + color.slice(0, 3).map(Math.round).join(',') + ') at ' + r.toFixed(1) + ':1 in ' + T + ' (in ' + name(parentOf(e)).slice(0, 40) + ')'); };
       for (const e of els) {
         const cs = getComputedStyle(e), r = e.getBoundingClientRect();
         if (+cs.opacity < 1 && +cs.opacity > 0 && r.width <= 14 && r.height <= 14) { const c = rgba(cs.backgroundColor); c[3] *= +cs.opacity; mark(e, c, behind(e, false), 'small mark'); }
@@ -219,15 +222,15 @@ function stubPage() {
         // the shared controls are the same size in every script (CLAUDE.md: control sizes)
         const sz = (x, w, h) => Math.abs(x.width - w) <= 0.5 && Math.abs(x.height - h) <= 0.5;
         if (e.getAttribute('aria-label') === 'Dark mode') {
-          if (!sz(r, 50, 28)) add('control size', e, 'sun/moon switch is ' + Math.round(r.width) + 'x' + Math.round(r.height) + ', should be 50x28');
+          if (!sz(r, ${TC.mode.w}, ${TC.mode.h})) add('control size', e, 'sun/moon switch is ' + Math.round(r.width) + 'x' + Math.round(r.height) + ', should be ${TC.mode.w}x${TC.mode.h}');
           const k = [...e.querySelectorAll('*')].find(k => getComputedStyle(k).position === 'absolute');
-          if (k && !sz(k.getBoundingClientRect(), 22, 22)) add('control size', e, 'sun/moon knob should be 22x22');
+          if (k && !sz(k.getBoundingClientRect(), ${TC.mode.knob}, ${TC.mode.knob})) add('control size', e, 'sun/moon knob should be ${TC.mode.knob}x${TC.mode.knob}');
           const nx = e.nextElementSibling;
           if (nx && nx.tagName === 'BUTTON') { const q = nx.getBoundingClientRect(); const gap = Math.round(q.left - r.right);
-            if (!(sz(q, 28, 28) || sz(q, 36, 36))) add('control size', nx, 'close button is ' + Math.round(q.width) + 'x' + Math.round(q.height) + ', should be 28x28 (36x36 on phones)');
-            if (Math.abs(gap - 8) > 0.5) add('control size', nx, gap + 'px after the sun/moon switch, should be 8px'); }
+            if (!(sz(q, ${TC.close.desktop}, ${TC.close.desktop}) || sz(q, ${TC.close.phone}, ${TC.close.phone}))) add('control size', nx, 'close button is ' + Math.round(q.width) + 'x' + Math.round(q.height) + ', should be ${TC.close.desktop}x${TC.close.desktop} (${TC.close.phone}x${TC.close.phone} on phones)');
+            if (Math.abs(gap - ${TC.close.gap}) > 0.5) add('control size', nx, gap + 'px after the sun/moon switch, should be ${TC.close.gap}px'); }
         } else if (e.getAttribute('role') === 'switch' || (e.tagName === 'INPUT' && e.type === 'checkbox' && cs.appearance === 'none')) {
-          if (!(sz(r, 40, 24) || sz(r, 46, 28))) add('control size', e, 'toggle is ' + Math.round(r.width) + 'x' + Math.round(r.height) + ', should be 40x24 (46x28 on phones)');
+          if (!(sz(r, ${TC.toggle.desktop.w}, ${TC.toggle.desktop.h}) || sz(r, ${TC.toggle.phone.w}, ${TC.toggle.phone.h}))) add('control size', e, 'toggle is ' + Math.round(r.width) + 'x' + Math.round(r.height) + ', should be ${TC.toggle.desktop.w}x${TC.toggle.desktop.h} (${TC.toggle.phone.w}x${TC.toggle.phone.h} on phones)');
         }
         // outlines (selected and focus rings) sit on what's behind the element
         if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) mark(e, rgba(cs.outlineColor), behind(e, false), 'outline');

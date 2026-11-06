@@ -92,6 +92,10 @@ def script(s):
            '__START__': indent(s.get('start')), '__APPLY__': indent(s.get('apply')),
            '__LAUNCHER__': f'{launcher} or the Tampermonkey menu' if launcher else 'the Tampermonkey menu',
            '__MASTER_MENU__': f"    GM_registerMenuCommand('Turn {s['name']} on/off', () => save({{ enabled: !loadSettings().enabled }}));\n" if app['master'] else ''}
+    G = json.load(open(f'{HERE}/tokens.json', encoding='utf-8'))['glass']   # the glass recipe, from the design tokens
+    for mode, P in (('light', 'L'), ('dark', 'D')):
+        for k, v in G[mode].items(): rep[f'__{P}_{k.upper()}__'] = v
+    rep['__BLUR__'] = f"blur({G['blur']}px) saturate({G['saturate']}%)"
     for k, v in rep.items(): t = t.replace(k, v)
     if '__' in re.sub(r'__[a-z]', '', t) and re.search(r'__[A-Z]+__', t): sys.exit('template placeholder left: ' + re.search(r'__[A-Z]+__', t).group(0))
     return t

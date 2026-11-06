@@ -123,15 +123,16 @@ __APPLY__
 
     const isDark = () => S.settings.appearance === 'dark' || (S.settings.appearance === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
 
-    // The glass recipe (CLAUDE.md): only neutrals swap between light and dark; accents stay.
+    // The glass recipe (tools/tokens.json, filled in by tools/new_script.py): only neutrals swap between
+    // light and dark; accents stay.
     const CSS = `
 :host{all:initial}
 *{box-sizing:border-box;margin:0}
 [hidden]{display:none!important}
 .panel{
   --a:${APP.accent};--a-rgb:${APP.rgb};--on:${APP.on};--ink:${APP.ink};
-  --glass:rgba(255,255,255,.84);--solid:rgb(250,250,252);--text:#1d1d1f;--sub:rgba(29,29,31,.64);--line:rgba(0,0,0,.07);
-  --edge:rgba(255,255,255,.8);--hl:#fff;--drop:rgba(0,0,0,.34);--ctl:rgba(0,0,0,.055);--ctl-hi:rgba(0,0,0,.1);--sw-off:rgba(0,0,0,.13);
+  --glass:__L_GLASS__;--solid:rgb(250,250,252);--text:__L_TEXT__;--sub:__L_SUB__;--line:rgba(0,0,0,.07);
+  --edge:__L_EDGE__;--hl:__L_HIGHLIGHT__;--drop:__L_DROP__;--ctl:rgba(0,0,0,.055);--ctl-hi:rgba(0,0,0,.1);--sw-off:rgba(0,0,0,.13);
   --field:rgba(255,255,255,.6);--field-hi:#fff;--knob:#fff;
   --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
   position:fixed;top:16px;right:16px;z-index:2147483647;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);
@@ -139,12 +140,12 @@ __APPLY__
   font:13px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif;
   color:var(--text);text-align:left;white-space:normal;letter-spacing:normal;
   background:radial-gradient(120% 40% at 0% 0%,rgba(var(--a-rgb),.18),transparent 70%),var(--glass);
-  backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);
+  backdrop-filter:__BLUR__;-webkit-backdrop-filter:__BLUR__;
   border:1px solid var(--edge);
   box-shadow:0 0 0 .5px rgba(var(--a-rgb),.4),0 28px 64px -18px var(--drop),inset 0 1px 0 var(--hl);
   animation:in .18s cubic-bezier(.2,.8,.2,1)}
-.panel[data-theme=dark]{--glass:rgba(22,22,28,.8);--solid:rgb(28,28,34);--text:#f2f2f5;--sub:rgba(235,235,245,.62);--line:rgba(255,255,255,.09);
-  --edge:rgba(255,255,255,.12);--hl:rgba(255,255,255,.1);--drop:rgba(0,0,0,.6);--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);
+.panel[data-theme=dark]{--glass:__D_GLASS__;--solid:rgb(28,28,34);--text:__D_TEXT__;--sub:__D_SUB__;--line:rgba(255,255,255,.09);
+  --edge:__D_EDGE__;--hl:__D_HIGHLIGHT__;--drop:__D_DROP__;--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);
   --sw-off:rgba(255,255,255,.2);--field:rgba(255,255,255,.06);--field-hi:rgba(255,255,255,.12);--knob:#55555f;--ink:${APP.inkDark};color-scheme:dark}
 @keyframes in{from{opacity:0;transform:translateY(-6px) scale(.98)}}
 @media (prefers-reduced-motion:reduce){.panel,.panel *{animation:none!important;transition:none!important}}

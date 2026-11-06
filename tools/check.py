@@ -18,6 +18,7 @@ It checks, in order:
   theme      light and dark from CLAUDE.md: the sun/moon switch, Appearance and "Match my device",
              appearance defaults to auto and follows the device live, the glass recipe numbers, and
              a -light twin for every screenshot, selection and focus rings in the accent
+  tokens     CLAUDE.md's tables match tools/tokens.json, and no tool keeps its own copy of a token
   privacy    no personal info, Greasy Fork links, local paths or chat links in scripts, pages
              or tools
   pages      every page and README shows each script's current version; icons are in place;
@@ -32,7 +33,7 @@ It checks, in order:
              second open tab, with nothing waiting for a reopen (changed scripts)
   screenshots the committed panel screenshots still match the panels (changed scripts)
 """
-import glob, os, re, subprocess, sys
+import glob, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 args = sys.argv[1:]
@@ -136,19 +137,22 @@ done(n)
 # The glass recipe and light/dark rules in CLAUDE.md. tools/audit.py checks the same recipe on the
 # rendered panels (opacity and blur of every frosted surface, faint text) in both themes.
 head('theme'); n = 0
-RECIPE = [('rgba(255,255,255,.8)', 'light edge'), ('rgba(255,255,255,.12)', 'dark edge'), ('rgba(255,255,255,.1)', 'dark top highlight'),
-          ('rgba(0,0,0,.34)', 'light drop shadow'), ('rgba(0,0,0,.6)', 'dark drop shadow')]
-TEXT = [('#1d1d1f', 'light text'), ('#f2f2f5', 'dark text'), ('rgba(29,29,31,.64)', 'light secondary text'), ('rgba(235,235,245,.62)', 'dark secondary text')]
+TOKENS = json.load(open(f'{HERE}/tokens.json', encoding='utf-8')); G = TOKENS['glass']   # tools/tokens.json
+RECIPE = [(G['light']['edge'], 'light edge'), (G['dark']['edge'], 'dark edge'), (G['dark']['highlight'], 'dark top highlight'),
+          (G['light']['drop'], 'light drop shadow'), (G['dark']['drop'], 'dark drop shadow')]
+TEXT = [(G['light']['text'], 'light text'), (G['dark']['text'], 'dark text'), (G['light']['sub'], 'light secondary text'), (G['dark']['sub'], 'dark secondary text')]
+BLUR = f"blur({G['blur']}px) saturate({G['saturate']}%)"
+op = lambda v: ('%g' % v).lstrip('0')   # .84, .8
 for p, src in {**S, **KIT}.items():
     plat, slug = info(p); n += 7
     ok("'Dark mode'" in src, f'{slug}: header needs the sun/moon switch (aria-label "Dark mode")')
     ok("'Appearance'" in src and 'Match my device' in src, f'{slug}: needs an "Appearance" section with a "Match my device" toggle')
     ok(re.search(r"appearance\W{1,6}'auto'|'appearance',\s*'auto'", src), f"{slug}: appearance should default to 'auto' (follow the device)")
     ok('prefers-color-scheme: dark' in src and re.search(r"addEventListener(\?\.)?\(\s*'change'", src), f'{slug}: should follow the device live (a prefers-color-scheme change listener)')
-    bad = [m.group(0) for m in re.finditer(r'blur\([^)]*\)\s*saturate\(170%\)', src) if not m.group(0).startswith('blur(28px)')]
-    ok(not bad, f'{slug}: glass blur should be blur(28px) saturate(170%), found {bad[:1]}')
-    ok(re.search(r'rgba\((2[4-5]\d),\s*(2[4-5]\d),\s*(2[4-5]\d),\s*\.84\)', src), f'{slug}: light glass should be rgba(255,255,255,.84) (or tinted, at .84)')
-    ok(re.search(r'rgba\(([0-4]?\d),\s*([0-4]?\d),\s*([0-4]?\d),\s*\.8\)', src), f'{slug}: dark glass should be rgba(22,22,28,.8) (or tinted, at .8)')
+    bad = [m.group(0) for m in re.finditer(r'blur\([^)]*\)\s*saturate\(' + str(G['saturate']) + r'%\)', src) if m.group(0).replace(' ', '') != BLUR.replace(' ', '')]
+    ok(not bad, f'{slug}: glass blur should be {BLUR}, found {bad[:1]}')
+    ok(re.search(r'rgba\((2[4-5]\d),\s*(2[4-5]\d),\s*(2[4-5]\d),\s*' + re.escape(op(G['opacity']['light'])) + r'\)', src), f"{slug}: light glass should be {G['light']['glass']} (or tinted, at {op(G['opacity']['light'])})")
+    ok(re.search(r'rgba\(([0-4]?\d),\s*([0-4]?\d),\s*([0-4]?\d),\s*' + re.escape(op(G['opacity']['dark'])) + r'\)', src), f"{slug}: dark glass should be {G['dark']['glass']} (or tinted, at {op(G['opacity']['dark'])})")
     # Selection and focus rings use the accent. Browsers that darken light pages themselves (some
     # phone browsers) leave outlines alone, so a black or text-colored ring vanishes there.
     m = re.search(r"outline:\s*[^;'\"}]*?(var\(--(?:[a-z]+-)?(?:text|sub|title|strong|muted|dim|line|ctl)\b|#(?:000|000000|fff|ffffff|1d1d1f)\b|rgba?\((?:0,\s*0,\s*0|255,\s*255,\s*255)\b)", src, re.I)
@@ -158,6 +162,35 @@ for p, src in {**S, **KIT}.items():
     for img in glob.glob(f'{R}/{plat}/{slug}/images/*.webp'):
         if img.endswith('-light.webp') or img.endswith('-cut.webp'): continue   # a cut is both themes already
         n += 1; ok(os.path.exists(img[:-5] + '-light.webp'), f'{slug}: {os.path.basename(img)} has no light twin (python3 tools/screens.py {slug})')
+done(n)
+
+# ------------------------------------------------------------------ tokens
+# tools/tokens.json is the one source of the design numbers: CLAUDE.md's tables must say the same, and
+# no tool may keep its own copy of a token value (it reads the file instead).
+head('tokens'); n = 0
+doc = open(f'{R}/CLAUDE.md', encoding='utf-8').read()
+ROWS = {'glass': 'glass', 'edge': 'edge', 'top highlight (inset)': 'highlight', 'drop shadow': 'drop', 'text': 'text', 'secondary text': 'sub'}
+for row, key in ROWS.items():
+    n += 1; want = f"| {row} | `{G['light'][key]}` | `{G['dark'][key]}` |"
+    ok(want in doc, f'CLAUDE.md glass table: the "{row}" row should read {want} (tools/tokens.json)')
+C = TOKENS['controls']; tg = C['toggle']
+for want in [f"backdrop-filter: blur({G['blur']}px) saturate({G['saturate']}%)", f"{round(G['opacity']['light'] * 100)}% light, {round(G['opacity']['dark'] * 100)}% dark",
+             f"| icon tile | {C['tile']['size']}×{C['tile']['size']}, {C['tile']['radius']}px corners |",
+             f"| name / tagline | {C['name']}px semibold / {C['tagline']}px",
+             f"| sun/moon switch | {C['mode']['w']}×{C['mode']['h']} track, {C['mode']['knob']}px knob",
+             f"| close button | {C['close']['desktop']}×{C['close']['desktop']} round, {C['close']['gap']}px after the switch | {C['close']['phone']}×{C['close']['phone']} |",
+             f"| toggle | {tg['desktop']['w']}×{tg['desktop']['h']} track, {tg['desktop']['knob']}px knob, 2px in | {tg['phone']['w']}×{tg['phone']['h']}, {tg['phone']['knob']}px knob |",
+             f"text under {TOKENS['contrast']['text']}:1", f"marks under\n  {TOKENS['contrast']['mark']}:1".replace('\\n', '\n')]:
+    n += 1; ok(want.replace('\n  ', ' ') in doc.replace('\n  ', ' '), f'CLAUDE.md should say "{want.strip()}" (tools/tokens.json)')
+for m in ('light', 'dark'):   # the glass color and the opacity token must agree
+    n += 1; a = re.search(r',\s*([\d.]+)\)$', G[m]['glass'])
+    ok(a and abs(float(a.group(1)) - G['opacity'][m]) < 1e-9, f"tools/tokens.json: {m} glass {G[m]['glass']} doesn't match its opacity {G['opacity'][m]}")
+copies = [G[m][k] for m in ('light', 'dark') for k in ('glass', 'sub')] + [f"blur({G['blur']}px)"]
+# (the tools that build or test panels; the README banners have their own page palettes)
+for f in ['tools/frame.py', 'tools/shot.js', 'tools/prismcut.py', 'tools/new_script.py', 'tools/kit/template.js', 'tools/audit.py', 'tools/live.py']:
+    t = open(f'{R}/{f}', encoding='utf-8').read(); n += 1
+    hit = [c for c in copies if c in t]
+    ok(not hit, f'{f} keeps its own copy of a design token ({hit[:1]}); read it from tools/tokens.json')
 done(n)
 
 # ------------------------------------------------------------------ privacy

@@ -39,7 +39,9 @@ def banner(title, sub, theme, kicker='', accent='#ffffff', lava=False, w=1200, h
     lava lamp: a slow wave with wax drops of light glass melting off it into the dark (a goo filter), kept clear
     of the text."""
     import math
-    x0, x1 = w * .72, w * .28
+    import json
+    CUT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tokens.json'), encoding='utf-8'))['cut']
+    x0, x1 = w * CUT['top'], w * CUT['bottom']   # the same diagonal as the link previews (tools/tokens.json)
     nx, ny = h, -(x1 - x0); L = math.hypot(nx, ny); nx, ny = nx / L, ny / L   # unit normal, toward the dark side
     amp = 1 if lava else 0
     pts = []
@@ -64,7 +66,7 @@ def banner(title, sub, theme, kicker='', accent='#ffffff', lava=False, w=1200, h
     # the seam follows the mask's edge: a thin accent line plus a faint glow
     line = (f'<filter id="ln" x="-10%" y="-10%" width="120%" height="120%">' + ('<feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 26 -11" result="s"/>' if lava else '<feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0" result="s"/>')
             + f'<feMorphology in="s" operator="dilate" radius="1" result="d"/><feComposite in="d" in2="s" operator="out" result="e"/>'
-            f'<feFlood flood-color="{accent}" flood-opacity=".6"/><feComposite in2="e" operator="in" result="c"/>'
+            f'<feFlood flood-color="{accent}" flood-opacity="{CUT["max"]}"/><feComposite in2="e" operator="in" result="c"/>'
             f'<feGaussianBlur in="c" stdDeviation="5" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="c"/></feMerge></filter>')
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-label="{t_}, in light and dark">
 <defs><clipPath id="c"><rect width="{w}" height="{h}" rx="28"/></clipPath>

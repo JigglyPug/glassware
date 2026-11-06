@@ -51,8 +51,12 @@ FRAMES = {
 }
 
 # ---------------------------------------------------------------- the frame (CLAUDE.md: control sizes)
-SIZES = dict(desktop=dict(x=28, sw=(40, 24), swk=20), phone=dict(x=36, sw=(46, 28), swk=24))
-MODE = (50, 28); MODE_KNOB = 22
+import json
+TOK = json.load(open(f'{HERE}/tokens.json', encoding='utf-8'))['controls']   # tools/tokens.json
+_t = TOK['toggle']
+SIZES = dict(desktop=dict(x=TOK['close']['desktop'], sw=(_t['desktop']['w'], _t['desktop']['h']), swk=_t['desktop']['knob']),
+             phone=dict(x=TOK['close']['phone'], sw=(_t['phone']['w'], _t['phone']['h']), swk=_t['phone']['knob']))
+MODE = (TOK['mode']['w'], TOK['mode']['h']); MODE_KNOB = TOK['mode']['knob']; GAP = TOK['close']['gap']
 
 def rules(f, size):
     v = f['vars']; s = SIZES[size]; R0 = f['root']; D = f['dark']
@@ -73,7 +77,7 @@ def rules(f, size):
             (f"{D} {f['mode']} {f['sun']}", f"color:{v['sub']}"),
         ]
     out += [
-        (f"{R0} {f['x']}", f"flex:none;display:grid;place-items:center;width:{s['x']}px;height:{s['x']}px;margin:0 0 0 {8 - f['gap']}px;padding:0;border:0;"
+        (f"{R0} {f['x']}", f"flex:none;display:grid;place-items:center;width:{s['x']}px;height:{s['x']}px;margin:0 0 0 {GAP - f['gap']}px;padding:0;border:0;"
                            f"border-radius:50%;background:{v['ctl']};color:{v['sub']};cursor:pointer;{reset}"),
         (f"{R0} {f['x']}:hover", f"background:{v['hi']};color:{v['text']}"),
         (f"{R0} {T}", f"flex:none;position:relative;width:{sw_w}px;height:{sw_h}px;margin:0;padding:0;border:0;border-radius:{sw_h // 2}px;"

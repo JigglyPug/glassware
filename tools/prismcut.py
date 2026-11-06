@@ -9,8 +9,9 @@ text under it stays readable. --lava (the Molten scripts) makes the edge wavy wi
 side melting off it into the dark, like wax in a lava lamp (the same look as the README banners). Both captures must be
 the same size: same panel, same demo data, only the theme differs.
 """
-import sys
+import json, os, sys
 import numpy as np
+CUT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tokens.json'), encoding='utf-8'))['cut']   # tools/tokens.json
 from PIL import Image
 
 def hex_rgb(h):
@@ -21,7 +22,7 @@ def cut(light, dark, out=None, accent='#ffffff', lava=False):
     B = np.asarray(Image.open(dark).convert('RGB'), np.float32)
     if A.shape != B.shape: raise ValueError(f'captures differ in size: {A.shape} vs {B.shape}')
     h, w = A.shape[:2]
-    x0, y0, x1, y1 = w * 0.72, 0.0, w * 0.28, float(h)            # top edge 72% across to bottom edge 28%
+    x0, y0, x1, y1 = w * CUT['top'], 0.0, w * CUT['bottom'], float(h)   # the diagonal, from the design tokens
     dx, dy = x1 - x0, y1 - y0; L = (dx * dx + dy * dy) ** .5
     ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
     d = ((xs - x0) * dy - (ys - y0) * dx) / L                     # signed distance from the line (px)
@@ -48,9 +49,9 @@ def cut(light, dark, out=None, accent='#ffffff', lava=False):
     img = A * m + B * (1 - m)
     col = hex_rgb(accent)
     # a thin, faint line: text under it stays readable
-    core = np.exp(-(d / (0.9 * s)) ** 2)[..., None] * .55
-    glow = np.exp(-(d / (6 * s)) ** 2)[..., None] * .12
-    a = np.clip(core + glow, 0, .6)
+    core = np.exp(-(d / (0.9 * s)) ** 2)[..., None] * CUT['core']
+    glow = np.exp(-(d / (6 * s)) ** 2)[..., None] * CUT['glow']
+    a = np.clip(core + glow, 0, CUT['max'])
     img = img * (1 - a) + col * a
     res = Image.fromarray(img.clip(0, 255).astype(np.uint8))
     if out: res.save(out)
