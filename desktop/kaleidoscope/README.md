@@ -8,7 +8,7 @@
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co%2C%20claude.ai-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
-<picture><source media="(prefers-color-scheme: light)" srcset="images/main-light.webp"><img src="images/main.webp" width="620"></picture>
+<img src="images/main-cut.webp" alt="Kaleidoscope in light and dark" width="620">
 
 </div>
 

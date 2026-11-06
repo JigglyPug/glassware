@@ -26,15 +26,16 @@ def cut(light, dark, out=None, accent='#ffffff', lava=False):
     ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
     d = ((xs - x0) * dy - (ys - y0) * dx) / L                     # signed distance from the line (px)
     t = ((xs - x0) * dx + (ys - y0) * dy) / (L * L)               # 0 at the top of the line, 1 at the bottom
-    s = max(w, h) / 1000                                          # keeps the seam's look at any size
+    s = w / 1000                                                  # keeps the seam's look at any width (tall heroes too)
     if lava:
         # a slow wave along the edge, and wax bubbles that merge into it (smooth minimum)
         wave = (np.sin(t * 2 * np.pi * 2.1 + .6) * 16 + np.sin(t * 2 * np.pi * 4.7 + 2) * 6) * s
         field = d - wave
         rng = np.random.default_rng(7)
         k = 14 * s
-        for _ in range(7):
-            tt = rng.uniform(.08, .92); side = rng.choice([-1, 1]); off = rng.uniform(26, 60) * s * side; r = rng.uniform(10, 20) * s
+        # only near the ends of the edge, so no wax drop sits on top of the panel's text
+        for tt, side in [(rng.uniform(.03, .08), 1), (rng.uniform(.1, .14), -1), (rng.uniform(.86, .9), 1), (rng.uniform(.92, .97), -1)]:
+            off = rng.uniform(26, 44) * s * side; r = rng.uniform(10, 16) * s
             cx, cy = x0 + dx * tt + dy / L * off, y0 + dy * tt - dx / L * off
             blob = np.sqrt((xs - cx) ** 2 + (ys - cy) ** 2) - r
             if side > 0:   # a light bubble out on the dark side: smooth union with the light region (field < 0)

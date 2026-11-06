@@ -8,7 +8,7 @@
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Phone-555?style=flat-square)
 
-<picture><source media="(prefers-color-scheme: light)" srcset="images/main-light.webp"><img src="images/main.webp" width="300"></picture>
+<img src="images/main-cut.webp" alt="Kaleidoscope Mobile in light and dark" width="300">
 
 </div>
 

@@ -187,7 +187,8 @@ and keep existing ones on it.
     link preview (`docs/img/<script>/og.png`). The landing preview (`docs/og.png`) stays
     screenshots only, with no icons, so adding a script doesn't mean redrawing it. The pages pull the icons from
     `assets/icons/` when `python3 tools/pages.py` runs, so rebuild the pages after any icon change.
-    The GitHub social preview is uploaded by hand (repo Settings → Social preview, `docs/og.png`).
+    The GitHub social preview is uploaded by hand (repo Settings → Social preview, `docs/og.png`):
+    re-upload it whenever `docs/og.png` changes, and say so when shipping.
   - After redrawing the icons: `node tools/icons.js`, scale them to 256px,
     `python3 tools/panel_icons.py`, update the shapes in `tools/live_glyphs.py` and run it, raise `?v=N`
     on every `@icon`, bump the versions, recapture, and run `python3 tools/pages.py`.
@@ -233,10 +234,16 @@ python3 tools/check.py              # release check: everything below, plus the 
 - Every screenshot is taken in both themes: `<name>.webp` (dark) and `<name>-light.webp`. The site
   has a sun/moon switch in the top bar that follows the device until it's flipped (then remembers
   the choice, with a "Match my device" link in the footer to go back) and swaps the site's palette
-  and every screenshot. READMEs use `<picture>` so GitHub shows the one matching its own theme.
-- Link previews (`docs/img/<script>/og.png`) show both themes at once: `tools/prismcut.py` cuts the
-  light and dark cards along a diagonal with a seam in the script's accent (a lava-lamp seam for
-  the Molten scripts). The cut is for previews and banners only, never on the site or READMEs.
+  and every screenshot.
+- **Wherever there's no switch, show both themes at once** with the prism cut: light upper left,
+  dark lower right, along a diagonal with a thin seam in the script's accent (a lava-lamp edge with
+  wax drops for the Molten scripts). That's every README banner (`tools/banners.py`), each README's
+  top screenshot and the front README's cards (`<name>-cut.webp`, made by `tools/readmes.py` with
+  `tools/prismcut.py`), and every link preview (`docs/img/<script>/og.png` and the landing
+  `docs/og.png`). The README galleries further down use `<picture>` and follow GitHub's theme. The
+  site itself never uses the cut: its switch shows both.
+- Link preview addresses carry a fingerprint of what they're made from (`og.png?v=…`), so Discord,
+  Slack and others fetch the new image instead of a cached old one.
 - **Look at every changed screenshot before pushing** (`python3 tools/sheet.py`), dark and light,
   every tab. The checks only catch the problems they were written for; looking catches the rest
   (a knob out of place, a ring that shouldn't be there, a color that's off). When looking finds

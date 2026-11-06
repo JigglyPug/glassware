@@ -8,7 +8,7 @@
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
-<picture><source media="(prefers-color-scheme: light)" srcset="images/main-light.webp"><img src="images/main.webp" width="620"></picture>
+<img src="images/main-cut.webp" alt="Prism in light and dark" width="620">
 
 </div>
 

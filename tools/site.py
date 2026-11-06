@@ -191,14 +191,30 @@ def shot(src_dark, alt, attrs=''):
     local = os.path.join(D, re.sub(r'^(\.\./)+', '', light))
     if not os.path.exists(local): return f'<img src="{src_dark}" alt="{alt}" {attrs}>'
     return f'<img class="dk" src="{src_dark}" alt="{alt}" {attrs}><img class="lt" src="{light}" alt="{alt}" {attrs}>'
+def og_ver(og):
+    """A short fingerprint of what a link preview is made from (the panel cards, the copy, the
+    preview tools), added to its address so Discord, Slack and others fetch it again when it changes
+    instead of showing a cached old one. The images themselves aren't byte-for-byte repeatable."""
+    import hashlib
+    hsh = hashlib.sha1()
+    slug = og.split('/')[1] if og.count('/') == 2 else None
+    ps = [p for p in S if p.split('/')[1] == slug] if slug else ['desktop/prism', 'desktop/molten-tools', 'desktop/kaleidoscope']
+    for p in ps:
+        for n in ('card.webp', 'card-light.webp'):
+            f = f'{R}/{p}/images/{n}'
+            if os.path.exists(f): hsh.update(open(f, 'rb').read())
+        hsh.update((S[p]['name'] + S[p]['tag'] + S[p]['kicker'] + THEME[p][0] + THEME[p][1]).encode())
+    for t in ('og.py', 'prismcut.py'): hsh.update(open(f'{R}/tools/{t}', 'rb').read())
+    return og + '?v=' + hsh.hexdigest()[:10]
+
 def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=None):
     up = '../' * depth
     meta = (f'<link rel="canonical" href="{SITE}{path}">'
             f'<meta property="og:type" content="website"><meta property="og:site_name" content="Glassware">'
             f'<meta property="og:title" content="{html.escape(title)}"><meta property="og:description" content="{html.escape(desc)}">'
-            f'<meta property="og:url" content="{SITE}{path}"><meta property="og:image" content="{SITE}{og}">'
+            f'<meta property="og:url" content="{SITE}{path}"><meta property="og:image" content="{SITE}{og_ver(og)}">'
             f'<meta property="og:image:width" content="1280"><meta property="og:image:height" content="640">'
-            f'<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="{SITE}{og}">')
+            f'<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="{SITE}{og_ver(og)}">')
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}">

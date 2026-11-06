@@ -13,7 +13,6 @@ sys.path.insert(0, HERE)
 RP = os.path.join(HERE, 'readmes.py'); src = open(RP, encoding='utf-8').read(); ns = {'__file__': RP}
 exec(src[:src.index('\nACCENT = {')], ns); S = ns['S']
 from site_themes import THEME
-import prismcut
 
 BG = {'molten': ('#0c0a0d', '#f6f1ec', 'rgba(246,241,236,.72)', ['#ff6a1f', '#ff2d6f', '#ffb23d', '#7a2cff']),
       'frost': ('#e9ebf5', '#1d1d26', 'rgba(29,29,38,.62)', ['#b9a7ff', '#ffb3d1', '#9fe7d3', '#9cc8ff']),
@@ -63,8 +62,9 @@ if __name__ == '__main__':
         def render(h, out):
             page.set_content(h); page.wait_for_timeout(150); page.screenshot(path=out)
         # landing: three panels fanned out
-        fan = [(f'{R}/desktop/prism/images/card.webp', -8, -300, 150, 1), (f'{R}/desktop/molten-tools/images/card.webp', 2, -150, 50, 2),
-               (f'{R}/desktop/kaleidoscope/images/card.webp', 10, 10, 190, 3)]
+        # each panel in light and dark at once (the cut, made by tools/readmes.py), like the per-script previews
+        cut = lambda p: f'{R}/{p}/images/card-cut.webp' if os.path.exists(f'{R}/{p}/images/card-cut.webp') else f'{R}/{p}/images/card.webp'
+        fan = [(cut('desktop/prism'), -8, -300, 150, 1), (cut('desktop/molten-tools'), 2, -150, 50, 2), (cut('desktop/kaleidoscope'), 10, 10, 190, 3)]
         # landing preview: screenshots only (no icon row), so a new script doesn't mean redrawing it
         render(card_html('molten', 'Userscripts for Tampermonkey', 'Glassware', 'Glass for the web. Frosted, lava-lit tools by JigglyPug.', fan, True), f'{D}/og.png')
         for p, s in S.items():
@@ -72,11 +72,8 @@ if __name__ == '__main__':
             kicker = s['kicker']
             # the prism cut: light and dark in one picture, since a preview can't follow a switch
             # (Molten gets the lava edge; everything else a straight one), seam in the script's accent
-            card, light = f'{R}/{p}/images/card.webp', f'{R}/{p}/images/card-light.webp'
-            if os.path.exists(light):
-                tmp = os.path.join(tempfile.mkdtemp(), 'cut.png')
-                prismcut.cut(light, card, tmp, THEME[p][1], lava=slug.startswith('molten'))
-                card = tmp
+            card = f'{R}/{p}/images/card-cut.webp'
+            if not os.path.exists(card): card = f'{R}/{p}/images/card.webp'
             shot = [(card, 4, -80, 120, 1)]
             os.makedirs(f'{D}/img/{slug}', exist_ok=True)
             render(card_html(th, kicker, s['name'], s['tag'], shot, False, [f'{R}/assets/icons/{slug}.png']), f'{D}/img/{slug}/og.png')

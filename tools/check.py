@@ -154,7 +154,7 @@ for p, src in {**S, **KIT}.items():
     for tok, what in RECIPE + ([] if slug.startswith('kaleidoscope') else TEXT):
         n += 1; ok(tok in src, f'{slug}: missing the recipe\'s {what} {tok}')
     for img in glob.glob(f'{R}/{plat}/{slug}/images/*.webp'):
-        if img.endswith('-light.webp'): continue
+        if img.endswith('-light.webp') or img.endswith('-cut.webp'): continue   # a cut is both themes already
         n += 1; ok(os.path.exists(img[:-5] + '-light.webp'), f'{slug}: {os.path.basename(img)} has no light twin (python3 tools/screens.py {slug})')
 done(n)
 
@@ -290,7 +290,7 @@ if '--quick' not in args:
     r = subprocess.run([sys.executable, f'{copy}/tools/pages.py'], capture_output=True, text=True)
     if ok(r.returncode == 0, 'tools/pages.py failed: ' + (r.stderr.strip().splitlines() or ['no output'])[-1]):
         # text outputs only: the link-preview PNGs aren't byte-for-byte repeatable
-        gen = [f for f in glob.glob(f'{copy}/**/*', recursive=True) if re.search(r'(README\.md|\.html|\.css|banner\.svg)$', f)]
+        gen = [f for f in glob.glob(f'{copy}/**/*', recursive=True) if re.search(r'(README\.md|\.html|\.css|banner\.svg|-cut\.webp)$', f)]
         stale = [os.path.relpath(f, copy) for f in gen
                  if not os.path.exists(f'{R}/{os.path.relpath(f, copy)}') or not filecmp.cmp(f, f'{R}/{os.path.relpath(f, copy)}', shallow=False)]
         for f in stale: ok(False, f'{f} doesn\'t match what tools/pages.py builds (hand-edited or not rebuilt; run python3 tools/pages.py)')

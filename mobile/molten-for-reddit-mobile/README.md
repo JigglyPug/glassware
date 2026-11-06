@@ -8,7 +8,7 @@
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Phone-555?style=flat-square)
 
-<picture><source media="(prefers-color-scheme: light)" srcset="images/lava-light.webp"><img src="images/lava.webp" width="300"></picture>
+<img src="images/lava-cut.webp" alt="Molten for Reddit Mobile in light and dark" width="300">
 
 </div>
 

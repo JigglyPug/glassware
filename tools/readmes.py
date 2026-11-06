@@ -159,6 +159,16 @@ def badge(label, msg, color, style='for-the-badge'):
     q = lambda t: quote(t.replace('-', '--').replace('_', '__'), safe='')
     return f'https://img.shields.io/badge/{q(label)}-{q(msg)}-{color}?style={style}'
 
+# GitHub has no light/dark switch to show off, so the top screenshot and the front-page cards show
+# both themes at once: the prism cut (tools/prismcut.py), in the script's accent, lava for Molten.
+def make_cut(p, name):
+    import prismcut
+    d, l = f'{R}/{p}/images/{name}.webp', f'{R}/{p}/images/{name}-light.webp'
+    if not (os.path.exists(d) and os.path.exists(l)): return None
+    out = f'{R}/{p}/images/{name}-cut.webp'
+    prismcut.cut(l, d, accent='#' + ACCENT[p], lava=p.split('/')[1].startswith('molten')).save(out, 'WEBP', quality=88, method=6)
+    return f'images/{name}-cut.webp'
+
 for p, s in S.items():
     if ONLY and p not in ONLY: continue
     slug = p.split('/')[1]; url = f'{RAW}/{p}/{slug}.user.js'; v = ver(f'{p}/{slug}.user.js'); c = ACCENT[p]
@@ -168,7 +178,8 @@ for p, s in S.items():
     md += f'[![Install]({badge("Install", "v" + v, c)})]({url}) [![Website]({badge("Website", "product page", "222")})]({SITE}{p}/)\n\n'
     md += f'![Runs on]({badge("runs on", s["sites"], "555", "flat-square")}) '
     md += f'![Platform]({badge("platform", s["platform"], "555", "flat-square")})\n\n'
-    md += pic(p, f'images/{hero}.webp', f'width="{300 if phone else 620}"') + '\n\n</div>\n\n'
+    cut = make_cut(p, hero); make_cut(p, 'card')
+    md += (f'<img src="{cut}" alt="{s["name"]} in light and dark" width="{300 if phone else 620}">' if cut else pic(p, f'images/{hero}.webp', f'width="{300 if phone else 620}"')) + '\n\n</div>\n\n'
     md += s['intro'] + '\n\n'
     if s.get('getting_started'): md += '## Getting started\n\n' + s['getting_started'] + '\n\n'
     md += '## Features\n\n' + '\n'.join(f'- **{t}**: {b}' for t, b in F[p]) + '\n'
@@ -189,7 +200,7 @@ def card(p):
     s = S[p]; slug = p.split('/')[1]; url = f'{RAW}/{p}/{slug}.user.js'; hero = HERO.get(p, s['shots'][0][0])
     pair = PAIR.get(p)
     also = (f'<br><sub>{"Phone version" if RUNS[pair] == "phone" else "Desktop version"}: <a href="{pair}">{S[pair]["name"]}</a></sub>') if pair else ''
-    return (f'<td align="center" valign="top" width="50%"><a href="{p}">{pic(p, f"{p}/images/card.webp", W380, root=True)}</a><br>'
+    return (f'<td align="center" valign="top" width="50%"><a href="{p}"><img src="{p}/images/card-cut.webp" alt="{s["name"]} in light and dark" {W380}></a><br>'
             f'<h3><img src="assets/icons/{slug}.png" alt="" width="44" align="center"> <a href="{p}">{s["name"]}</a></h3>{s["tag"]}<br><sub>{s["sites"]}</sub>{also}<br><br>'
             f'<a href="{url}"><img src="{badge("Install", "v" + ver(f"{p}/{slug}.user.js"), ACCENT[p])}"></a></td>')
 
