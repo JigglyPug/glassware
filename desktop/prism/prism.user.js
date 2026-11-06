@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.0
+// @version      2.2.1
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.0';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.1';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -638,7 +638,7 @@
   /* light and dark glass: only these neutrals swap; the accent colors stay */
   --text:#1d1d1f;--sub:rgba(29,29,31,.64);--line:rgba(0,0,0,.07);--ctl:rgba(0,0,0,.055);--ctl-hi:rgba(0,0,0,.1);--sw-off:rgba(0,0,0,.13);
   --field:rgba(255,255,255,.6);--field-hi:#fff;--edge:rgba(255,255,255,.8);--hl:#fff;--drop:rgba(0,0,0,.34);--ck-edge:rgba(0,0,0,.22);
-  --knob:#fff;--stripe-a:#fff;--stripe-b:#f0f0f2;
+  --knob:#fff;--stripe-a:#fff;--stripe-b:#f0f0f2;--faint:rgba(0,0,0,.3);
   --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
   position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;overscroll-behavior:contain;
   font:13px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif;
@@ -650,7 +650,7 @@
   transition:background-color .2s,box-shadow .2s;animation:in .18s cubic-bezier(.2,.8,.2,1)}
 .panel[data-theme=dark]{--text:#f2f2f5;--sub:rgba(235,235,245,.62);--line:rgba(255,255,255,.09);--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);
   --sw-off:rgba(255,255,255,.2);--field:rgba(255,255,255,.06);--field-hi:rgba(255,255,255,.12);--edge:rgba(255,255,255,.12);--hl:rgba(255,255,255,.1);
-  --drop:rgba(0,0,0,.6);--ck-edge:rgba(255,255,255,.3);--knob:#55555f;--stripe-a:#2c2c33;--stripe-b:#222228;color-scheme:dark}
+  --drop:rgba(0,0,0,.6);--ck-edge:rgba(255,255,255,.3);--faint:rgba(255,255,255,.3);--knob:#55555f;--stripe-a:#2c2c33;--stripe-b:#222228;color-scheme:dark}
 .panel::-webkit-scrollbar{display:none}
 @keyframes in{from{opacity:0;transform:translateY(-6px) scale(.98)}}
 @media (prefers-reduced-motion:reduce){.panel,.panel *{animation:none!important;transition:none!important}}
@@ -702,7 +702,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .src.used{border-color:rgba(var(--a-rgb),.6);box-shadow:0 0 0 3px rgba(var(--a-rgb),.13),0 0 18px -6px rgba(var(--a-rgb),.8)}
 .src.failed .nm,.src.skipped .nm{opacity:.45}
 .src.drag{background:var(--bg-solid);box-shadow:0 12px 26px -10px rgba(0,0,0,.35);transform:scale(1.015)}
-.src.fb{border-style:dashed;background:transparent;padding-left:10px}
+.src.fb{border-style:dashed;border-color:var(--faint);background:transparent;padding-left:10px}
 .grip{border:0;background:none;color:var(--sub);padding:2px;border-radius:6px;cursor:grab;touch-action:none;display:grid}
 .grip:active{cursor:grabbing}
 .grip:focus-visible,.ck:focus-visible,.sw:focus-visible,.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--fill);outline-offset:2px}

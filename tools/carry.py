@@ -77,7 +77,7 @@ def check(p):
     """Returns a list of problems (strings) for one script."""
     slug = p.split('/')[1]; new_path = f'{R}/{p}/{slug}.user.js'
     old_src = live_source(p)
-    if old_src is None: return []                    # a brand-new script has nobody to carry over
+    if old_src is None: return [], None              # a brand-new script has nobody to carry over
     new_src = open(new_path, encoding='utf-8').read()
     probs = []
     for k in ('name', 'namespace'):
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     for p in targets:
         try: probs, n = check(p)
         except Exception as e: probs, n = [f'test could not run: {e}'], 0
-        print(f'== {p}: ' + ('settings carry over' if not probs else f'{len(probs)} problem(s)') + f' ({n} settings checked)')
+        print(f'== {p}: ' + ('new script, nothing to carry over yet' if n is None else 'settings carry over' if not probs else f'{len(probs)} problem(s)') + ('' if n is None else f' ({n} settings checked)'))
         for x in probs: print('   ' + x)
         bad += bool(probs)
     sys.exit(1 if bad else 0)

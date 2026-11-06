@@ -9,7 +9,10 @@ container or pushed off screen, sideways scrolling and overlapping controls. Des
 are checked at laptop and desktop sizes; scripts that run on phones (RUNS in readmes.py) are
 also checked at small and large phone sizes. Prints one line per problem; no output under a
 script means it's clean. It also checks the glass recipe (blur 28px, saturate 170%, light glass
-at 84%, dark at 80%) and flags text fainter than 3:1 against its background. Every size runs in dark
+at 84%, dark at 80%), flags text fainter than 3:1 (SVG chart text too) and marks, dashed lines and
+outlines under 1.8:1 against what's behind them ("hard to see"), and taps a chart bar to check the
+selected state. What a script draws outside its panel (SURFACES below: Hourglass's block screen
+and late-night nudge, Looking-Glass's badge menu) gets the same checks. Every size runs in dark
 on a plain page and with the global CSS big sites ship ("with site CSS"), which panels outside a
 shadow root inherit, then in light on a plain page. "text cut with …" is usually on purpose (long names), so check those
 by eye. Phone scripts are also read for bottom sheets sized in plain vh: on phones vh ignores the
@@ -37,6 +40,26 @@ open(FONTS, 'w').write('<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.
 if 'Roboto' not in subprocess.run(['fc-list'], capture_output=True, text=True).stdout:
     print('note: Roboto is not installed, so phone sizes use the desktop font')
 
+# Things a script draws outside its panel, checked the same way: (label, url, menu command, flags).
+from screens import NUDGE
+LG_MENU = ("(async()=>{const b=__all().find(e=>e.classList&&e.classList.contains('b')&&e.tagName==='BUTTON');"
+           "b.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,composed:true}));await new Promise(r=>setTimeout(r,200));"
+           "if(!__all().some(e=>e.classList&&e.classList.contains('menu')))b.click();await new Promise(r=>setTimeout(r,500));})()")
+SURFACES = {
+    'desktop/hourglass': [('block screen', 'https://www.youtube.com/', 'none', ['--seed', f'{HERE}/seeds/hourglass.json', '--clock', '2026-11-03T11:48:00-05:00']),
+                          ('late-night nudge', 'https://www.youtube.com/', 'Open', ['--seed', f'{HERE}/seeds/hourglass.json', '--clock', '2026-11-03T23:40:00-05:00', '--eval', NUDGE])],
+    'desktop/looking-glass': [('badge menu', 'https://example.com/', 'none', ['--video', '--wait', '2500', '--eval', LG_MENU])],
+}
+
+def surface(p, label, url, cmd, flags, w, h, phone, theme):
+    slug = p.split('/')[1]
+    args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--audit', '--vw', str(w), '--vh', str(h), '--theme', theme] + (['--mobile'] if phone else []) + flags
+    if '--clock' not in flags: args += ['--clock', CLOCK]
+    r = subprocess.run(args, capture_output=True, text=True, timeout=180, env=dict(os.environ, FONTCONFIG_FILE=FONTS) if phone else None)
+    line = next((l for l in r.stdout.splitlines() if l.startswith('AUDIT ')), None)
+    if line is None: return [f'{label} | could not run: {(r.stderr or r.stdout)[-300:]}']
+    return [i.replace('main |', label + ' |', 1) for i in json.loads(line[6:])]
+
 def audit(p, w, h, phone, hostile=False, theme='dark'):
     url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]
     extra = [x for x in extra if x != '--mobile']
@@ -60,6 +83,10 @@ if __name__ == '__main__':
         with ThreadPoolExecutor(4) as ex:
             for (w, h, phone, hostile, theme), res in zip(runs, ex.map(lambda a: audit(p, *a), runs)):
                 for issue in res: found.setdefault(issue, []).append(f'{w}x{h}' + (' with site CSS' if hostile else '') + (' light' if theme == 'light' else ''))
+            # the block screen, nudge, badge menu...: one desktop and one phone size, both themes
+            sruns = [(sf, w, h, phone, theme) for sf in SURFACES.get(p, []) for w, h, phone in sizes[:1] + sizes[-1:] for theme in ('dark', 'light')]
+            for (sf, w, h, phone, theme), res in zip(sruns, ex.map(lambda a: surface(p, *a[0], *a[1:]), sruns)):
+                for issue in res: found.setdefault(issue, []).append(f'{w}x{h}' + (' light' if theme == 'light' else ''))
         if RUNS[p] != 'desktop':
             import re
             code = open(f'{R}/{p}/{p.split("/")[1]}.user.js', encoding='utf-8').read()

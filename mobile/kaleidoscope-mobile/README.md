@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Kaleidoscope Mobile: Kaleidoscope, made for your phone." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.3.0-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/kaleidoscope-mobile/)
+[![Install](https://img.shields.io/badge/Install-v1.3.1-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/kaleidoscope-mobile/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Phone-555?style=flat-square)
 

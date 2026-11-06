@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.3.0
+// @version      1.3.1
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -50,7 +50,7 @@
     // AniList genre-bar colors, one per mode
     const MODES = [
       { id: 'recent', color: '#3DB4F2', title: 'More like my recent', hint: 'Keeps your current streak going' },
-      { id: 'top', color: '#68D639', title: 'More like my top rated', hint: 'Built on what your favorites have in common' },
+      { id: 'top', color: '#5CC22F', title: 'More like my top rated', hint: 'Built on what your favorites have in common' },
       { id: 'wild', color: '#9256F3', title: 'Wildcard', hint: 'Outside your usual genres, still your taste' },
       { id: 'airing', color: '#F779A4', title: 'What\'s airing now', hint: 'Picks from this season\'s real lineup', animeOnly: true },
       { id: 'backlog', color: '#E85D75', title: 'Clear my backlog', hint: 'What to start next from Planning and Paused' },

@@ -56,7 +56,7 @@ function stubPage() {
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  const browser = await chromium.launch(has('--forcedark') ? { args: ['--blink-settings=forceDarkModeEnabled=true', '--enable-features=WebContentsForceDark'] } : {});   // --forcedark: a browser that darkens light pages itself
   const ctxOpts = mobile ? { ...devices['Pixel 7'], ...(opt('--vh', '') ? { viewport: { width: +opt('--vw', '412'), height: +opt('--vh', '839') } } : {}) } : { viewport: { width: +opt('--vw', '1280'), height: +opt('--vh', '820') }, deviceScaleFactor: 2 };
   ctxOpts.colorScheme = theme;
   ctxOpts.timezoneId = 'America/Detroit';
@@ -133,24 +133,60 @@ function stubPage() {
       const glassA = window.__theme === 'light' ? 0.84 : 0.8;
       for (const e of els) { const cs = getComputedStyle(e), f = cs.backdropFilter || cs.webkitBackdropFilter || '';
         if (!/saturate/.test(f)) continue; const r = e.getBoundingClientRect(); if (r.width * r.height < 12000) continue;
+        if (r.width >= vw && r.height >= vh) continue;   // a full-screen veil isn't glass (CLAUDE.md)
         if (f.replace(/\\s+/g, ' ') !== 'blur(28px) saturate(1.7)') add('glass off recipe', e, 'backdrop-filter ' + f + ', should be blur(28px) saturate(170%)');
         const a = rgba(cs.backgroundColor)[3]; if (Math.abs(a - glassA) > 0.005) add('glass off recipe', e, 'glass at ' + Math.round(a * 100) + '%, should be ' + Math.round(glassA * 100) + '% in ' + (window.__theme || 'dark')); }
-      // Text too faint to read on its own background (contrast under 3:1). Dimmed rows (an off
-      // feature, a disabled control) are faint on purpose and skipped.
+      // Things too faint to see on their own background, in this theme. Dimmed rows (an off feature,
+      // a disabled control) are faint on purpose and skipped, and so is anything over a gradient or
+      // image (its background can't be read back). Text (SVG text too) needs 3:1; small marks (dots,
+      // ticks, swatches, ::before/::after markers) and dashed or dotted lines need 1.8:1. Wide
+      // tracks and dividers are meant to be subtle and aren't checked.
       const page = window.__theme === 'light' ? [244, 245, 247] : [15, 15, 15];
       const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
       const over = (top, under) => [0, 1, 2].map(i => top[i] * top[3] + under[i] * (1 - top[3]));
+      const ratioOf = (a, b) => { const L1 = lum(a), L2 = lum(b); return (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05); };
+      // the solid color behind x (x's own background included when self), or null when unknowable or dimmed
+      const behind = (x, self) => { let layers = [], op = 1;
+        for (let y = self ? x : parentOf(x); y && y.nodeType === 1; y = parentOf(y)) { const c = getComputedStyle(y);
+          if (+c.opacity < 1 || y.disabled || y.getAttribute('aria-disabled') === 'true') return null;
+          // a gradient on a big glass surface is only its corner glow; on anything smaller it's the fill
+          if (c.backgroundImage !== 'none' && !(y instanceof SVGElement)) { const q = y.getBoundingClientRect(); if (q.width * q.height < 40000) return null; }
+          if (y instanceof SVGElement) continue;
+          const b = rgba(c.backgroundColor); if (b[3] > 0) layers.push(b); if (b[3] >= 0.99) break; }
+        let bg = page; for (const b of layers.reverse()) bg = over(b, bg); return bg; };
+      const T = window.__theme || 'dark';
       for (const e of els) {
         if (![...e.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim().length > 1)) continue;
-        let dim = false, layers = [];
-        for (let x = e; x && x.nodeType === 1; x = parentOf(x)) { const c = getComputedStyle(x);
-          if (+c.opacity < 1 || x.disabled || x.getAttribute('aria-disabled') === 'true') { dim = true; break; }
-          const b = rgba(c.backgroundColor); if (b[3] > 0) layers.push(b); if (b[3] >= 0.99) break; }
+        if (+getComputedStyle(e).opacity < 1) continue;
+        let dim = false;
+        for (let x = e; x && x.nodeType === 1; x = parentOf(x)) { const c = getComputedStyle(x); if (+c.opacity < 1 || x.disabled || x.getAttribute('aria-disabled') === 'true') { dim = true; break; } }
         if (dim) continue;
-        let bg = page; for (const b of layers.reverse()) bg = over(b, bg);
-        const fg = over(rgba(getComputedStyle(e).color), bg), L1 = lum(fg), L2 = lum(bg);
-        const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
-        if (ratio < 3) add('faint text', e, 'contrast ' + ratio.toFixed(1) + ':1 in ' + (window.__theme || 'dark'));
+        const layers = []; let bg = page;
+        for (let x = e; x && x.nodeType === 1; x = parentOf(x)) { const b = rgba(getComputedStyle(x).backgroundColor); if (b[3] > 0) layers.push(b); if (b[3] >= 0.99) break; }
+        for (const b of layers.reverse()) bg = over(b, bg);
+        const ratio = ratioOf(over(rgba(getComputedStyle(e).color), bg), bg);
+        if (ratio < 3) add('faint text', e, 'contrast ' + ratio.toFixed(1) + ':1 in ' + T);
+      }
+      const svgs = __all().filter(e => e instanceof SVGElement && fixedAnc(e) && e.getBoundingClientRect().width > 0);
+      for (const e of svgs.filter(e => e.tagName.toLowerCase() === 'text' && e.textContent.trim().length > 1)) {
+        const c = getComputedStyle(e), bg = behind(e.ownerSVGElement || e, false); if (!bg) continue;
+        const f = rgba(c.fill); f[3] *= +c.fillOpacity * +c.opacity; const ratio = ratioOf(over(f, bg), bg);
+        if (ratio < 3) add('faint text', e, 'contrast ' + ratio.toFixed(1) + ':1 in ' + T);
+      }
+      const mark = (e, color, bg, what) => { if (!bg || color[3] === 0) return; const r = ratioOf(over(color, bg), bg);
+        if (r < 1.8) add('hard to see', e, what + ' ' + 'rgb(' + color.slice(0, 3).map(Math.round).join(',') + ') at ' + r.toFixed(1) + ':1 in ' + T + ' (in ' + name(parentOf(e)).slice(0, 40) + ')'); };
+      for (const e of els) {
+        const cs = getComputedStyle(e), r = e.getBoundingClientRect();
+        if (+cs.opacity < 1 && +cs.opacity > 0 && r.width <= 14 && r.height <= 14) { const c = rgba(cs.backgroundColor); c[3] *= +cs.opacity; mark(e, c, behind(e, false), 'small mark'); }
+        else if (r.width <= 14 && r.height <= 14 && !e.childElementCount && !e.textContent.trim()) mark(e, rgba(cs.backgroundColor), behind(e, false), 'small mark');
+        for (const side of ['Top', 'Left'])
+          if (/dashed|dotted/.test(cs['border' + side + 'Style']) && parseFloat(cs['border' + side + 'Width']) > 0) mark(e, rgba(cs['border' + side + 'Color']), behind(e, false), cs['border' + side + 'Style'] + ' line');
+        // outlines (selected and focus rings) sit on what's behind the element
+        if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) mark(e, rgba(cs.outlineColor), behind(e, false), 'outline');
+        for (const pseudo of ['::before', '::after']) { const pc = getComputedStyle(e, pseudo);
+          if (pc.content === 'none' || pc.display === 'none') continue;
+          const w = parseFloat(pc.width), h = parseFloat(pc.height); if (!(w > 0 && h > 0 && w <= 14 && h <= 14)) continue;
+          const c = rgba(pc.backgroundColor); c[3] *= +pc.opacity; mark(e, c, behind(e, true), pseudo + ' mark'); }
       }
       for (const e of els) {
         const cs = getComputedStyle(e), r = e.getBoundingClientRect();
@@ -245,6 +281,10 @@ function stubPage() {
     const res = [];
     const check = async label => {
       res.push(...await page.evaluate(l => __audit(l), label));
+      // a selected state: tap the first chart bar or day that shows details (Hourglass), then look again
+      if (await page.evaluate(() => { const t = __all().find(e => e.dataset && e.dataset.tip && e.getBoundingClientRect().width > 0); if (t) t.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true })); return !!t; })) {
+        await page.waitForTimeout(250); res.push(...await page.evaluate(l => __audit(l), label + ' > tapped'));
+      }
       const n = await page.evaluate(() => __folds().length);
       for (let i = 0; i < n; i++) {
         const t = await page.evaluate(i => { const f = __folds()[i]; if (!f) return null; const t = (f.closest('[class*=row]') || f.parentElement).textContent.trim().slice(0, 30); f.click(); return t; }, i);

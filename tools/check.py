@@ -12,10 +12,11 @@ It checks, in order:
   scripts    each script parses, its header lines match CLAUDE.md, its version fallbacks match
              @version, and a changed script has a higher @version than the live one
   frame      panel rules from CLAUDE.md: menu wording, on/off wording, no dropdowns, Esc closes,
-             footer, Troubleshooting (when the script has logging), static vs live icon tiles
+             footer, Troubleshooting (when the script has logging), static vs live icon tiles; also
+             run on a script freshly made by tools/new_script.py from tools/kit/example.json
   theme      light and dark from CLAUDE.md: the sun/moon switch, Appearance and "Match my device",
              appearance defaults to auto and follows the device live, the glass recipe numbers, and
-             a -light twin for every screenshot
+             a -light twin for every screenshot, selection and focus rings in the accent
   privacy    no personal info, Greasy Fork links, local paths or chat links in scripts, pages
              or tools
   pages      every page and README shows each script's current version; icons are in place;
@@ -25,7 +26,7 @@ It checks, in order:
   generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
-             recipe and no faint text, in both themes (changed scripts)
+             recipe, nothing faint or hard to see, in both themes (changed scripts)
   screenshots the committed panel screenshots still match the panels (changed scripts)
 """
 import glob, os, re, subprocess, sys
@@ -77,9 +78,18 @@ for p, src in S.items():
         ok(vtuple(v) > vtuple(ov), f'{slug} changed but @version {v} is not higher than the live {ov}')
 done(n)
 
+# The new-script kit (tools/new_script.py) must keep producing scripts that pass every rule below,
+# so its example spec is generated here and checked with the real scripts.
+import json, new_script
+_kit = new_script.load(f'{HERE}/kit/example.json', fresh=False); _kit['slug'] = 'kit-example'
+KIT = {f"{R}/{_kit['folder']}/kit-example/kit-example.user.js": new_script.script(_kit)}
+import tempfile
+with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as _f: _f.write(next(iter(KIT.values())))
+
 # ------------------------------------------------------------------ frame
 head('frame'); n = 0
-for p, src in S.items():
+ok(subprocess.run(['node', '--check', _f.name], capture_output=True).returncode == 0, 'tools/kit/template.js makes a script with a syntax error (python3 tools/new_script.py tools/kit/example.json --dry)'); n += 1
+for p, src in {**S, **KIT}.items():
     plat, slug = info(p); name = hdr(src, 'name'); n += 6
     menus = re.findall(r"GM_registerMenuCommand\(\s*'([^']+)'", src)
     ok(menus and menus[0].startswith(f'Open {name.replace(" Mobile", "")}'), f'{slug}: first menu command should be "Open {name}" (has {menus[:1]})')
@@ -120,7 +130,7 @@ head('theme'); n = 0
 RECIPE = [('rgba(255,255,255,.8)', 'light edge'), ('rgba(255,255,255,.12)', 'dark edge'), ('rgba(255,255,255,.1)', 'dark top highlight'),
           ('rgba(0,0,0,.34)', 'light drop shadow'), ('rgba(0,0,0,.6)', 'dark drop shadow')]
 TEXT = [('#1d1d1f', 'light text'), ('#f2f2f5', 'dark text'), ('rgba(29,29,31,.64)', 'light secondary text'), ('rgba(235,235,245,.62)', 'dark secondary text')]
-for p, src in S.items():
+for p, src in {**S, **KIT}.items():
     plat, slug = info(p); n += 7
     ok("'Dark mode'" in src, f'{slug}: header needs the sun/moon switch (aria-label "Dark mode")')
     ok("'Appearance'" in src and 'Match my device' in src, f'{slug}: needs an "Appearance" section with a "Match my device" toggle')
@@ -130,6 +140,10 @@ for p, src in S.items():
     ok(not bad, f'{slug}: glass blur should be blur(28px) saturate(170%), found {bad[:1]}')
     ok(re.search(r'rgba\((2[4-5]\d),\s*(2[4-5]\d),\s*(2[4-5]\d),\s*\.84\)', src), f'{slug}: light glass should be rgba(255,255,255,.84) (or tinted, at .84)')
     ok(re.search(r'rgba\(([0-4]?\d),\s*([0-4]?\d),\s*([0-4]?\d),\s*\.8\)', src), f'{slug}: dark glass should be rgba(22,22,28,.8) (or tinted, at .8)')
+    # Selection and focus rings use the accent. Browsers that darken light pages themselves (some
+    # phone browsers) leave outlines alone, so a black or text-colored ring vanishes there.
+    m = re.search(r"outline:\s*[^;'\"}]*?(var\(--(?:[a-z]+-)?(?:text|sub|title|strong|muted|dim|line|ctl)\b|#(?:000|000000|fff|ffffff|1d1d1f)\b|rgba?\((?:0,\s*0,\s*0|255,\s*255,\s*255)\b)", src, re.I)
+    n += 1; ok(not m, f'{slug}: outline in a neutral color ({m.group(0) if m else ""}); selection and focus rings use the accent')
     for tok, what in RECIPE + ([] if slug.startswith('kaleidoscope') else TEXT):
         n += 1; ok(tok in src, f'{slug}: missing the recipe\'s {what} {tok}')
     for img in glob.glob(f'{R}/{plat}/{slug}/images/*.webp'):
@@ -187,6 +201,13 @@ for name, reg in [('RUNS in tools/readmes.py', RUNS), ('S in tools/readmes.py', 
 for p in JOBS:
     n += 1
     if JOBS[p][3]: ok(p in carry.FIRST, f'{p} has tabs, so tools/carry.py FIRST needs its first tab\'s name')
+import panel_icons
+icons_js = open(f'{HERE}/icons.js', encoding='utf-8').read()
+for p in folders:
+    slug = p.split('/')[1]; n += 3
+    ok(slug in STATIC or slug in LIVE, f'{slug}: add it to STATIC or LIVE at the top of tools/check.py (CLAUDE.md: header icon tiles)')
+    ok(re.search(r"(?m)^\s*(ICONS\[)?['\"]" + re.escape(slug) + r"['\"]", icons_js), f'{slug}: tools/icons.js has no icon for it')
+    ok(slug not in STATIC or p in panel_icons.SCRIPTS, f'{slug}: static tile, so tools/panel_icons.py SCRIPTS needs it')
 for a, b in ns.get('PAIR', {}).items(): n += 1; ok(a in folders and b in folders, f'PAIR {a} <-> {b} names a script that doesn\'t exist')
 done(n)
 
@@ -209,7 +230,7 @@ if '--quick' not in args:
             try: probs, k = carry.check(p)
             except Exception as e: probs, k = [f'test could not run: {e}'], 0
             for x in probs: ok(False, f'{p.split("/")[1]}: {x}')
-            if not probs: print(f'  ✓ {p.split("/")[1]}: {k} settings carry over')
+            if not probs: print(f'  ✓ {p.split("/")[1]}: ' + ('new script, nothing to carry over yet' if k is None else f'{k} settings carry over'))
     head('glitches')
     if not targets: print('  ✓ no script differs from GitHub')
     else:

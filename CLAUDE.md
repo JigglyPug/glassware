@@ -26,9 +26,22 @@ tools/                                builders for all of the above
   page sections (Desktop and phone / Desktop / Phone) and its All · Desktop · Phone filter
   (opens on Phone on a phone), the front README's "Where each script runs" table and sections,
   and the "More for…" links on product pages.
-- Adding a script means listing it everywhere the tools look: `S` and `RUNS` in `tools/readmes.py`,
-  `F` in `tools/features.py`, `THEME` in `tools/site_themes.py`, `JOBS` in `tools/screens.py`, and
-  `FIRST` in `tools/carry.py` if its panel has tabs. `tools/check.py` fails until they all agree.
+- **Start every new script with the kit**: write its spec as `tools/specs/<script>.json` (copy
+  `tools/kit/example.json`: name, tagline, accent, icon colors and glyph, where it runs, settings,
+  counters, page copy, features, demo data and the feature code), then run
+  `python3 tools/new_script.py tools/specs/<script>.json`. It writes the script from
+  `tools/kit/template.js`, already on the panel frame, the glass recipe and light/dark, picks
+  readable inks for the accent, lists the script in every registry, draws and embeds its icon,
+  captures it in both themes and rebuilds the pages. Then build out the feature code in the script
+  itself, add any extra screenshots or demo data, and ship it like any other change (audit, check).
+  The spec stays as the record of how it started; after that the script is the source.
+- The registries the kit fills in (and `tools/check.py` checks agree): `S`, `RUNS` and `ACCENT` in
+  `tools/readmes.py`, `F` in `tools/features.py`, `THEME` in `tools/site_themes.py`, `JOBS` in
+  `tools/screens.py`, `FIRST` in `tools/carry.py` (tabbed panels), `STATIC` or `LIVE` in
+  `tools/check.py`, `SCRIPTS` in `tools/panel_icons.py` (static tiles) and `ICONS` in `tools/icons.js`.
+- The kit is part of the release check: `tools/check.py` generates a script from
+  `tools/kit/example.json` and runs every frame and theme rule on it, so the template can't drift
+  from this file. When a rule here changes, change the template too.
 - Desktop and phone versions of the same app are listed in `PAIR`, which adds the "Phone
   version" / "Desktop version" links and the "Also on your phone" / "Also on desktop" card.
 
@@ -130,6 +143,13 @@ and keep existing ones on it.
   skin) and every other number above. Small chips over video (Looking-Glass badges) and
   full-screen veils are not glass and keep their own lighter blur, without `saturate(170%)`.
   `tools/check.py` and `tools/audit.py` enforce this (below).
+- **Everything stays visible in both themes.** Text, chart labels (SVG text too), small marks (dots,
+  ticks, legend swatches, `::before`/`::after` markers), dashed guide lines and selected states take
+  their colors from the theme variables or the accent, never a fixed dark or light gray that only
+  works on one glass. Selection and focus rings (outlines, a tapped bar or day) use the accent, never
+  black, white or the text color: some phone browsers darken light pages themselves and leave
+  outlines alone, so a neutral ring vanishes there. The audit flags text under 3:1 and marks under
+  1.8:1 against what's behind them, and taps a chart bar to check the selected state too.
 - `tools/frame_molten.py` and `tools/frame_kaleido.py` record the change that brought the Molten and
   Kaleidoscope panels onto this frame.
 - **Header icon tiles come in two kinds. Check which before changing one.**
@@ -169,7 +189,10 @@ python3 tools/check.py              # release check: everything below, plus the 
   (phones in Roboto), once on a plain page and once with common site-wide CSS, and lists text
   spilling out of buttons, things cut off or off screen, sideways scrolling and overlaps. It also
   flags phone sheets sized in plain `vh`. It runs in both themes and also flags glass off the
-  recipe and text fainter than 3:1 against its background. Fix what it finds before shipping; it should print
+  recipe, text fainter than 3:1 and marks or outlines under 1.8:1 against their background
+  ("hard to see"), with a chart bar tapped as well, and does the same for what a script draws
+  outside its panel (`SURFACES` in `tools/audit.py`: block screen, nudge, badge menu; add new ones there). `node tools/shot.js … --forcedark` opens a page
+  the way browsers that darken pages themselves show it, to look at by eye. Fix what it finds before shipping; it should print
   "clean" for every script.
 - Panels that live in the page (not a shadow root) inherit the site's CSS: undo text rules like
   `white-space` on the panel itself. Picker grids use equal columns

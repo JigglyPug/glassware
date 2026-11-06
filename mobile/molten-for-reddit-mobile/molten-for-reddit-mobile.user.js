@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.4.0
+// @version      1.4.1
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1946,7 +1946,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-tab.on{background:rgba(255,154,61,.2);color:var(--mt-ink);opacity:1}' +
       '#ytt-panel .ytt-body{overflow-y:auto;padding:2px 16px 16px;scrollbar-width:thin !important}' +
       '#ytt-panel .ytt-sec{margin:18px 0 4px;display:flex;align-items:center;gap:7px;color:var(--mt-ink);font:700 10.5px/1.2 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;letter-spacing:.16em;text-transform:uppercase}' +
-      '#ytt-panel .ytt-sec::before{content:"";width:6px;height:6px;border-radius:1px;background:' + ACCENT + ';transform:rotate(45deg);flex:none}' +
+      '#ytt-panel .ytt-sec::before{content:"";width:6px;height:6px;border-radius:1px;background:var(--mt-ink);transform:rotate(45deg);flex:none}' +
       '#ytt-panel .ytt-brand{display:flex;align-items:center;gap:11px;min-width:0}' +
       '#ytt-panel .ytt-icon{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;' +
       'background:radial-gradient(circle at 25% 20%,#ffb23d,transparent 60%),radial-gradient(circle at 85% 30%,#ff2d6f,transparent 60%),' +
