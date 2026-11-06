@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Kaleidoscope: Your AniList list, turned into your next favorite." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.10.1-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/kaleidoscope/kaleidoscope.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/kaleidoscope/)
+[![Install](https://img.shields.io/badge/Install-v2.10.2-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/kaleidoscope/kaleidoscope.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/kaleidoscope/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co%2C%20claude.ai-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 

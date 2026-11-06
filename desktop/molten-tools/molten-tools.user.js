@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.7.1
+// @version      3.7.2
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -4559,8 +4559,8 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel.ytt-peek{opacity:.18}' +
       '#ytt-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
       '#ytt-panel .ytt-head{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 14px 10px 16px}' +
-      '#ytt-panel .ytt-title{font-weight:650;font-size:15px}' +
-      '#ytt-panel .ytt-sub{opacity:.55;font-size:11.5px}' +
+      '#ytt-panel .ytt-title{font-weight:650;font-size:16px}' +
+      '#ytt-panel .ytt-sub{opacity:.55;font-size:12px}' +
       '#ytt-panel .ytt-tagline{font-size:12px;color:var(--mt-ink);margin:1px 0 2px}' +
       '#ytt-panel .ytt-x{width:28px;height:28px;border:0;border-radius:50%;background:var(--mt-ctl-hi);color:var(--mt-text);' +
       'cursor:pointer;font-size:16px;line-height:28px;padding:0}' +
@@ -4600,14 +4600,15 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel .ytt-seg.grid .ytt-segbtn{padding:7px 4px;line-height:1.25;min-width:0;white-space:normal;overflow-wrap:break-word}' +
       // The panel lives in the page, so undo site-wide text rules it would otherwise inherit (no-wrap buttons and labels).
       '#ytt-panel,#ytt-panel *{white-space:normal}' +
+      '#ytt-panel label{color:inherit!important;text-shadow:inherit!important;font-weight:inherit}' +   // sites style <label> (Reddit dark mode: white)
       '#ytt-panel .ytt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;cursor:default}' +
       '#ytt-panel label.ytt-row{cursor:pointer}' +
       '#ytt-panel .ytt-label{flex:1;min-width:0}' +
       '#ytt-panel .ytt-count{opacity:.9}#ytt-panel .ytt-count[hidden]{display:none}' +
       '#ytt-panel .ytt-hint{display:block;opacity:.65;font-size:11.5px;margin-top:1px}' +
-      '#ytt-panel input.ytt-switch{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:10px;' +
+      '#ytt-panel input.ytt-switch{appearance:none;-webkit-appearance:none;width:40px;height:24px;border-radius:12px;' +
       'background:var(--mt-sw-off);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0;border:0}' +
-      '#ytt-panel input.ytt-switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;' +
+      '#ytt-panel input.ytt-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;' +
       'background:#fff;transition:transform .15s}' +
       '#ytt-panel input.ytt-switch:checked{background:' + ACCENT + '}' +
       '#ytt-panel input.ytt-switch:checked::after{transform:translateX(16px)}' +

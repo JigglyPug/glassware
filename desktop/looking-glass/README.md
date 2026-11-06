@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Looking-Glass: Open any video on its own." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.2.0-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
+[![Install](https://img.shields.io/badge/Install-v1.2.1-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 

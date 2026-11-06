@@ -14,7 +14,8 @@ outlines under 1.8:1 against what's behind them ("hard to see"), and taps a char
 selected state. What a script draws outside its panel (SURFACES below: Hourglass's block screen
 and late-night nudge, Looking-Glass's badge menu) gets the same checks. Every size runs in dark
 on a plain page and with the global CSS big sites ship ("with site CSS"), which panels outside a
-shadow root inherit, then in light on a plain page. "text cut with …" is usually on purpose (long names), so check those
+shadow root inherit, in both themes. The site CSS also colors labels, paragraphs and headings in the
+opposite theme's colors (a dark site under a light panel), and switches are checked for a centered knob. "text cut with …" is usually on purpose (long names), so check those
 by eye. Phone scripts are also read for bottom sheets sized in plain vh: on phones vh ignores the
 address and tool bars, so the sheet's top slides under them; they need a dvh size as well.
 Phone sizes render in Roboto, Android's font (install it into ~/.fonts first), because
@@ -77,9 +78,9 @@ if __name__ == '__main__':
         sizes = ([] if RUNS[p] == 'phone' else [(w, h, False) for w, h in DESKTOP]) + ([(w, h, True) for w, h in PHONE] if RUNS[p] != 'desktop' else [])
         found = {}
         from concurrent.futures import ThreadPoolExecutor
-        # dark on a plain page and with site CSS, then light on a plain page (layout is the same in both
-        # themes; light adds its own glass and contrast checks)
-        runs = [(w, h, phone, hostile, 'dark') for w, h, phone in sizes for hostile in (False, True)] + [(w, h, phone, False, 'light') for w, h, phone in sizes]
+        # both themes, each on a plain page and with site CSS (whose text colors come from the opposite
+        # theme, like Reddit in dark mode on a phone set to light)
+        runs = [(w, h, phone, hostile, 'dark') for w, h, phone in sizes for hostile in (False, True)] + [(w, h, phone, hostile, 'light') for w, h, phone in sizes for hostile in (False, True)]
         with ThreadPoolExecutor(4) as ex:
             for (w, h, phone, hostile, theme), res in zip(runs, ex.map(lambda a: audit(p, *a), runs)):
                 for issue in res: found.setdefault(issue, []).append(f'{w}x{h}' + (' with site CSS' if hostile else '') + (' light' if theme == 'light' else ''))

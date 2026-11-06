@@ -50,6 +50,9 @@ function stubPage() {
   button{white-space:nowrap;line-height:1;font:inherit;text-transform:none;letter-spacing:normal;min-width:0}
   p,h1,h2,h3,h4,ul{margin:0;padding:0}a{color:inherit;text-decoration:none}svg{fill:currentColor}img,video{max-width:100%;height:auto}
   input,select,textarea{line-height:1;font:inherit}label{white-space:nowrap}
+  /* ...and text colors from the site's own theme, which can be the opposite of the panel's
+     (Reddit in dark mode on a phone set to light colors every <label> near-white) */
+  label,p,h1,h2,h3,h4,li,small,strong{color:${dark ? '#1a1a1b' : '#d7dadc'}}
   </style>` : ''}</head><body><header><div class="logo"></div><div class="search"></div><div id="end" style="display:flex;gap:10px"></div></header>
   ${has('--video') ? '<video muted playsinline src="https://' + host + '/clip.mp4"></video>' : ''}
   <main class="grid">${cards}</main></body></html>`;
@@ -181,6 +184,30 @@ function stubPage() {
         else if (r.width <= 14 && r.height <= 14 && !e.childElementCount && !e.textContent.trim()) mark(e, rgba(cs.backgroundColor), behind(e, false), 'small mark');
         for (const side of ['Top', 'Left'])
           if (/dashed|dotted/.test(cs['border' + side + 'Style']) && parseFloat(cs['border' + side + 'Width']) > 0) mark(e, rgba(cs['border' + side + 'Color']), behind(e, false), cs['border' + side + 'Style'] + ' line');
+        // switches: the knob (a round child or ::before/::after) sits centered in the track, inside it
+        if (e.getAttribute('role') === 'switch' || (e.tagName === 'INPUT' && e.type === 'checkbox' && cs.appearance === 'none')) {
+          const knobs = [...e.children].filter(k => getComputedStyle(k).position === 'absolute' && parseFloat(getComputedStyle(k).borderTopLeftRadius) >= k.getBoundingClientRect().height / 2 - 1)
+            .map(k => k.getBoundingClientRect());
+          for (const pseudo of ['::before', '::after']) { const pc = getComputedStyle(e, pseudo);
+            if (pc.content !== 'none' && pc.position === 'absolute' && parseFloat(pc.height) > 4) { const t = parseFloat(pc.top), hh = parseFloat(pc.height);
+              if (isFinite(t)) knobs.push({ top: r.top + t + parseFloat(cs.borderTopWidth || 0), height: hh, left: r.left, right: r.left }); } }
+          for (const k of knobs) { const off = Math.abs((k.top + k.height / 2) - (r.top + r.height / 2));
+            if (off > 1.5) add('knob off center', e, Math.round(off) + 'px from the middle of a ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' track');
+            if (k.height > r.height + 0.5) add('knob off center', e, 'knob taller than its track'); }
+        }
+        // the shared controls are the same size in every script (CLAUDE.md: control sizes)
+        const sz = (x, w, h) => Math.abs(x.width - w) <= 0.5 && Math.abs(x.height - h) <= 0.5;
+        if (e.getAttribute('aria-label') === 'Dark mode') {
+          if (!sz(r, 50, 28)) add('control size', e, 'sun/moon switch is ' + Math.round(r.width) + 'x' + Math.round(r.height) + ', should be 50x28');
+          const k = [...e.querySelectorAll('*')].find(k => getComputedStyle(k).position === 'absolute');
+          if (k && !sz(k.getBoundingClientRect(), 22, 22)) add('control size', e, 'sun/moon knob should be 22x22');
+          const nx = e.nextElementSibling;
+          if (nx && nx.tagName === 'BUTTON') { const q = nx.getBoundingClientRect(); const gap = Math.round(q.left - r.right);
+            if (!(sz(q, 28, 28) || sz(q, 36, 36))) add('control size', nx, 'close button is ' + Math.round(q.width) + 'x' + Math.round(q.height) + ', should be 28x28 (36x36 on phones)');
+            if (Math.abs(gap - 8) > 0.5) add('control size', nx, gap + 'px after the sun/moon switch, should be 8px'); }
+        } else if (e.getAttribute('role') === 'switch' || (e.tagName === 'INPUT' && e.type === 'checkbox' && cs.appearance === 'none')) {
+          if (!(sz(r, 40, 24) || sz(r, 46, 28))) add('control size', e, 'toggle is ' + Math.round(r.width) + 'x' + Math.round(r.height) + ', should be 40x24 (46x28 on phones)');
+        }
         // outlines (selected and focus rings) sit on what's behind the element
         if (cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0) mark(e, rgba(cs.outlineColor), behind(e, false), 'outline');
         for (const pseudo of ['::before', '::after']) { const pc = getComputedStyle(e, pseudo);
@@ -217,7 +244,7 @@ function stubPage() {
   if (has('--audit')) { await page.evaluate(t => { window.__theme = t; }, theme); await page.evaluate(auditJs); }
   if (opt('--maxfrac', '')) await page.evaluate(f => { window.__maxFrac = f; }, +opt('--maxfrac', '0.92'));
   if (has('--sheet')) await page.evaluate(() => { window.__sheet = true; });
-  if (evalJs) { await page.evaluate(evalJs); await page.waitForTimeout(900); }
+  if (evalJs) { const v = await page.evaluate(evalJs); if (has('--print')) console.log('EVAL ' + JSON.stringify(v)); await page.waitForTimeout(900); }   // --print: show what --eval returned
   async function snap(file) {
     await page.evaluate(() => __hideErr());
     // Screenshots never show the version: they only need recapturing when a panel changes.

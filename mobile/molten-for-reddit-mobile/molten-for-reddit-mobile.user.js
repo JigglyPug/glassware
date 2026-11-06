@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.4.1
+// @version      1.4.2
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1933,8 +1933,8 @@ div.lava-blobs {
       '#ytt-panel.ytt-peek{opacity:.18}' +
       '#ytt-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
       '#ytt-panel .ytt-head{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 14px 10px 16px}' +
-      '#ytt-panel .ytt-title{font-weight:650;font-size:15px}' +
-      '#ytt-panel .ytt-sub{opacity:.55;font-size:11.5px}' +
+      '#ytt-panel .ytt-title{font-weight:650;font-size:16px}' +
+      '#ytt-panel .ytt-sub{opacity:.55;font-size:12px}' +
       '#ytt-panel .ytt-tagline{font-size:12px;color:var(--mt-ink);margin:1px 0 2px}' +
       '#ytt-panel .ytt-x{width:28px;height:28px;border:0;border-radius:50%;background:var(--mt-ctl-hi);color:var(--mt-text);' +
       'cursor:pointer;font-size:16px;line-height:28px;padding:0}' +
@@ -1974,14 +1974,15 @@ div.lava-blobs {
       '#ytt-panel .ytt-seg.grid .ytt-segbtn{padding:7px 4px;line-height:1.25;min-width:0;white-space:normal;overflow-wrap:break-word}' +
       // The panel lives in the page, so undo site-wide text rules it would otherwise inherit (no-wrap buttons and labels).
       '#ytt-panel,#ytt-panel *{white-space:normal}' +
+      '#ytt-panel label{color:inherit!important;text-shadow:inherit!important;font-weight:inherit}' +   // sites style <label> (Reddit dark mode: white)
       '#ytt-panel .ytt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;cursor:default}' +
       '#ytt-panel label.ytt-row{cursor:pointer}' +
       '#ytt-panel .ytt-label{flex:1;min-width:0}' +
       '#ytt-panel .ytt-count{opacity:.9}#ytt-panel .ytt-count[hidden]{display:none}' +
       '#ytt-panel .ytt-hint{display:block;opacity:.65;font-size:11.5px;margin-top:1px}' +
-      '#ytt-panel input.ytt-switch{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:10px;' +
+      '#ytt-panel input.ytt-switch{appearance:none;-webkit-appearance:none;width:40px;height:24px;border-radius:12px;' +
       'background:var(--mt-sw-off);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0;border:0}' +
-      '#ytt-panel input.ytt-switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;' +
+      '#ytt-panel input.ytt-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;' +
       'background:#fff;transition:transform .15s}' +
       '#ytt-panel input.ytt-switch:checked{background:' + ACCENT + '}' +
       '#ytt-panel input.ytt-switch:checked::after{transform:translateX(16px)}' +
@@ -2498,12 +2499,12 @@ div.lava-blobs {
     '#ytt-panel::before{content:"";display:block;width:40px;height:4px;border-radius:2px;background:var(--mt-sw-off);margin:8px auto 0}' +
     '#ytt-panel .ytt-head{padding-top:8px!important}' +
     '#ytt-panel .ytt-tab{font-size:13.5px!important;padding:10px 2px!important}' +
-    '#ytt-panel .ytt-x{width:36px!important;height:36px!important}' +
+    '#ytt-panel .ytt-x{width:36px!important;height:36px!important;min-height:0!important}' +
     '#ytt-panel .ytt-row{padding:11px 0!important}' +
     '#ytt-panel .ytt-label{font-size:14.5px}' +
     '#ytt-panel .ytt-hint{font-size:12.5px!important}' +
     '#ytt-panel input.ytt-switch{width:46px!important;height:28px!important;border-radius:14px!important}' +
-    '#ytt-panel input.ytt-switch::after{width:22px!important;height:22px!important;top:3px!important;left:3px!important}' +
+    '#ytt-panel input.ytt-switch::after{width:24px!important;height:24px!important;top:2px!important;left:2px!important}' +
     '#ytt-panel input.ytt-switch:checked::after{transform:translateX(18px)!important}' +
     '#ytt-panel input.ytt-text,#ytt-panel input.ytt-num,#ytt-panel select.ytt-sel{font-size:16px!important;min-height:40px}' +
     '#ytt-panel input.ytt-num{width:78px!important}' +
@@ -2517,6 +2518,8 @@ div.lava-blobs {
     '#ytt-panel .ytt-chip{text-transform:uppercase!important}' +
     '#ytt-panel button{display:inline-flex!important;align-items:center!important;justify-content:center!important;' +
     'height:auto!important;min-height:40px;line-height:1.2!important;box-sizing:border-box!important}' +
+    // ...but the sun/moon switch keeps its own track and knob, the same size as in every panel
+    '#ytt-panel button.ytt-mode{display:flex!important;justify-content:space-between!important;width:50px!important;height:28px!important;min-height:0!important;padding:0 7px!important;line-height:1!important}' +
     '#ytt-panel .ytt-tab{min-height:38px}' +
     '#ytt-panel .ytt-seg-hint{margin:8px 0 4px!important}' +
     '#ytt-toggle.lava-float{right:14px!important;bottom:calc(14px + env(safe-area-inset-bottom))!important;width:46px!important;height:46px!important}'

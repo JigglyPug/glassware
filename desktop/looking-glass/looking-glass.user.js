@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.0
+// @version      1.2.1
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.0';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.1';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1138,11 +1138,12 @@ button:disabled{cursor:not-allowed}
 .logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}
 .logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
 .title{font-weight:650;font-size:16px;letter-spacing:-.015em}
-.sub{font-size:11.5px;color:var(--sub)}
+.sub{font-size:12px;color:var(--sub)}
 .x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub);flex:none}
 .x:hover{background:var(--ctl-hi);color:var(--text)}
+.panel:focus{outline:none}
 /* sun/moon switch: light or dark glass (the device's choice until it's flipped) */
-.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
+.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;margin-right:-3px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
 .mode .mi2{position:relative;z-index:1;display:grid;transition:color .18s}
 .mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
 .vars[data-theme=dark] .mode .knob{transform:translateX(22px)}
@@ -1218,7 +1219,7 @@ button:disabled{cursor:not-allowed}
   @keyframes up{from{transform:translateY(40px);opacity:0}}
   .grab{display:block;width:38px;height:5px;border-radius:3px;background:var(--sw-off);margin:8px auto 0}
   .head{padding-top:10px}
-  .x{width:34px;height:34px}
+  .x{width:36px;height:36px}
   .sw{width:46px;height:28px;border-radius:14px}.sw::after{width:24px;height:24px}.sw[aria-checked=true]::after{transform:translateX(18px)}
   .seg button{min-height:36px}
   .slr{grid-template-columns:minmax(0,1fr) 58px}.slr>div:first-child{grid-column:1/-1}
@@ -1236,14 +1237,15 @@ button:disabled{cursor:not-allowed}
             host.style.cssText = 'all:initial;position:fixed;inset:auto;z-index:2147483647;';
             const root = this.root = host.attachShadow({ mode: 'closed' });
             root.append(h('style', { text: PANEL_CSS }));
-            this.panel = h('div', { class: 'panel vars', role: 'dialog', 'aria-label': 'Looking-Glass' });
+            this.panel = h('div', { class: 'panel vars', role: 'dialog', 'aria-label': 'Looking-Glass', tabindex: '-1' });
             root.append(this.panel);
             mount(host);
             for (const ev of ['click', 'pointerdown', 'mousedown', 'touchstart', 'keydown', 'wheel']) host.addEventListener(ev, e => e.stopPropagation());
             this.onKey = e => { if (e.key === 'Escape' && e.composedPath().includes(host)) this.close(); };
             addEventListener('keydown', this.onKey, true);
             this.render();
-            if (!TOUCH) { const f = this.root.querySelector('.x'); f && f.focus({ preventScroll: true }); }
+            // focus the panel itself (so Esc reaches it), not the close button, which would show a focus ring
+            if (!TOUCH) this.panel.focus({ preventScroll: true });
             this.timer = setInterval(() => this.renderFoot(), 1500);
         },
         close() {

@@ -86,6 +86,18 @@ and keep existing ones on it.
   Phones: a bottom sheet with a grab handle.
 - **Header.** Icon tile (the script's glyph on its own colors), then name and tagline, then the
   sun/moon switch (`aria-label` "Dark mode"), then a round close button on the right.
+- **Control sizes** (the same in every panel; the audit measures them):
+
+  | | desktop | phone |
+  |---|---|---|
+  | icon tile | 34×34, 10px corners | same |
+  | name / tagline | 16px semibold / 12px (Kaleidoscope keeps its AniList wordmark) | same |
+  | sun/moon switch | 50×28 track, 22px knob, 3px in | same |
+  | close button | 28×28 round, 8px after the switch | 36×36 |
+  | toggle | 40×24 track, 20px knob, 2px in | 46×28, 24px knob |
+
+  A site's own button rules (min-heights, centering, fixed heights) must not reach these: reset
+  them on the control itself, as Molten for Reddit Mobile does for Reddit's buttons.
 - **Context line** under the header: the site or account in monospace, plus a status chip when the
   script has a status (On/Off, the color source, the list type...).
 - **Tabs** only for scripts with many settings or areas (Hourglass, Molten, Kaleidoscope). The tab
@@ -182,6 +194,7 @@ python3 tools/screens.py [script]   # recapture panel screenshots (needs Playwri
 python3 tools/pages.py              # rebuild every README, banner, site page and link preview
 python3 tools/audit.py [script]     # check panels for small visual glitches (run after panel changes)
 python3 tools/carry.py [script]     # check settings and saved data carry over from the live version
+python3 tools/sheet.py              # every changed screenshot, dark next to light, on one sheet per script
 python3 tools/check.py              # release check: everything below, plus the two above for changed scripts
 ```
 
@@ -190,7 +203,9 @@ python3 tools/check.py              # release check: everything below, plus the 
   spilling out of buttons, things cut off or off screen, sideways scrolling and overlaps. It also
   flags phone sheets sized in plain `vh`. It runs in both themes and also flags glass off the
   recipe, text fainter than 3:1 and marks or outlines under 1.8:1 against their background
-  ("hard to see"), with a chart bar tapped as well, and does the same for what a script draws
+  ("hard to see"), switches whose knob isn't centered, shared controls off the sizes above, and
+  labels that take the site's own text color (the site CSS uses the opposite theme's colors),
+  with a chart bar tapped as well, and does the same for what a script draws
   outside its panel (`SURFACES` in `tools/audit.py`: block screen, nudge, badge menu; add new ones there). `node tools/shot.js … --forcedark` opens a page
   the way browsers that darken pages themselves show it, to look at by eye. Fix what it finds before shipping; it should print
   "clean" for every script.
@@ -217,6 +232,12 @@ python3 tools/check.py              # release check: everything below, plus the 
 - Link previews (`docs/img/<script>/og.png`) show both themes at once: `tools/prismcut.py` cuts the
   light and dark cards along a diagonal with a seam in the script's accent (a lava-lamp seam for
   the Molten scripts). The cut is for previews and banners only, never on the site or READMEs.
+- **Look at every changed screenshot before pushing** (`python3 tools/sheet.py`), dark and light,
+  every tab. The checks only catch the problems they were written for; looking catches the rest
+  (a knob out of place, a ring that shouldn't be there, a color that's off). When looking finds
+  something a check could have caught, add the check too.
+- Panels open with focus on the panel itself, never on a control (that shows a focus ring on
+  every open); Esc still closes them.
 - Screenshots use made-up demo data only (`tools/seeds/`). Never use real browsing data.
 - A panel change that only shows up with data (a counter line, a list, a status) needs demo data
   in `tools/seeds/` so the screenshots show it; otherwise the pages never show the new feature.

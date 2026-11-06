@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.1
+// @version      2.2.2
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.1';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.2';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -656,7 +656,7 @@
 @media (prefers-reduced-motion:reduce){.panel,.panel *{animation:none!important;transition:none!important}}
 button{font:inherit;color:inherit;cursor:pointer}
 .head{display:flex;align-items:center;gap:11px;padding:16px 16px 4px}
-.logo{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--on);flex:none;
+.logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--on);flex:none;
   background:linear-gradient(140deg,var(--fill-hi),var(--fill));box-shadow:0 4px 14px -4px rgba(var(--a-rgb),.9),inset 0 1px 0 rgba(255,255,255,.35)}
 /* glass tile like the app icon; the color still follows the script's state */
 .logo{position:relative;overflow:hidden;color:#fff;
@@ -666,14 +666,14 @@ button{font:inherit;color:inherit;cursor:pointer}
   background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 48%),linear-gradient(135deg,transparent 34%,rgba(255,255,255,.09) 34% 44%,transparent 44%)}
 .logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}
 .logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
-.title{font-weight:650;font-size:15.5px;letter-spacing:-.015em}
-.sub{font-size:11.5px;color:var(--sub)}
-.x{margin-left:auto;width:26px;height:26px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub)}
+.title{font-weight:650;font-size:16px;letter-spacing:-.015em}
+.sub{font-size:12px;color:var(--sub)}
+.x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub)}
 .x:hover{background:var(--ctl-hi);color:var(--text)}
 /* sun/moon switch: light or dark glass (the device's choice until it's flipped) */
-.mode{position:relative;flex:none;margin-left:auto;width:48px;height:26px;border:0;border-radius:13px;background:var(--ctl);padding:0 6px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
+.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;margin-right:-3px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
 .mode .mi{position:relative;z-index:1;display:grid;transition:color .18s}
-.mode .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
+.mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
 .panel[data-theme=dark] .mode .knob{transform:translateX(22px)}
 .panel:not([data-theme=dark]) .mode .sun,.panel[data-theme=dark] .mode .moon{color:var(--text)}
 .mode+.x{margin-left:0}
@@ -689,10 +689,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .row+.row{margin-top:8px}
 .t{font-weight:500}
 .d{font-size:11.5px;color:var(--sub);margin-top:1px}
-.sw{flex:none;position:relative;width:38px;height:23px;border:0;border-radius:12px;background:var(--sw-off);transition:background .18s}
-.sw::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
+.sw{flex:none;position:relative;width:40px;height:24px;border:0;border-radius:12px;background:var(--sw-off);transition:background .18s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
 .sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px rgba(var(--a-rgb),.7)}
-.sw[aria-checked=true]::after{transform:translateX(15px)}
+.sw[aria-checked=true]::after{transform:translateX(16px)}
 .seg{display:flex;padding:2px;border-radius:10px;background:var(--ctl)}
 .seg button{flex:1;border:0;background:none;padding:6px 0;border-radius:8px;font-size:12px;font-weight:500;transition:background .15s,color .15s}
 .seg button.on{background:var(--fill);color:var(--on);box-shadow:0 1px 4px rgba(0,0,0,.14),0 0 14px -4px rgba(var(--a-rgb),.8)}

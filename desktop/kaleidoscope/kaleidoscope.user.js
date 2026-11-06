@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.1
+// @version      2.10.2
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -1124,6 +1124,7 @@
       'border:1px solid var(--k-edge);border-radius:22px;box-shadow:0 0 0 .5px rgba(61,180,242,.35),0 0 40px -12px rgba(61,180,242,.45),0 14px 44px var(--k-drop),inset 0 1px 0 var(--k-hl);' +
       'font:13px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:left;opacity:1;visibility:visible}' +
       '#kaleidoscope-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
+      '#kaleidoscope-panel label{color:inherit!important;text-shadow:inherit!important}' +   // sites style <label>
       '#kaleidoscope-panel .kld-head{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 14px 10px 16px}' +
       '#kaleidoscope-panel .kld-title{font-weight:800;font-size:17px;color:var(--k-title);line-height:1.2}' +
       '#kaleidoscope-panel .kld-title b{color:' + ACCENT + ';font-weight:800}' +
@@ -1158,9 +1159,9 @@
       '#kaleidoscope-panel label.kld-row{cursor:pointer}' +
       '#kaleidoscope-panel .kld-label{flex:1;min-width:0;color:var(--k-strong)}' +
       '#kaleidoscope-panel .kld-hint{display:block;color:var(--k-dim);font-size:11.5px;margin-top:1px}' +
-      '#kaleidoscope-panel input.kld-switch{appearance:none;-webkit-appearance:none;width:36px;height:20px;border-radius:10px;' +
+      '#kaleidoscope-panel input.kld-switch{appearance:none;-webkit-appearance:none;width:40px;height:24px;border-radius:12px;' +
       'background:var(--k-sw-off);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0;border:0}' +
-      '#kaleidoscope-panel input.kld-switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;' +
+      '#kaleidoscope-panel input.kld-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;' +
       'background:#fff;transition:transform .15s}' +
       '#kaleidoscope-panel input.kld-switch:checked{background:' + ACCENT + '}' +
       '#kaleidoscope-panel input.kld-switch:checked::after{transform:translateX(16px)}' +

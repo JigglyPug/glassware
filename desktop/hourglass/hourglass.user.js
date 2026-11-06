@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.4.1
+// @version      1.4.2
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.4.1';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.4.2';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -951,11 +951,11 @@ h1 span{color:var(--ink)}
 .logo svg{position:relative;filter:drop-shadow(0 0 1.2px rgba(255,255,255,.95)) drop-shadow(0 0 4px rgba(var(--a-rgb),.95))}
 .logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
 .title{font-weight:650;font-size:16px;letter-spacing:-.015em}
-.sub{font-size:11.5px;color:var(--sub)}
-.x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub)}
+.sub{font-size:12px;color:var(--sub)}
+.x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub);flex:none}
 .x:hover{background:var(--ctl-hi);color:var(--text)}
 /* sun/moon switch: light or dark glass (the device's choice until it's flipped) */
-.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
+.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;margin-right:-3px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
 .mode .mi2{position:relative;z-index:1;display:grid;transition:color .18s}
 .mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
 .vars[data-theme=dark] .mode .knob{transform:translateX(22px)}
@@ -1189,7 +1189,7 @@ h1 span{color:var(--ink)}
 @keyframes sheet{from{opacity:0;transform:translateY(48px)}}
 .grab{width:42px;height:5px;border-radius:3px;background:var(--sw-off);margin:9px auto 0;flex:none}
 .m .head{padding-top:8px}
-.m .x{width:34px;height:34px}
+.m .x{width:36px;height:36px}
 .m .tabs .seg button{min-height:40px;font-size:13px}
 .m .seg.sm button{min-height:34px}
 .m .sw{width:46px;height:28px;border-radius:14px}.m .sw::after{width:24px;height:24px}.m .sw[aria-checked=true]::after{transform:translateX(18px)}
