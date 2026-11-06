@@ -140,7 +140,10 @@ function stubPage() {
       const els = __all().filter(e => e.nodeType === 1 && !/^(STYLE|SCRIPT|svg|path|defs|g|circle|rect|line|polyline|polygon|ellipse|stop|linearGradient|radialGradient|filter|feGaussianBlur|feMerge|feMergeNode|feColorMatrix|use|clipPath|mask)$/i.test(e.tagName) && !(e instanceof SVGElement) && fixedAnc(e) && vis(e));
       // The glass recipe (tools/tokens.json): every frosted surface has the token blur and saturation,
       // light and dark glass at their token opacities. Only big surfaces count (panel, menus, cards, toasts), not chips.
-      const rgba = c => { const m = (c || '').match(/[\\d.]+/g) || [0, 0, 0, 0]; return [+m[0], +m[1], +m[2], m[3] === undefined ? 1 : +m[3]]; };
+      // rgb()/rgba(), and color(srgb r g b / a) (what color-mix() computes to: channels 0-1)
+      const rgba = c => { c = c || ''; const m = c.match(/[\\d.]+/g) || [0, 0, 0, 0];
+        if (/^color\\(srgb/.test(c)) return [m[0] * 255, m[1] * 255, m[2] * 255, m[3] === undefined ? 1 : +m[3]];
+        return [+m[0], +m[1], +m[2], m[3] === undefined ? 1 : +m[3]]; };
       const glassA = window.__theme === "light" ? ${TG.opacity.light} : ${TG.opacity.dark};
       for (const e of els) { const cs = getComputedStyle(e), f = cs.backdropFilter || cs.webkitBackdropFilter || '';
         if (!/saturate/.test(f)) continue; const r = e.getBoundingClientRect(); if (r.width * r.height < 12000) continue;
@@ -288,6 +291,9 @@ function stubPage() {
     let clip;
     if (crop) { const sel = opt('--clipsel', ''); const r = await page.evaluate(sel => { if (sel) { const e = __all().find(x => x.matches && x.matches(sel)); if (e) { const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; } } return __panelRect(); }, sel); if (r) { const pad = 28; const vp = page.viewportSize();
       const x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad); clip = { x, y, width: Math.min(vp.width - x, r.w + pad * 2), height: Math.min(vp.height - y, r.h + pad * 2) }; } }
+    // a cropped capture shows the whole panel: if anything inside it still scrolls, the picture is cut off
+    if (crop) { const cut = await page.evaluate(() => __all().filter(e => { const c = getComputedStyle(e); return /auto|scroll/.test(c.overflowY) && e.scrollHeight > e.clientHeight + 2 && e.clientHeight > 40; }).length);
+      if (cut) console.log('CLIPPED ' + file + ': the panel scrolls, so part of it is missing (capture it taller with --vh)'); }
     await page.screenshot({ path: file, clip, animations: 'disabled' });   // animations stopped, so captures repeat exactly
     console.log('saved', file, clip ? 'cropped' : '');
     if (has('--text')) console.log('TEXT>>', await page.evaluate(() => { const seen = new Set(); const out = []; for (const e of __all()) { if (e.children.length) continue; const t = (e.textContent || '').trim(); const r = e.getBoundingClientRect(); if (!t || r.width === 0 || seen.has(t) || t.length > 140) continue; if (e.closest('header,main')) continue; seen.add(t); out.push(t); } return out.join(' | '); }));

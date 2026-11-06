@@ -10,7 +10,7 @@ F = {
  ('A menu that matches', 'A frosted panel tinted by the current title bar color. Open it with Alt + Shift + P.'),
 ],
 'desktop/hourglass': [
- ('A real dashboard', 'Today against your average, an hour-by-hour chart with lockdown shaded, week and month views, category trends, top sites and streaks.'),
+ ('A dashboard that tells you something', 'Each card answers one question in a sentence: how today compares with your usual, what changed, when you drift and whether lockdown is working.'),
  ('A schedule you draw', 'Drag lockdown blocks onto each day in 30-minute steps, or start from presets like 9–5, evenings or overnight.'),
  ('Passes, not loopholes', 'A few daily passes that open only the site you\'re on, with a timer and a wait to think it over.'),
  ('Lockdown that holds', 'An "Is this important?" screen with a delay, and looser settings only kick in after lockdown ends.'),
@@ -18,7 +18,7 @@ F = {
  ('Smart suggestions', 'Sites you spend 30+ minutes a day on get suggested for a list, or you can ignore them.'),
  ('Music mode', 'Let music through during lockdown, with listening time tracked apart from screen time.'),
  ('Late-night nudge', 'A friendly reminder to take a break when you\'re still browsing past bedtime.'),
- ('On your phone too', 'The same script switches to a bottom-sheet menu on phones, with a trimmed dashboard, bigger touch targets and tap-for-details charts. Listening time stays on the PC.'),
+ ('On your phone too', 'The same script switches to a bottom-sheet menu on phones, with the full dashboard in one column, bigger touch targets and tap-for-details charts. Listening time stays on the PC.'),
  ('Private by design', 'Everything stays on your device, and only site names are kept, never full addresses or page titles.'),
 ],
 'desktop/looking-glass': [

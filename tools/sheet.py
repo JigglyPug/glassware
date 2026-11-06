@@ -4,8 +4,9 @@
     python3 tools/sheet.py prism        # every screenshot of these scripts
     python3 tools/sheet.py --all        # every screenshot of every script
 
-Writes one sheet per script (dark on the left, light on the right, one row per capture) to a
-temporary folder and prints the paths. The checks only catch the problems they were written for;
+Writes one page per capture (dark on the left, light on the right) to a temporary folder and
+prints the paths. Tall captures are cut into parts, so every page can be looked at full size:
+look at every page it prints. The checks only catch the problems they were written for;
 looking catches the rest (a knob out of place, a color that's off, something missing), so this is a
 required step before every push that changes a panel (CLAUDE.md).
 """
@@ -13,32 +14,36 @@ import glob, os, subprocess, sys, tempfile
 from PIL import Image, ImageDraw
 
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-W = 520   # width of each capture on the sheet
+W = 700      # width of each capture on a page
+PAGE = 1600  # tallest slice of a capture on one page: small enough that a viewer shows it at full size
 
 def changed_images():
     out = subprocess.run(['git', '-C', R, 'diff', '--name-only', 'origin/main', '--', '*/*/images/*.webp'], capture_output=True, text=True).stdout.split()
     new = subprocess.run(['git', '-C', R, 'ls-files', '--others', '--exclude-standard', '--', '*/*/images/*.webp'], capture_output=True, text=True).stdout.split()
     return sorted(set(out + new))
 
-def sheet(folder, names, out):
-    rows = []
+def pages(folder, names, tmp):
+    """One page per capture, dark next to light; a tall capture (a whole dashboard) is cut into
+    slices of PAGE height, so no page ever has to shrink to a thumbnail to fit."""
+    out = []
     for n in names:
         d, l = f'{R}/{folder}/images/{n}.webp', f'{R}/{folder}/images/{n}-light.webp'
         ims = [Image.open(x).convert('RGB') for x in (d, l) if os.path.exists(x)]
-        for im in ims: im.thumbnail((W, 4000))
-        rows.append((n, ims))
-    h = sum(max(im.height for im in ims) + 34 for _, ims in rows if ims)
-    c = Image.new('RGB', (W * 2 + 30, max(h, 1)), (250, 250, 252)); dr = ImageDraw.Draw(c); y = 0
-    for n, ims in rows:
         if not ims: continue
-        dr.text((10, y + 8), f'{folder} / {n}   (dark | light)', fill=(40, 40, 50))
-        for i, im in enumerate(ims): c.paste(im, (10 + i * (W + 10), y + 28))
-        y += max(im.height for im in ims) + 34
-    c.save(out)
+        ims = [im.resize((W, round(im.height * W / im.width)), Image.LANCZOS) if im.width > W else im for im in ims]
+        H = max(im.height for im in ims); k = (H + PAGE - 1) // PAGE
+        for i in range(k):
+            top, bot = i * PAGE, min(H, (i + 1) * PAGE)
+            c = Image.new('RGB', (W * 2 + 30, bot - top + 34), (250, 250, 252)); dr = ImageDraw.Draw(c)
+            dr.text((10, 8), f'{folder} / {n}   (dark | light)' + (f'   part {i + 1} of {k}' if k > 1 else ''), fill=(40, 40, 50))
+            for j, im in enumerate(ims):
+                if top < im.height: c.paste(im.crop((0, top, im.width, min(im.height, bot))), (10 + j * (W + 10), 28))
+            f = f"{tmp}/{folder.split('/')[1]}-{n}" + (f'-{i + 1}' if k > 1 else '') + '.png'; c.save(f); out.append(f)
+    return out
 
 if __name__ == '__main__':
     args = sys.argv[1:]
-    folders = sorted({os.path.dirname(os.path.dirname(p)) for p in glob.glob(f'{R}/*/*/images')})
+    folders = sorted({os.path.dirname(p) for p in glob.glob(f'{R}/*/*/images')})
     folders = [os.path.relpath(f, R) for f in folders]
     if '--all' in args: pick = {f: None for f in folders}
     elif args: pick = {f: None for f in folders if f.split('/')[1] in args}
@@ -51,4 +56,4 @@ if __name__ == '__main__':
     tmp = tempfile.mkdtemp(prefix='sheets-')
     for f, names in pick.items():
         names = sorted(names) if names else sorted({os.path.basename(p)[:-5].removesuffix('-light') for p in glob.glob(f'{R}/{f}/images/*.webp')})
-        out = f"{tmp}/{f.split('/')[1]}.png"; sheet(f, names, out); print(out)
+        for page in pages(f, names, tmp): print(page)

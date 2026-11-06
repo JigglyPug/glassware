@@ -10,6 +10,13 @@ schedule, block screen, late-night nudge).
 Run tools/pages.py afterwards to copy the images into the site.
 """
 import os, subprocess, sys, tempfile
+
+def cap(args):
+    """Run one capture; fail if its picture is cut off (shot.js prints CLIPPED when the panel still scrolls)."""
+    r = subprocess.run(args, check=True, capture_output=True, text=True)
+    clipped = [l for l in r.stdout.splitlines() if l.startswith('CLIPPED')]
+    if clipped: raise RuntimeError('\n'.join(clipped))
+    return r
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
@@ -48,15 +55,15 @@ def hourglass_phone(imgs=None):
     seed = ['--seed', f'{HERE}/seeds/hourglass.json']
     for theme, sfx in THEMES:
         tmp = tempfile.mkdtemp()
-        subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop', '--theme', theme,
-                        '--vh', '2600', '--clipsel', '.frame.m .panel', '--clock', CLOCK, '--tabs', 'Schedule'] + seed, check=True, capture_output=True)
+        cap(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop', '--theme', theme,
+                        '--vh', '4800', '--clipsel', '.frame.m .panel', '--clock', CLOCK, '--tabs', 'Schedule'] + seed)
         # the block screen: a weekday morning, inside the demo lockdown
-        subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/block.png', '--cmd', 'none', '--mobile', '--theme', theme,
-                        '--clock', '2026-11-03T11:48:00-05:00'] + seed, check=True, capture_output=True)
+        cap(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/block.png', '--cmd', 'none', '--mobile', '--theme', theme,
+                        '--clock', '2026-11-03T11:48:00-05:00'] + seed)
         webp(f'{tmp}/phone.png', f'{imgs}/phone-dashboard{sfx}.webp'); webp(f'{tmp}/phone-schedule.png', f'{imgs}/phone-schedule{sfx}.webp')
         # the late-night nudge, from the Preview button in Settings, at 11:40 PM
-        subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/nudge.png', '--cmd', 'Open', '--mobile', '--theme', theme,
-                        '--clock', '2026-11-03T23:40:00-05:00', '--eval', NUDGE] + seed, check=True, capture_output=True)
+        cap(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/nudge.png', '--cmd', 'Open', '--mobile', '--theme', theme,
+                        '--clock', '2026-11-03T23:40:00-05:00', '--eval', NUDGE] + seed)
         webp(f'{tmp}/block.png', f'{imgs}/phone-block{sfx}.webp'); webp(f'{tmp}/nudge.png', f'{imgs}/phone-nudge{sfx}.webp')
     print('captured desktop/hourglass phone shots')
 
@@ -69,7 +76,7 @@ def run(p, imgs=None):
         tmp = tempfile.mkdtemp(); out = f'{tmp}/{slug}.png'
         args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, out, '--cmd', cmd, '--crop', '--clock', CLOCK, '--theme', theme,
                 '--vh', '2600' if mobile else '3000'] + extra + (['--tabs', ','.join(tabs)] if tabs else [])
-        subprocess.run(args, check=True, capture_output=True)
+        cap(args)
         webp(out, f'{imgs}/{lead}{sfx}.webp')
         for t in tabs:
             webp(f'{tmp}/{slug}-{t.lower()}.png', f'{imgs}/{t.lower()}{sfx}.webp')

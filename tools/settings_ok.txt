@@ -1,2 +1,4 @@
 # Settings that were retired on purpose, so tools/carry.py stops flagging them.
 # One per line: <script folder name> | <the line carry.py printed>
+# The dashboard's Week/Month switch was never saved; it became the 7 days / 4 weeks range for every card
+hourglass | "Dashboard | choice | This week" didn't carry over: was 'Week', new version shows '7 days'

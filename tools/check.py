@@ -29,6 +29,9 @@ It checks, in order:
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
              recipe, nothing faint or hard to see, in both themes (changed scripts)
+  dashboard  the demo history matches its generator; tools/dash.py: every Hourglass card answers
+             its question in a sentence that names the change, no figure on two cards, labelled
+             axes (when Hourglass changed)
   live       tools/live.py: every control updates the panel on the spot, in the same tab and in a
              second open tab, with nothing waiting for a reopen (changed scripts)
   screenshots the committed panel screenshots still match the panels (changed scripts)
@@ -284,6 +287,23 @@ if '--quick' not in args:
             elif l.strip() and cur: ok(False, f'{cur}: {l.strip()}')
         for p in targets:   # every script asked about must report back; silence is not a pass
             ok(p.split('/')[1] in seen, f'{p.split("/")[1]}: the glitch check gave no result')
+
+# ------------------------------------------------------------------ dashboard
+head('dashboard')
+# the demo history is written by its generator, never by hand
+import importlib.util
+spec = importlib.util.spec_from_file_location('hgseed', f'{HERE}/seeds/hourglass.py'); hgseed = importlib.util.module_from_spec(spec); spec.loader.exec_module(hgseed)
+ok(json.load(open(f'{HERE}/seeds/hourglass.json')) == json.loads(json.dumps(hgseed.make('habit'))),
+   'tools/seeds/hourglass.json differs from what tools/seeds/hourglass.py writes (run python3 tools/seeds/hourglass.py)')
+if not any(f.startswith('dashboard:') for f in fails): print('  ✓ the demo history matches its generator')
+if '--quick' not in args and ('--all' in args or 'desktop/hourglass' in changed):
+    r = subprocess.run([sys.executable, f'{HERE}/dash.py'], capture_output=True, text=True)
+    runs = 0
+    for l in r.stdout.splitlines():
+        if l.startswith('== '): runs += 1; (print(f'  ✓ {l[3:].split(":")[0]}: every card answers its question') if l.endswith('clean') else None)
+        elif l.strip(): ok(False, f'hourglass dashboard: {l.strip()}')
+    want = 2 * len(hgseed.PLANTED)
+    ok(runs == want, f'the dashboard test reported {runs} of {want} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
 
 # ------------------------------------------------------------------ screenshots
 if '--quick' not in args:

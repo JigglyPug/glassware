@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Hourglass: Screen time and lockdown for every site." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.4.4-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
+[![Install](https://img.shields.io/badge/Install-v1.5.0-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -20,7 +20,7 @@ A fresh install starts in setup mode: Hourglass counts your screen time but bloc
 
 ## Features
 
-- **A real dashboard**: Today against your average, an hour-by-hour chart with lockdown shaded, week and month views, category trends, top sites and streaks.
+- **A dashboard that tells you something**: Each card answers one question in a sentence: how today compares with your usual, what changed, when you drift and whether lockdown is working.
 - **A schedule you draw**: Drag lockdown blocks onto each day in 30-minute steps, or start from presets like 9–5, evenings or overnight.
 - **Passes, not loopholes**: A few daily passes that open only the site you're on, with a timer and a wait to think it over.
 - **Lockdown that holds**: An "Is this important?" screen with a delay, and looser settings only kick in after lockdown ends.
@@ -28,7 +28,7 @@ A fresh install starts in setup mode: Hourglass counts your screen time but bloc
 - **Smart suggestions**: Sites you spend 30+ minutes a day on get suggested for a list, or you can ignore them.
 - **Music mode**: Let music through during lockdown, with listening time tracked apart from screen time.
 - **Late-night nudge**: A friendly reminder to take a break when you're still browsing past bedtime.
-- **On your phone too**: The same script switches to a bottom-sheet menu on phones, with a trimmed dashboard, bigger touch targets and tap-for-details charts. Listening time stays on the PC.
+- **On your phone too**: The same script switches to a bottom-sheet menu on phones, with the full dashboard in one column, bigger touch targets and tap-for-details charts. Listening time stays on the PC.
 - **Private by design**: Everything stays on your device, and only site names are kept, never full addresses or page titles.
 
 ## A closer look
@@ -40,7 +40,7 @@ A fresh install starts in setup mode: Hourglass counts your screen time but bloc
 
 ## On your phone
 
-The same script switches to a phone layout on its own: a bottom-sheet menu, a trimmed dashboard you can tap for details, and bigger touch targets. Open it from the Tampermonkey menu, or from the Open Hourglass link on any block screen.
+The same script switches to a phone layout on its own: a bottom-sheet menu, the same dashboard in one column with charts you can tap for details, and bigger touch targets. Open it from the Tampermonkey menu, or from the Open Hourglass link on any block screen.
 
 <table>
 <tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-dashboard-light.webp"><img src="images/phone-dashboard.webp" width="200"></picture><br><sub><b>Dashboard</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-schedule-light.webp"><img src="images/phone-schedule.webp" width="200"></picture><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-block-light.webp"><img src="images/phone-block.webp" width="200"></picture><br><sub><b>Block screen</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-nudge-light.webp"><img src="images/phone-nudge.webp" width="200"></picture><br><sub><b>Late-night nudge</b></sub></td></tr>

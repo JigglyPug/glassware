@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.4.4
+// @version      1.5.0
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.4.4';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.0';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -869,71 +869,86 @@ h1 span{color:var(--ink)}
     const totalOf = o => o ? sum(Object.values(o.s || {})) : 0;
     const catSums = o => { const a = [0, 0, 0, 0, 0]; if (o) for (const hr of o.h || []) if (hr) hr.forEach((v, i) => { a[i] += v; }); return a; };
 
-    function dashData() {
-        const now = new Date(), t = dow(now);
-        const d35 = lastDays(35), byKey = Object.fromEntries(d35.map(x => [x.k, x]));
-        const today = d35[34], o = today.o || newDay();
-        // averages count every day since Hourglass was installed (a 0m day is a real day), and
-        // today is compared with how much you'd usually have done by this time of day
-        const installK = get('days', [])[0] || today.k;
-        const prev7 = d35.slice(27, 34).filter(x => x.k >= installK);
+    function dashData(range) {
+        const now = new Date(), t = dow(now), todayK = dayKey(now);
+        // everything stored since Hourglass was installed (up to the history setting); a 0m day is a real day
+        const installK = get('days', [])[0] || todayK;
+        const since = Math.round((new Date(todayK + 'T12:00:00') - new Date(installK + 'T12:00:00')) / 864e5) + 1;
+        const all = lastDays(clamp(since || 1, 1, S.cfg.hist), now);
+        const today = all[all.length - 1], o = today.o || newDay();
+        const past = all.slice(0, -1);                       // full days only; today has its own card
+        const R = range === 'month' ? 28 : 7, full = past.length >= R;
+        const win = past.slice(-R), base = past.slice(0, Math.max(0, past.length - R));
+        const period = full ? (range === 'month' ? 'the past 4 weeks' : 'the past 7 days') : win.length === 1 ? 'your first day' : 'your first ' + win.length + ' days';
+        const inP = win.length === 1 ? 'on your first day' : 'in ' + period;   // "in the past 7 days"
+        const mean = a => a.length ? sum(a) / a.length : 0;
+        const hourTot = (x, i) => sum(x?.h?.[i] || []);
+        const next = x => all[all.indexOf(x) + 1];
+
+        // today against the usual for this weekday (every stored one), up to this time of day
         const H = now.getHours(), frac = now.getMinutes() / 60;
-        const soFar = o => { if (!o) return 0; let t = 0; for (let i = 0; i < H; i++) t += sum(o.h?.[i] || []); return t + sum(o.h?.[H] || []) * frac; };
-        const avg = prev7.length ? sum(prev7.map(x => totalOf(x.o))) / prev7.length : null;
-        const avgNow = prev7.length ? sum(prev7.map(x => soFar(x.o))) / prev7.length : null;
+        const soFar = x => { let s = 0; for (let i = 0; i < H; i++) s += hourTot(x, i); return s + hourTot(x, H) * frac; };
+        const same = past.filter(x => dow(x.dt) === t), uset = same.length >= 2 ? same : past;
+        const usual = uset.length ? { kind: same.length >= 2 ? DAYS[t] : 'day', now: mean(uset.map(x => soFar(x.o))), day: mean(uset.map(x => totalOf(x.o))),
+            hours: Array.from({ length: 24 }, (_, i) => mean(uset.map(x => hourTot(x.o, i)))) } : null;
         const todayTot = totalOf(today.o);
-        const monthDays = d35.slice(7).map(x => ({ v: totalOf(x.o), counts: x.k >= installK }));
 
-        // week (respects week start)
-        const offs = S.cfg.weekStart === 'sun' ? now.getDay() : t;
-        const ws = addDays(now, -offs);
-        const week = Array.from({ length: 7 }, (_, i) => { const dt = addDays(ws, i), k = dayKey(dt); return { dt, k, future: dt > now && k !== today.k, o: byKey[k]?.o || (k === today.k ? today.o : null) }; });
-        const weekLetters = S.cfg.weekStart === 'sun' ? ['S', 'M', 'T', 'W', 'T', 'F', 'S'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-        // heat: 5 rows aligned to week start
-        const hs = addDays(ws, -28);
-        const heat = Array.from({ length: 35 }, (_, i) => { const dt = addDays(hs, i), k = dayKey(dt); return { dt, k, today: k === today.k, future: dt > now && k !== today.k, v: totalOf(byKey[k]?.o) }; });
-
-        // streak
-        const goal = S.cfg.goal * 60;
-        // a day with no browsing at all is still a day under your goal (once Hourglass was installed)
-        const counted = x => x.k >= installK;
-        let streak = 0;
-        for (let i = 34; i >= 0; i--) { const x = d35[i]; if (!counted(x) || totalOf(x.o) > goal) break; streak++; }
-        let best = 0, run = 0;
-        for (const x of d35) { if (counted(x) && totalOf(x.o) <= goal) { run++; best = Math.max(best, run); } else run = 0; }
-
-        // categories vs previous 7 days
-        const last7 = d35.slice(28, 35), before7 = d35.slice(21, 28);
-        const cs = a => a.reduce((acc, x) => { catSums(x.o).forEach((v, i) => { acc[i] += v; }); return acc; }, [0, 0, 0, 0, 0]);
-        const c7 = cs(last7), cb = cs(before7);
-        const cToday = catSums(today.o);
-
-        // top sites + sparks
-        const top = Object.entries(o.s || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => ({
-            k, v, cat: catOf(k), visits: (o.v || {})[k] || 0, spark: last7.map(x => (x.o?.s || {})[k] || 0),
-        }));
-
-        // other sites (not on your list)
+        // what changed: each site's daily average in the range against everything before it
         const listed = k => !!(S.sites.find(s => s.d === k) || matchSite(k, S.sites));
-        const otherToday = Object.entries(o.s || {}).filter(([k]) => !listed(k)).sort((a, b) => b[1] - a[1]);
-        const agg = {};
-        // average over the days Hourglass has been installed (up to 7), so a new install doesn't divide by days it never saw
-        const sugDays = Math.max(1, last7.filter(x => x.k >= installK).length);
-        for (const x of last7) if (x.k >= installK) for (const [k, v] of Object.entries(x.o?.s || {})) agg[k] = (agg[k] || 0) + v;
-        const sugs = Object.entries(agg).filter(([k, v]) => !listed(k) && !S.ignored.some(g => g.d === k) && v / sugDays >= SUGGEST_MIN)
-            .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => ({ k, avg: v / sugDays, cat: guessCat(k) }));
+        const siteAvg = (list, k) => mean(list.map(x => (x.o?.s || {})[k] || 0));
+        const keys = new Set(); for (const x of past) for (const k in x.o?.s || {}) keys.add(k);
+        const enough = base.length >= 7, need = Math.max(0, R + 7 - past.length);
+        const sites = [...keys].map(k => { const v = siteAvg(win, k), was = siteAvg(base, k); return { k, now: v, was, d: v - was, cat: catOf(k), listed: listed(k) }; });
+        // the same by category (the four on your list, then everything else)
+        const catAvg = list => { const a = [0, 0, 0, 0, 0]; for (const x of list) catSums(x.o).forEach((v, i) => { a[i] += v / list.length; }); return a; };
+        const catNow = catAvg(win), catWas = catAvg(base);
+        const moved = enough ? sites.filter(s => Math.abs(s.d) >= 300).sort((a, b) => Math.abs(b.d) - Math.abs(a.d)).slice(0, 5) : [];
+        // busy sites off your list (the old "Consider adding"), unless they're already in the list above
+        const sugs = sites.filter(s => !s.listed && !S.ignored.some(g => g.d === s.k) && s.now >= SUGGEST_MIN && !moved.includes(s)).sort((a, b) => b.now - a.now).slice(0, 3);
 
-        // hourly
-        const hours = Array.from({ length: 24 }, (_, i) => (o.h || [])[i] || [0, 0, 0, 0, 0]);
-        const busiest = hours.map(sum).reduce((bi, v, i, a) => v > a[bi] ? i : bi, 0);
+        // when you drift: the average for each weekday and hour in the range, and where the day's weight sits
+        const order = S.cfg.weekStart === 'sun' ? [6, 0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5, 6];
+        const grid = order.map(d => { const ds = win.filter(x => dow(x.dt) === d); return Array.from({ length: 24 }, (_, i) => mean(ds.map(x => hourTot(x.o, i)))); });
+        const hrs = Array.from({ length: 24 }, (_, i) => sum(win.map(x => hourTot(x.o, i)))), hTot = sum(hrs);
+        let peak = 0; for (let i = 1; i <= 21; i++) if (hrs[i] + hrs[i + 1] + hrs[i + 2] > hrs[peak] + hrs[peak + 1] + hrs[peak + 2]) peak = i;
+        const peakShare = hTot ? (hrs[peak] + hrs[peak + 1] + hrs[peak + 2]) / hTot : 0;
+        // after midnight counts as late, not early
+        const center = list => { let w = 0, s = 0; for (const x of list) for (let i = 0; i < 24; i++) { const v = hourTot(x.o, i); s += v * (i < 5 ? i + 24.5 : i + .5); w += v; } return w ? s / w : null; };
+        const cNow = center(win), cWas = enough ? center(base) : null;
+        // a late night: 10 minutes or more online after bedtime (bedtime's hour on, and the next morning until it ends)
+        const bS = Math.floor(S.cfg.bedS / 2) % 24, bE = Math.ceil(S.cfg.bedE / 2) % 24;
+        const nightSec = x => { let s = 0; if (bS > bE) { for (let i = bS; i < 24; i++) s += hourTot(x.o, i); for (let i = 0; i < bE; i++) s += hourTot(next(x)?.o, i); }
+            else for (let i = bS; i < bE; i++) s += hourTot(next(x)?.o, i); return s; };
+        const lateNights = win.filter(x => nightSec(x) >= 600).length;
 
-        const attTotal = sum(Object.values(o.att || {}));
-        const mostTried = Object.entries(o.att || {}).sort((a, b) => b[1] - a[1])[0];
-        const visits = sum(Object.values(o.v || {}));
-        const nightKey = inBedtime(now) ? nightId(now) : lastNightId(now);
-        return { now, t, avg, avgNow, monthDays, installK, nightKey, nightNow: inBedtime(now), listen: listenToday(), todayTot, mini: d35.slice(28).map(x => totalOf(x.o)), week, weekLetters, month: d35.slice(7).map(x => totalOf(x.o)),
-            heat, streak, best, goal, c7, cb, cToday, top, otherToday, sugs, hours, busiest, attTotal, mostTried, visits, o };
+        // lockdown: blocked tries per lockdown day (by today's schedule, or any day with a try) and passes used
+        const att = x => sum(Object.values(x.o?.att || {}));
+        const lockOn = x => (S.sched[dow(x.dt)].on && S.sched[dow(x.dt)].blocks.length > 0) || att(x) > 0;
+        const lw = win.filter(lockOn), lb = base.filter(lockOn);
+        const triesNow = lw.length ? sum(lw.map(att)) / lw.length : null, triesWas = lb.length >= 3 ? sum(lb.map(att)) / lb.length : null;
+        const tried = {}; for (const x of win) for (const [k, v] of Object.entries(x.o?.att || {})) tried[k] = (tried[k] || 0) + v;
+        const mostTried = Object.entries(tried).sort((a, b) => b[1] - a[1])[0];
+        const passesUsed = sum(win.map(x => (x.o?.pass || []).length));
+
+        // today's own numbers (the hourly card's stats and the lockdown line in the top card)
+        const visits = sum(Object.values(o.v || {})), sitesToday = Object.keys(o.s || {}).length, attToday = sum(Object.values(o.att || {}));
+        // how much: the daily average in the range, against everything before it
+        const avgNow = mean(win.map(x => totalOf(x.o))), avgWas = enough ? mean(base.map(x => totalOf(x.o))) : null;
+        for (const s of sites) s.spark = win.map(x => (x.o?.s || {})[s.k] || 0);
+        const topSites = enough ? [] : sites.filter(s => s.now > 0).sort((a, b) => b.now - a.now).slice(0, 5);   // too new to compare: just the busiest
+        // the streak calendar: five whole weeks, ending with this one (week start from Settings)
+        const byKey = Object.fromEntries(all.map(x => [x.k, x])), ws = addDays(now, -(S.cfg.weekStart === 'sun' ? now.getDay() : t));
+        const cal = Array.from({ length: 35 }, (_, i) => { const dt = addDays(ws, i - 28), k = dayKey(dt), x = byKey[k];
+            return { dt, k, v: x ? totalOf(x.o) : 0, counted: !!x, today: k === todayK, future: dt > now && k !== todayK }; });
+        // goal: days under it in the range; the streak and best run over everything stored (today counts while it's under)
+        const goal = S.cfg.goal * 60;
+        const under = win.filter(x => totalOf(x.o) <= goal).length;
+        let streak = 0; for (let i = all.length - 1; i >= 0; i--) { if (totalOf(all[i].o) > goal) break; streak++; }
+        let best = 0, run = 0; for (const x of all) { if (totalOf(x.o) <= goal) { run++; best = Math.max(best, run); } else run = 0; }
+
+        return { now, t, o, R, full, win, base, period, inP, enough, need, usual, todayTot, todayHours: Array.from({ length: 24 }, (_, i) => (o.h || [])[i] || [0, 0, 0, 0, 0]), H, frac, catNow, catWas,
+            moved, sugs, order, grid, hTot, peak, peakShare, cNow, cWas, lateNights, att, lockOn, triesNow, triesWas, mostTried, passesUsed,
+            goal, under, streak, best, hasHistory: past.length > 0, visits, sitesToday, attToday, avgNow, avgWas, topSites, cal };
     }
 
     /* ───────────────────────── panel css ───────────────────────── */
@@ -1006,11 +1021,10 @@ h1 span{color:var(--ink)}
 .t{font-weight:500}
 .d{font-size:11.5px;color:var(--sub);margin-top:2px}
 .d b{color:var(--text);font-weight:600}
+.d b{white-space:nowrap}
 .d b.good{color:var(--good)}
 .d b.bad{color:var(--danger)}
 .big{font-weight:650;font-size:38px;letter-spacing:-.035em;line-height:1.05;margin:2px 0 4px}
-.mid{font-weight:650;font-size:22px;letter-spacing:-.03em;line-height:1.1}
-.mid small{font-size:13px;color:var(--sub);font-weight:500;letter-spacing:0}
 .mono{font:12px var(--mono)}
 .sw:disabled{opacity:.45}
 .ibtn{flex:none;width:30px;height:30px;border:0;border-radius:8px;background:none;color:var(--sub);display:grid;place-items:center}
@@ -1028,76 +1042,83 @@ h1 span{color:var(--ink)}
 .listen svg{color:var(--music-ink)}
 .listen b{font:600 12px var(--mono);color:var(--text)}
 .keys{font-size:10.5px;color:var(--sub);padding:0 18px 12px}
-.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:22px}
 .lockbar{position:relative;height:12px;border-radius:6px;background:var(--ctl);margin-top:4px}
 .lb-on{position:absolute;top:0;bottom:0;border-radius:6px;background:repeating-linear-gradient(135deg,rgba(var(--a-rgb),.55) 0 5px,rgba(var(--a-rgb),.32) 5px 10px)}
 .lb-now{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:1px;background:var(--text)}
 .ticks{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--sub);margin-top:6px}
-.mini7{display:flex;align-items:flex-end;gap:5px;height:40px;margin-top:10px}
-.mini7 span{flex:1;border-radius:3px;background:rgba(var(--a-rgb),.28);min-height:2px}
-.mini7 span.today{background:var(--fill)}
-.chart{position:relative}
-.cols{position:relative;display:grid;gap:3px;align-items:end}
-.col{display:flex;flex-direction:column;justify-content:flex-end;height:100%;min-width:0}
-.stack{display:flex;flex-direction:column-reverse;border-radius:4px 4px 2px 2px;overflow:hidden;gap:1px}
-.stack i{display:block;flex-basis:0;min-height:0}
-.base{height:1px;background:var(--ctl-hi)}
-.xl{display:grid;gap:3px;font:10px var(--mono);color:var(--sub);margin-top:6px}
-.xl span{white-space:nowrap;overflow:visible}
-.band{position:absolute;top:-8px;bottom:0;border-radius:7px;background:repeating-linear-gradient(135deg,rgba(var(--a-rgb),.09) 0 6px,transparent 6px 12px);border:1px dashed rgba(var(--a-rgb),.6)}
-.band b{position:absolute;top:6px;left:8px;font:600 9px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
-.avg{position:absolute;left:0;right:0;border-top:1.5px dashed var(--guide);z-index:1}
-.avg b{position:absolute;right:0;top:-17px;font:600 9.5px/1 var(--mono);color:var(--sub);background:var(--bg-solid);padding:2px 4px;border-radius:4px}
-.gl{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
-.gl b{position:absolute;right:0;top:-12px;font:9.5px var(--mono);color:var(--sub);font-weight:400}
-.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;font-size:11.5px;color:var(--sub)}
-.legend span{display:inline-flex;align-items:center;gap:6px}
-.legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
-.donut{display:flex;align-items:center;gap:16px}
-.donut svg{flex:none}
-.dlist{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
-.dl{display:flex;align-items:center;gap:8px;font-size:12px}
-.dl i{width:9px;height:9px;border-radius:3px;flex:none}
-.dl span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dl span.k{font-weight:600}
-.dl b{font:500 11.5px var(--mono);color:var(--sub)}
-.hbar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin-bottom:12px;background:var(--ctl)}
+.qc .label{margin-bottom:10px}
+.ans{font-size:15px;font-weight:600;line-height:1.38;letter-spacing:-.012em;margin:0 0 14px;text-wrap:pretty}
+.rangebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 14px 12px;padding:0 4px;font-size:12px;color:var(--sub)}
+.rangebar .seg button{white-space:nowrap}
+.ch{display:grid;grid-template-columns:44px minmax(0,1fr);column-gap:8px;min-width:0}
+.ch .ya{position:relative;font:9.5px var(--mono);color:var(--sub)}
+.ch .ya span{position:absolute;right:0;transform:translateY(-50%);white-space:nowrap}
+.ch .pl{position:relative;border-bottom:1px solid var(--ctl-hi)}
+.ch .xa{grid-column:2;display:grid;font:10px var(--mono);color:var(--sub);margin-top:6px}
+.ch .xa span{white-space:nowrap;text-align:center;min-width:0}
+.key{display:flex;flex-wrap:wrap;gap:6px 12px;margin:10px 0 0 52px;font-size:11.5px;color:var(--sub)}
+.key span{display:inline-flex;align-items:center;gap:6px}
+.key i.sw2{display:inline-block;width:9px;height:9px;border-radius:3px}
+.key i.k2{display:inline-block;width:12px;height:0;border-top:2px solid var(--sub)}
+.key i.k3{width:12px;height:10px;border:1px dashed rgba(var(--a-rgb),.7);border-radius:3px;background:repeating-linear-gradient(135deg,rgba(var(--a-rgb),.35) 0 3px,transparent 3px 6px)}
+.gl2{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
+.goal{position:absolute;left:0;right:0;border-top:1.5px dashed var(--guide);z-index:1}
+.band2{position:absolute;top:0;bottom:0;border-left:1px dashed rgba(var(--a-rgb),.7);border-right:1px dashed rgba(var(--a-rgb),.7);background:repeating-linear-gradient(135deg,rgba(var(--a-rgb),.1) 0 5px,transparent 5px 10px)}
+.bars{position:absolute;inset:0;display:grid;align-items:end}
+.bar{position:relative;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0}
+.bar>i{display:block;width:100%;max-width:24px;min-height:2px;border-radius:4px 4px 2px 2px;background:var(--fill)}
+.bar.over>i{background:var(--danger)}
+.bar.off>i{background:var(--ctl-hi)}
+.sb{display:flex;flex-direction:column-reverse;width:100%;max-width:24px;min-height:2px;border-radius:4px 4px 2px 2px;overflow:hidden;gap:1px}
+.sb i{display:block;flex-basis:0;min-height:0}
+.bar .us{position:absolute;left:12%;right:12%;height:2px;margin-bottom:-1px;border-radius:1px;background:var(--sub);z-index:1}
+.hbar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;background:var(--ctl)}
 .hbar i{display:block;flex-basis:0}
-.crow{display:grid;grid-template-columns:12px 1fr auto 56px;align-items:center;gap:8px;font-size:12.5px;padding:6px 0;border-top:1px solid var(--line)}
+.crow{display:grid;grid-template-columns:10px minmax(0,1fr) auto 64px;align-items:center;gap:8px;font-size:12.5px;padding:7px 0;border-top:1px solid var(--line)}
 .crow i{width:10px;height:10px;border-radius:3px}
 .crow b{font:500 12px var(--mono)}
+.sl{font:600 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--sub);margin:16px 0 4px}
+.lvl{margin:16px 18px 8px;font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--sub)}
+.lvl:first-child{margin-top:2px}
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:22px;align-items:start}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin-top:14px}
+.stats.five{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));padding-top:12px;border-top:1px solid var(--line)}
+.stats>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.stats b{font-weight:650;font-size:17px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats span{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spark{stroke:var(--fill);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.sparkf{fill:rgba(var(--a-rgb),.12);stroke:none}
+.spk{justify-self:center}
+.sug2{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:6px 0 6px 26px;font-size:12px;color:var(--sub)}
+.calw{grid-template-columns:44px minmax(0,1fr)}
+.cya{display:grid;grid-template-rows:repeat(5,1fr);row-gap:5px;font:9.5px var(--mono);color:var(--sub);text-align:right;align-items:center;white-space:nowrap}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.cal i{display:block;height:24px;border-radius:6px;background:var(--ctl)}
+.cal i.under{background:var(--fill)}
+.cal i.over{background:color-mix(in srgb,var(--danger) 72%,transparent)}
+.cal i.future{background:transparent;border:1px dashed var(--faint)}
+.cal i.today{box-shadow:0 0 0 2px var(--bg-solid),0 0 0 3.5px var(--fill)}
+.key i.cu{background:var(--fill)}.key i.co{background:color-mix(in srgb,var(--danger) 72%,transparent)}
+.bar .pdot{width:6px;height:6px;border-radius:50%;background:var(--ink);margin-bottom:4px;flex:none}
+.srow2{display:grid;grid-template-columns:30px minmax(0,1fr) 64px 62px;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.srow2.wa{grid-template-columns:30px minmax(0,1fr) 64px 62px 150px}
+.srow2 .acts{display:flex;gap:6px;justify-content:flex-end}
+.srow2:not(.wa) .acts{display:none}
+.hmw{grid-template-columns:30px minmax(0,1fr)}
+.hya{display:grid;grid-template-rows:repeat(7,16px);row-gap:2px;font:9.5px/16px var(--mono);color:var(--sub);text-align:right}
+.hm{display:grid;grid-template-columns:repeat(24,minmax(0,1fr));grid-auto-rows:16px;gap:2px}
+.hm i{display:block;border-radius:3px}
+.hmw .scale{grid-column:2;margin-top:10px}
+.lkt{display:flex;justify-content:space-between;gap:10px;margin:14px 0 6px;font-size:11.5px;color:var(--sub)}
+.lkt b{color:var(--text);font-weight:600}
 .delta{font:600 10.5px var(--mono);text-align:right}
 .delta.up{color:var(--danger)}.delta.down{color:var(--good)}.delta.flat{color:var(--sub)}
-.srow{display:grid;grid-template-columns:30px minmax(0,1fr) minmax(60px,150px) 64px 54px;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
-.srow:first-of-type{border-top:0}
 .fav{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:650;font-size:13px;color:#fff;flex:none}
 .nm{display:flex;flex-direction:column;min-width:0}
 .nm b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nm small{font-size:11px;color:var(--sub);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tbar{height:8px;border-radius:4px;background:var(--ctl);overflow:hidden}
-.tbar i{display:block;height:100%;border-radius:4px}
-.tm{font:500 12px var(--mono);text-align:right}
-.spark{stroke:var(--fill);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.sparkf{fill:rgba(var(--a-rgb),.12);stroke:none}
-.attw{position:relative;margin-top:6px}
-.aband{position:absolute;top:0;bottom:0;border-radius:6px;background:repeating-linear-gradient(135deg,rgba(var(--a-rgb),.1) 0 5px,transparent 5px 10px);border:1px dashed rgba(var(--a-rgb),.6)}
-.att{position:relative;display:grid;gap:2px;align-items:end;height:46px}
-.att .ac{display:flex;flex-direction:column-reverse;align-items:center;gap:3px;height:100%;border-bottom:1px solid var(--line);padding-bottom:3px;overflow:hidden}
-.att .ac i{width:7px;height:7px;border-radius:50%;background:var(--fill);box-shadow:0 0 6px rgba(var(--a-rgb),.6);flex:none}
-.passes{display:flex;gap:6px;margin-top:6px}
-.passes span{flex:1;height:10px;border-radius:5px;background:var(--fill);box-shadow:0 0 10px -3px rgba(var(--a-rgb),.9)}
-.passes span.used{background:var(--ctl-hi);box-shadow:none}
-.stats4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px}
-.stats4 .mid{font-size:20px}
-.heat{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
-.hc{aspect-ratio:1/1;border-radius:6px;position:relative}
-.hc.future{background:transparent!important;border:1px dashed var(--faint)}
-.hc.today{box-shadow:0 0 0 2px var(--bg-solid),0 0 0 3.5px var(--fill)}
-.hc.over::after{content:"";position:absolute;right:4px;top:4px;width:5px;height:5px;border-radius:50%;background:var(--text);opacity:.55}
-.hdays{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;font:10px var(--mono);color:var(--sub);text-align:center;margin-bottom:5px}
 .scale{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--sub);margin-top:10px}
 .scale i{width:12px;height:12px;border-radius:3px;display:inline-block}
-.sug{display:grid;grid-template-columns:30px minmax(0,1fr) 120px auto auto;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .disc{display:flex;align-items:center;gap:8px;width:100%;border:0;background:none;padding:10px 0 4px;border-top:1px solid var(--line);margin-top:4px;color:var(--sub);font-size:12px;font-weight:500;text-align:left}
 .disc svg{transition:transform .2s}
 .disc.open svg{transform:rotate(180deg)}
@@ -1176,6 +1197,8 @@ h1 span{color:var(--ink)}
 .gdot{width:12px;height:12px;border-radius:4px;flex:none}
 .gname{font-weight:600;font-size:13.5px}
 .gmeta{font:11px var(--mono);color:var(--sub);margin-left:auto;white-space:nowrap}
+/* the narrowest phones: the group's count and time go under its name */
+@media (max-width:380px){.gbtn{flex-wrap:wrap;row-gap:2px}.gmeta{flex-basis:100%;margin-left:40px}}
 .site{display:grid;grid-template-columns:30px minmax(0,1fr) auto 40px 30px;align-items:center;gap:12px;padding:9px 14px;border-top:1px solid var(--line)}
 .site.off .nm,.site.off .fav{opacity:.45}
 .site.pend{background:rgba(var(--a-rgb),.07)}
@@ -1216,17 +1239,16 @@ h1 span{color:var(--ink)}
 .m .keys{display:none}
 .m .row{flex-wrap:wrap}.m .seg.sm button{white-space:nowrap}.m .row>.seg[style*="width"]{width:auto!important}
 .m .foot{padding-bottom:4px}
-.m .srow{grid-template-columns:30px minmax(0,1fr) 64px}.m .srow .tbar,.m .srow svg{display:none}
 .m .site{grid-template-columns:30px minmax(0,1fr) 46px 36px}.m .site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
 .m .slr{grid-template-columns:minmax(0,1fr) 66px}.m .slr>div:first-child{grid-column:1/-1}
-.m .chart .col{cursor:pointer}
+.m .srow2,.m .srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.m .srow2 .spk{display:none}.m .srow2 .acts{grid-column:2/-1;justify-content:flex-start}.m .srow2 .acts:empty{display:none}
 /* the accent, never a neutral: browsers that darken pages themselves leave outlines alone */
-.tapped .stack,.hc.tapped{outline:2px solid var(--fill);outline-offset:2px;box-shadow:0 0 12px -2px rgba(var(--a-rgb),.9)}
+.bar.tapped>i,.bar.tapped>.sb,.hm i.tapped,.cal i.tapped{outline:2px solid var(--fill);outline-offset:2px;box-shadow:0 0 12px -2px rgba(var(--a-rgb),.9)}
+.m .bar,.m .hm i{cursor:pointer}
 .readout{margin-top:10px;font:500 11.5px var(--mono);color:var(--sub);min-height:16px}
 .readout.on{color:var(--text)}
 @media (max-width:620px){
-  .srow{grid-template-columns:30px minmax(0,1fr) 64px}.srow .tbar,.srow svg{display:none}
-  .sug{grid-template-columns:30px minmax(0,1fr) auto auto}.sug .tbar{display:none}
+  .srow2,.srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.srow2 .spk{display:none}.srow2 .acts{grid-column:2/-1;justify-content:flex-start}.srow2 .acts:empty{display:none}
   .site{grid-template-columns:30px minmax(0,1fr) 40px 30px}.site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
   .slr{grid-template-columns:minmax(0,1fr) 66px}.slr>div:first-child{grid-column:1/-1}
   .listen{display:none}
@@ -1407,8 +1429,8 @@ h1 span{color:var(--ink)}
                         h('button', { 'aria-label': 'Cancel this change', onclick: it.cancel }, icon(ICONS.close, 10, 3))))) : null));
         },
 
-        tapTips(tile) {
-            const read = h('div', { class: 'readout', text: 'Tap a bar or day for details' });
+        tapTips(tile, hint) {
+            const read = h('div', { class: 'readout', text: hint || 'Tap a day for details' });
             tile.append(read);
             tile.addEventListener('click', e => {
                 const t = e.target.closest('[data-tip]');
@@ -1437,188 +1459,224 @@ h1 span{color:var(--ink)}
 
         /* ── dashboard */
         vDash() {
-            const D = dashData(), lock = inLockdown(), T = !S.cfg.enabled ? THEMES.off : lock ? THEMES.lock : THEMES.free;
-            const tw = lockWindow(D.t), twText = blocksText(D.t);
-            const out = [];
-            // hero
-            const nowTxt = D.now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-            let cmp;
-            if (D.avg == null) cmp = h('div', { class: 'd', text: 'Your average shows up after a day of history.' });
-            else if (D.avgNow < 300) cmp = h('div', { class: 'd' }, 'You usually have under 5m by ' + nowTxt + '. Daily average ', h('b', { text: fmtDur(D.avg) }));
+            const D = dashData(this.range), T = !S.cfg.enabled ? THEMES.off : inLockdown() ? THEMES.lock : THEMES.free;
+            const out = [], nowTxt = D.now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            // every card asks one question and answers it in plain short sentences first (CLAUDE.md: Dashboards)
+            const card = (q, ans, ranged, ...kids) => h('div', { class: 'tile full qc', 'data-q': q, 'data-range': ranged ? '' : null }, this.label(q), h('div', { class: 'ans', text: ans }), ...kids);
+            const level = text => h('div', { class: 'lvl', text });
+            const dayTip = x => x.dt.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+            const catName = i => (CAT[HCOL[i]] || OTHER).n;
+            const stack = (cats, tot) => h('div', { class: 'sb', style: `height:${tot}%` }, cats.map((v, k) => v > 0 ? h('i', { style: `flex-grow:${v};background:${colorOf(HCOL[k])}` }) : null));
+            const xDays = days => h('div', { class: 'xa', 'data-axis': 'x', style: `grid-template-columns:repeat(${days.length},minmax(0,1fr))` },
+                days.length <= 7 ? days.map(x => h('span', { text: x.dt.toLocaleDateString(undefined, { weekday: 'narrow' }) }))
+                    : days.map((x, i) => i % 7 ? null : h('span', { style: 'grid-column:span 7;text-align:left', text: x.dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })));
+            const xHours = () => h('div', { class: 'xa', 'data-axis': 'x', style: 'grid-template-columns:repeat(4,minmax(0,1fr))' }, ['12 AM', '6 AM', '12 PM', '6 PM'].map(x => h('span', { style: 'text-align:left', text: x })));
+            // a bar per column: heights against max, gridlines, a dashed line (an average or the goal) if given, labelled axes
+            const barChart = ({ name, aria, n, bars, max, ticks, line, x, height = 110, under }) => h('div', { class: 'ch', 'data-chart': name, role: 'img', 'aria-label': aria },
+                h('div', { class: 'ya', 'data-axis': 'y' }, ticks.map(t => h('span', { style: `top:${100 - t.v / max * 100}%`, text: t.text })), line ? h('span', { style: `top:${100 - line.v / max * 100}%`, text: line.text }) : null),
+                h('div', { class: 'pl', style: `height:${height}px` }, ...(under || []),
+                    ...ticks.map(t => h('div', { class: 'gl2', style: `top:${100 - t.v / max * 100}%` })),
+                    line ? h('div', { class: 'goal', style: `top:${100 - line.v / max * 100}%` }) : null,
+                    h('div', { class: 'bars', style: `grid-template-columns:repeat(${n},minmax(0,1fr));gap:${n > 12 ? 2 : 8}px` }, bars)),
+                x);
+            const legend = (...extra) => h('div', { class: 'key' }, HCOL.map(k => h('span', null, h('i', { class: 'sw2', style: 'background:' + colorOf(k) }), (CAT[k] || OTHER).n)), ...extra);
+            const sign = d => (d > 0 ? '+' : d < 0 ? '−' : '') + fmtDur(Math.abs(d));
+            const sched = S.sched[D.t], passLeft = Math.max(0, S.cfg.passes - S.passes.used.length), twText = blocksText(D.t);
+            const clockOf = m => (Math.floor(m / 60) % 12 || 12) + ':' + pad(m % 60) + (m < 720 ? ' AM' : ' PM');
+
+            /* ── at a glance ── */
+            out.push(level('At a glance'));
+            const U = D.usual, kind = U ? U.kind : '';
+            let todayAns;
+            if (!U) todayAns = "Today's your first day with Hourglass. Your usual shows up tomorrow.";
+            else if (U.now < 300) todayAns = `You usually have under 5m by ${nowTxt} on a ${kind}. Today you're at ${fmtDur(D.todayTot)}.`;
             else {
-                const pct = Math.round((D.todayTot / D.avgNow - 1) * 100);
-                cmp = h('div', null,
-                    h('div', { class: 'd' }, h('b', { class: pct <= 0 ? 'good' : 'bad', text: Math.abs(pct) + '% ' + (pct <= 0 ? 'below' : 'above') }), ' your usual by ' + nowTxt + ' (' + fmtDur(D.avgNow) + ')'),
-                    h('div', { class: 'd', text: 'Daily average ' + fmtDur(D.avg) }));
+                const d = D.todayTot - U.now;
+                todayAns = Math.abs(d) < Math.max(300, U.now * .1) ? `You're right around your usual ${kind} for ${nowTxt}.`
+                    : `You're ${fmtDur(Math.abs(d))} ${d > 0 ? 'above' : 'below'} your usual ${kind} for ${nowTxt}.`;
             }
-            const miniMax = Math.max(...D.mini, 3600);
-            const passLeft = Math.max(0, S.cfg.passes - S.passes.used.length);
-            out.push(h('div', { class: 'card hero' },
-                h('div', null, this.label('Screen time today'), h('div', { class: 'big', text: fmtDur(D.todayTot) }), cmp,
-                    h('div', { class: 'mini7', role: 'img', 'aria-label': 'Screen time, last 7 days' }, D.mini.map((v, i) => h('span', { class: i === 6 ? 'today' : '', style: 'height:' + Math.max(4, v / miniMax * 100) + '%', title: fmtDur(v) })))),
-                h('div', null, this.label('Lockdown today', twText || 'Off today'),
-                    h('div', { class: 'lockbar' }, ...(S.sched[D.t].on ? S.sched[D.t].blocks.map(b => h('div', { class: 'lb-on', style: `left:${b.s / 48 * 100}%;width:${(b.e - b.s) / 48 * 100}%` })) : []),
-                        h('div', { class: 'lb-now', style: `left:${unitsNow() / 48 * 100}%` })),
-                    h('div', { class: 'ticks' }, ['12a', '6a', '12p', '6p', '12a'].map(t => h('span', { text: t }))),
-                    h('div', { class: 'stats4', style: 'margin-top:14px' },
-                        h('div', null, h('div', { class: 'mid', text: String(D.attTotal) }), h('div', { class: 'd', text: 'Blocked attempts' })),
-                        h('div', null, h('div', { class: 'mid' }, String(passLeft), h('small', { text: ' of ' + S.cfg.passes })), h('div', { class: 'd', text: 'Passes left today' }))))));
+            out.push(card("How's today going?", todayAns, false,
+                h('div', { class: 'glance' },
+                    h('div', null, h('div', { class: 'big', text: fmtDur(D.todayTot) }), h('div', { class: 'd', text: 'online so far today' }),
+                        U ? h('div', { class: 'd', style: 'margin-top:10px' }, 'By now you usually have ', h('b', { text: fmtDur(U.now) }), '.', kind !== 'day' ? [' A whole ' + kind + ' is usually ', h('b', { text: fmtDur(U.day) }), '.'] : null) : null),
+                    h('div', null, h('div', { class: 'lkt', style: 'margin-top:4px' }, h('span', { text: 'Lockdown today' }), h('b', { text: twText || 'Off today' })),
+                        h('div', { class: 'lockbar' }, ...(sched.on ? sched.blocks.map(b => h('div', { class: 'lb-on', style: `left:${b.s / 48 * 100}%;width:${(b.e - b.s) / 48 * 100}%` })) : []),
+                            h('div', { class: 'lb-now', style: `left:${unitsNow() / 48 * 100}%` })),
+                        h('div', { class: 'ticks' }, ['12a', '6a', '12p', '6p', '12a'].map(t => h('span', { text: t }))),
+                        h('div', { class: 'stats' },
+                            h('div', null, h('b', { text: D.attToday + (D.attToday === 1 ? ' try' : ' tries') }), h('span', { text: 'blocked today' })),
+                            h('div', null, h('b', { text: passLeft + ' of ' + S.cfg.passes }), h('span', { text: 'passes left' })))))));
 
-            // today by hour
-            const hourCols = D.hours.map((hr, i) => {
-                const tot = sum(hr);
-                return h('div', { class: 'col', title: hourName(i) + ' · ' + fmtDur(tot), 'data-tip': hourName(i) + ' · ' + fmtDur(tot) },
-                    h('div', { class: 'stack', style: 'height:' + Math.min(100, tot / 3600 * 100) + '%' }, hr.map((v, k) => v > 0 ? h('i', { style: `flex-grow:${v};background:${colorOf(HCOL[k])}` }) : null)));
-            });
-            out.push(h('div', { class: 'tile full' }, this.label('Today by hour', 'Lockdown hours are shaded'),
-                h('div', { class: 'chart', style: 'height:150px;margin-top:18px' },
-                    h('div', { class: 'gl', style: 'bottom:50%' }, h('b', { text: '30m' })), h('div', { class: 'gl', style: 'bottom:100%' }, h('b', { text: '60m' })),
-                    ...(S.sched[D.t].on ? S.sched[D.t].blocks.map((b, bi) => h('div', { class: 'band', style: `left:calc((100% - 30px) * ${b.s / 48});width:calc((100% - 30px) * ${(b.e - b.s) / 48})` }, bi === 0 ? h('b', { text: 'Lockdown' }) : null)) : []),
-                    h('div', { class: 'cols', style: 'height:150px;grid-template-columns:repeat(24,minmax(0,1fr));padding-right:30px' }, hourCols)),
-                h('div', { class: 'base' }),
-                h('div', { class: 'xl', style: 'grid-template-columns:repeat(24,minmax(0,1fr));padding-right:30px' }, D.hours.map((_, i) => h('span', { text: i === 0 ? '12a' : i === 6 ? '6a' : i === 12 ? '12p' : i === 18 ? '6p' : '' }))),
-                h('div', { class: 'legend' }, HCOL.map(k => h('span', null, h('i', { style: 'background:' + colorOf(k) }), (CAT[k] || OTHER).n)))));
+            /* ── where and when ── */
+            out.push(level('Where and when'));
+            const cToday = catSums(D.o), topCat = cToday.reduce((bi, v, i, a) => v > a[bi] ? i : bi, 0);
+            const busiest = D.todayHours.map(sum).reduce((bi, v, i, a) => v > a[bi] ? i : bi, 0);
+            const whereAns = !D.todayTot ? 'Nothing yet today. Your hours fill in as you browse.'
+                : `Your busiest hour today was ${hourName(busiest)}. ${catName(topCat)} took the most time.`;
+            const hmax = Math.ceil(Math.max(1800, ...D.todayHours.map(sum), ...(U ? U.hours : [])) / 1800) * 1800;
+            const hTicks = Array.from({ length: hmax / 1800 }, (_, i) => ({ v: (i + 1) * 1800, text: fmtDur((i + 1) * 1800) })).filter((t, i, a) => a.length <= 3 || (i + 1) % 2 === 0);
+            const L = D.o.long, stat = (big, small) => h('div', null, h('b', { text: big }), h('span', { text: small }));
+            const whereCard = card('Where did today go?', whereAns, false,
+                barChart({ name: 'today', aria: 'Time online each hour today by category, with your usual ' + kind, n: 24, max: hmax, ticks: hTicks, height: 140, x: xHours(),
+                    under: sched.on ? sched.blocks.map(b => h('div', { class: 'band2', style: `left:${b.s / 48 * 100}%;width:${(b.e - b.s) / 48 * 100}%` })) : [],
+                    bars: D.todayHours.map((hr, i) => {
+                        const tot = sum(hr), tip = hourName(i) + ' · ' + fmtDur(tot) + (U ? ' · usually ' + fmtDur(U.hours[i]) : '');
+                        return h('div', { class: 'bar', title: tip, 'data-tip': tip }, tot ? stack(hr, tot / hmax * 100) : null,
+                            U && U.hours[i] >= 60 ? h('b', { class: 'us', style: `bottom:${U.hours[i] / hmax * 100}%` }) : null);
+                    }) }),
+                legend(U ? h('span', null, h('i', { class: 'k2' }), 'Usual ' + kind) : null, sched.on && sched.blocks.length ? h('span', null, h('i', { class: 'k3' }), 'Lockdown') : null),
+                D.todayTot ? h('div', { class: 'stats five' },
+                    stat(D.visits + (D.visits === 1 ? ' visit' : ' visits'), 'today'),
+                    stat(D.visits ? fmtDur(D.todayTot / D.visits) : '—', 'average visit'),
+                    stat(L ? fmtDur(L.sec) : '—', L ? 'longest · ' + L.d : 'longest visit'),
+                    stat(D.o.first != null ? clockOf(D.o.first) : '—', 'first visit'),
+                    stat(D.sitesToday + (D.sitesToday === 1 ? ' site' : ' sites'), 'visited')) : null);
+            out.push(whereCard);
 
-            // week/month + donut
+            // the range every card below covers
+            out.push(h('div', { class: 'rangebar' }, h('span', { text: 'The past' }),
+                this.seg([['week', '7 days'], ['month', '4 weeks']], this.range, v => { this.range = v; this.render(); }, true, { 'aria-label': 'Range' }),
+                h('span', { text: 'against everything before' })));
+
             const g1 = h('div', { class: 'grid2' });
-            let cols, labels, avgV, gap, title;
-            const stackOf = o => { const c = catSums(o); return c.map((v, k) => ({ v, c: colorOf(HCOL[k]) })); };
-            if (this.range === 'week') {
-                title = 'This week'; gap = 10; labels = D.weekLetters;
-                cols = D.week.map(x => ({ tot: x.future ? 0 : totalOf(x.o), segs: x.future ? [] : stackOf(x.o), tip: x.future ? 'Coming up' : x.dt.toLocaleDateString(undefined, { weekday: 'long' }) + ' · ' + fmtDur(totalOf(x.o)) }));
-                avgV = D.avg;
-            } else {
-                title = 'Last 4 weeks'; gap = 2;
-                labels = D.month.map((_, i) => i % 7 === 0 ? (28 - i) + 'd' : '');
-                cols = D.month.map((v, i) => ({ tot: v, segs: [{ v: 1, c: i === 27 ? T.fill : `rgba(${T.rgb},.45)` }], tip: fmtDur(v) }));
-                const wd = D.monthDays.filter(x => x.counts).map(x => x.v); avgV = wd.length ? sum(wd) / wd.length : null;
+            // How much are you online? (a bar per day, stacked by category, with the average)
+            let muchAns;
+            if (!D.win.length) muchAns = 'Your daily average shows up after your first full day.';
+            else if (D.avgWas == null) muchAns = `You averaged ${fmtDur(D.avgNow)} a day ${D.inP}.`;
+            else {
+                const d = D.avgNow - D.avgWas;
+                muchAns = `You averaged ${fmtDur(D.avgNow)} a day ${D.inP}. ` + (Math.abs(d) < 300 ? "That's about the same as before." : `That's ${fmtDur(Math.abs(d))} ${d > 0 ? 'more' : 'less'} than before.`);
             }
-            const rmax = Math.max(3600 * 2, Math.ceil(Math.max(...cols.map(c => c.tot), avgV || 0) / 3600) * 3600);
-            g1.append(h('div', { class: 'tile' },
-                this.label(title, this.seg([['week', 'Week'], ['month', 'Month']], this.range, v => { this.range = v; this.render(); }, true)),
-                h('div', { class: 'chart', style: 'height:150px;margin-top:20px' },
-                    h('div', { class: 'gl', style: 'bottom:100%' }, h('b', { text: fmtDur(rmax) })),
-                    avgV ? h('div', { class: 'avg', style: 'bottom:' + (avgV / rmax * 100) + '%' }, h('b', { text: 'avg ' + fmtDur(avgV) })) : null,
-                    h('div', { class: 'cols', style: `height:150px;grid-template-columns:repeat(${cols.length},minmax(0,1fr));gap:${gap}px` },
-                        cols.map(c => h('div', { class: 'col', title: c.tip, 'data-tip': c.tip }, h('div', { class: 'stack', style: 'height:' + (c.tot / rmax * 100) + '%' }, c.segs.map(s => s.v > 0 ? h('i', { style: `flex-grow:${s.v};background:${s.c}` }) : null)))))),
-                h('div', { class: 'base' }),
-                h('div', { class: 'xl', style: `grid-template-columns:repeat(${cols.length},minmax(0,1fr));gap:${gap}px` }, labels.map(l => h('span', { style: 'text-align:center', text: l })))));
-
-            const cT = D.cToday, listedT = sum(cT.slice(0, 4)), otherT = cT[4], allT = listedT + otherT;
-            const C = 2 * Math.PI * 40;
-            let cum = 0;
-            const rings = allT ? cT.map((v, k) => { if (!v) return null; const len = v / allT * C; const el = sv('circle', { cx: 50, cy: 50, r: 40, fill: 'none', stroke: colorOf(HCOL[k]), 'stroke-width': 12, 'stroke-dasharray': Math.max(0, len - 1.6).toFixed(2) + ' ' + (C - len + 1.6).toFixed(2), 'stroke-dashoffset': (-cum).toFixed(2), transform: 'rotate(-90 50 50)' }); cum += len; return el; }) : [];
-            const otherRest = D.otherToday.slice(3);
-            g1.append(h('div', { class: 'tile' }, this.label('Online today', 'All sites'),
-                h('div', { class: 'donut' },
-                    sv('svg', { width: 132, height: 132, viewBox: '0 0 100 100', role: 'img', 'aria-label': 'Your list versus everything else today' },
-                        sv('circle', { cx: 50, cy: 50, r: 40, fill: 'none', stroke: 'rgba(0,0,0,.05)', 'stroke-width': 12 }), ...rings,
-                        sv('text', { x: 50, y: 49, 'text-anchor': 'middle', style: 'font:650 15px -apple-system,Segoe UI,system-ui,sans-serif;fill:var(--text)' }, fmtDur(allT)),
-                        sv('text', { x: 50, y: 62, 'text-anchor': 'middle', style: 'font:7.5px ui-monospace,Consolas,monospace;fill:var(--sub);letter-spacing:.06em' }, 'ONLINE')),
-                    h('div', { class: 'dlist' },
-                        h('div', { class: 'dl' }, h('i', { style: 'background:var(--fill)' }), h('span', { class: 'k', text: 'Your list' }), h('b', { text: (allT ? Math.round(listedT / allT * 100) : 0) + '% · ' + fmtDur(listedT) })),
-                        h('div', { class: 'dl' }, h('i', { style: 'background:' + OTHER.c }), h('span', { class: 'k', text: 'Other sites' }), h('b', { text: (allT ? Math.round(otherT / allT * 100) : 0) + '% · ' + fmtDur(otherT) })),
-                        h('div', { style: 'height:1px;background:var(--line);margin:2px 0' }),
-                        D.otherToday.length ? [
-                            ...D.otherToday.slice(0, 3).map(([k, v]) => h('div', { class: 'dl' }, h('i', { style: 'background:var(--faint)' }), h('span', { text: k }), h('b', { text: fmtDur(v) }))),
-                            otherRest.length ? h('div', { class: 'dl' }, h('i', { style: 'background:var(--faint)' }), h('span', { text: otherRest.length + ' other site' + (otherRest.length > 1 ? 's' : '') }), h('b', { text: fmtDur(sum(otherRest.map(x => x[1]))) })) : null,
-                        ] : h('div', { class: 'd', text: 'Nothing off your list yet today.' })))));
-
-            // categories
-            const rows = [...CATS, 'other'].map((k, i) => {
-                const now7 = D.c7[i], was = D.cb[i];
-                let delta = '—', dc = 'flat';
-                if (was > 60 && now7 > 0) { const p = Math.round((now7 / was - 1) * 100); delta = (p > 0 ? '+' : p < 0 ? '−' : '') + Math.abs(p) + '%'; dc = p > 0 ? 'up' : p < 0 ? 'down' : 'flat'; }
-                return h('div', { class: 'crow' }, h('i', { style: 'background:' + colorOf(k) }), h('span', { text: (CAT[k] || OTHER).n }), h('b', { text: fmtDur(cT[i]) }), h('span', { class: 'delta ' + dc, text: delta }));
-            });
-            g1.append(h('div', { class: 'tile' }, this.label('Categories', 'Last 7 days vs the 7 before'),
-                h('div', { class: 'hbar' }, cT.map((v, k) => v > 0 ? h('i', { style: `flex-grow:${v};background:${colorOf(HCOL[k])}` }) : null)), rows));
-
-            // attempts + passes
-            const attH = D.o.attH || [];
-            const today = S.sched[D.t];
-            const used = S.passes.used;
-            const lastUsed = used[used.length - 1];
-            g1.append(h('div', { class: 'tile' }, this.label('Blocked attempts', twText || 'No lockdown today'),
-                h('div', null, h('div', { class: 'mid' }, String(D.attTotal), h('small', { text: D.attTotal === 1 ? ' try' : ' tries' })),
-                    h('div', { class: 'd' }, D.mostTried ? ['Most tried: ', h('b', { text: D.mostTried[0] }), ' (' + D.mostTried[1] + ')'] : 'No blocked tries today. Nice.')),
-                h('div', { class: 'attw' },
-                    ...(today.on ? today.blocks.map(b => h('div', { class: 'aband', style: `left:${b.s / 48 * 100}%;width:${(b.e - b.s) / 48 * 100}%` })) : []),
-                    h('div', { class: 'att', role: 'img', 'aria-label': 'Blocked attempts by hour, lockdown shaded', style: 'grid-template-columns:repeat(24,minmax(0,1fr))' },
-                        Array.from({ length: 24 }, (_, i) => { const c = attH[i] || 0; return h('div', { class: 'ac', title: hourName(i) + ' · ' + c }, Array.from({ length: Math.min(c, 4) }, () => h('i'))); }))),
-                h('div', { class: 'ticks' }, ['12a', '6a', '12p', '6p', '12a'].map(t => h('span', { text: t }))),
-                h('div', { class: 'label', style: 'margin:16px 0 6px' }, 'Passes', h('i', { text: passLeft + ' of ' + S.cfg.passes + ' left' })),
-                h('div', { class: 'passes' }, Array.from({ length: S.cfg.passes }, (_, i) => h('span', { class: i < used.length ? 'used' : '' }))),
-                h('div', { class: 'd', style: 'margin-top:8px', text: lastUsed ? 'Last used at ' + new Date(lastUsed.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + ' on ' + lastUsed.d : 'None used today' })));
+            const dtop = Math.ceil(Math.max(3600, ...D.win.map(x => totalOf(x.o))) / 3600) * 3600;
+            const weekCard = card('How much are you online?', muchAns, D.full,
+                D.win.length ? barChart({ name: 'days', aria: 'Time online per day by category, with your average', n: D.win.length, max: dtop, ticks: [{ v: dtop, text: fmtDur(dtop) }], line: { v: D.avgNow, text: 'avg' }, x: xDays(D.win),
+                    bars: D.win.map(x => { const v = totalOf(x.o), tip = dayTip(x) + ' · ' + fmtDur(v); return h('div', { class: 'bar', title: tip, 'data-tip': tip }, v ? stack(catSums(x.o), v / dtop * 100) : null); }) }) : null);
+            // Where does your time go? (categories, with the change from before)
+            const cAll = sum(D.catNow), cTop = D.catNow.reduce((bi, v, i, a) => v > a[bi] ? i : bi, 0);
+            let catAns;
+            if (!cAll) catAns = 'Your categories show up after your first full day.';
+            else {
+                const nm = catName(cTop);
+                catAns = `${nm} ${nm.endsWith('s') ? 'take' : 'takes'} the most time ${D.inP}.`;
+                if (D.enough) {
+                    const ch = D.catNow.map((v, i) => ({ i, d: v - D.catWas[i], was: D.catWas[i] })).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0];
+                    if (ch && Math.abs(ch.d) >= 300) { const n2 = ch.i === cTop ? (nm.endsWith('s') ? 'They' : 'It') : catName(ch.i);
+                        catAns += ch.was < 60 ? ` ${n2} is new.` : ` ${n2} ${ch.d > 0 ? 'grew' : 'shrank'} the most, ${ch.d > 0 ? 'up' : 'down'} ${Math.round(Math.abs(ch.d) / ch.was * 100)}%.`; }
+                }
+            }
+            const catCard = card('Where does your time go?', catAns, D.full,
+                cAll ? h('div', { class: 'hbar', role: 'img', 'aria-label': 'Share of your time by category' }, D.catNow.map((v, k) => v > 0 ? h('i', { style: `flex-grow:${v};background:${colorOf(HCOL[k])}` }) : null)) : null,
+                cAll ? h('div', { class: 'sl', text: 'Share of your time · change' }) : null,
+                HCOL.map((k, i) => {
+                    if (D.catNow[i] < 60 && D.catWas[i] < 60) return null;   // a category you don't use
+                    const was = D.catWas[i], d = D.catNow[i] - was, pct = was >= 60 ? Math.round(d / was * 100) : null;
+                    const txt = !D.enough ? '' : pct == null ? 'new' : Math.abs(pct) < 5 ? 'same' : (pct > 0 ? '+' : '−') + Math.abs(pct) + '%';
+                    return h('div', { class: 'crow', title: fmtDur(D.catNow[i]) + ' a day' }, h('i', { style: 'background:' + colorOf(k) }), h('span', { text: (CAT[k] || OTHER).n }), h('b', { text: Math.round(D.catNow[i] / cAll * 100) + '%' }),
+                        h('span', { class: 'delta ' + (txt === 'same' || !txt ? 'flat' : d > 0 ? 'up' : 'down'), text: txt }));
+                }));
+            g1.append(weekCard, catCard);
             out.push(g1);
 
-            // top sites
-            const topMax = D.top[0]?.v || 1;
-            out.push(h('div', { class: 'tile full' }, this.label('Top sites today', MOBILE ? null : 'Last 7 days on the right'),
-                D.top.length ? D.top.map(s => {
-                    const c = colorOf(s.cat), mx = Math.max(...s.spark, 1), W = 54, H = 22, p = 2;
-                    const pts = s.spark.map((v, i) => [p + i * (W - 2 * p) / 6, H - p - v / mx * (H - 2 * p)]);
-                    const d = pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ' ' + q[1].toFixed(1)).join(' ');
-                    return h('div', { class: 'srow' },
-                        h('div', { class: 'fav', style: 'background:' + c + (s.cat === 'music' ? ';color:#5a1020' : ''), text: s.k[0].toUpperCase() }),
-                        h('div', { class: 'nm' }, h('b', { text: s.k }), h('small', { text: (CAT[s.cat] || OTHER).n + ' · ' + s.visits + (s.visits === 1 ? ' visit' : ' visits') })),
-                        h('div', { class: 'tbar' }, h('i', { style: `width:${s.v / topMax * 100}%;background:${c}` })),
-                        h('div', { class: 'tm', text: fmtDur(s.v) }),
-                        sv('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': s.k + ', last 7 days' },
-                            sv('path', { class: 'sparkf', d: d + ` L${W - p} ${H - p} L${p} ${H - p} Z` }), sv('path', { class: 'spark', d })));
-                }) : h('div', { class: 'd', text: 'Browse a little and your sites show up here.' })));
+            // What changed? (the sites that moved, with their trend; busy sites off your list fold away)
+            let chAns;
+            const top = D.moved[0];
+            if (!D.enough) chAns = `Changes show up after ${D.need} more day${D.need === 1 ? '' : 's'} of history.`;
+            else if (!top) chAns = `Nothing moved much ${D.inP}. Every site stayed within 5m a day.`;
+            else if (top.was < 60) chAns = `${top.k} is new ${D.inP}. It's at ${fmtDur(top.now)} a day.`;
+            else chAns = `${top.k} ${top.d > 0 ? 'rose' : 'dropped'} the most ${D.inP}. It went from ${fmtDur(top.was)} to ${fmtDur(top.now)} a day.`;
+            const rows = D.enough ? D.moved : D.topSites;
+            const addBtns = s => [h('button', { class: 'btn sm primary', onclick: () => this.addSite(s.k, guessCat(s.k)) }, icon(ICONS.plus, 12, 2.4), 'Add'),
+                h('button', { class: 'btn sm', text: 'Ignore', onclick: () => { S.ignored.push({ d: s.k, avg: s.now }); set('ignored', S.ignored); this.render(); } })];
+            const offList = s => !s.listed && !S.ignored.some(g => g.d === s.k);
+            const acts = rows.some(offList);
+            const spark = s => { const mx = Math.max(...s.spark, 1), W = 64, Hh = 22, p = 2, n = Math.max(1, s.spark.length - 1);
+                const d = s.spark.map((v, i) => (i ? 'L' : 'M') + (p + i * (W - 2 * p) / n).toFixed(1) + ' ' + (Hh - p - v / mx * (Hh - 2 * p)).toFixed(1)).join(' ');
+                return sv('svg', { class: 'spk', width: W, height: Hh, viewBox: `0 0 ${W} ${Hh}`, role: 'img', 'aria-label': s.k + ', each day' }, sv('path', { class: 'sparkf', d: d + ` L${W - p} ${Hh - p} L${p} ${Hh - p} Z` }), sv('path', { class: 'spark', d })); };
+            const sugOpen = this.ignOpen;
+            out.push(card('What changed?', chAns, D.full,
+                rows.length ? h('div', { class: 'sl', text: (D.enough ? 'Sites that moved' : 'Your top sites so far') + ' · time a day · each day' }) : null,
+                rows.map(s => h('div', { class: 'srow2' + (acts ? ' wa' : '') },
+                    h('div', { class: 'fav', style: 'background:' + colorOf(s.cat) + (s.listed && s.cat !== 'music' ? '' : ';color:#1d1d1f'), text: s.k[0].toUpperCase() }),
+                    h('div', { class: 'nm' }, h('b', { text: s.k }), h('small', { text: (s.listed ? CAT[s.cat].n : 'Not on your list') + ' · ' + (D.enough ? fmtDur(s.was) + ' → ' : '') + fmtDur(s.now) })),
+                    spark(s),
+                    h('div', { class: 'delta ' + (!D.enough || Math.abs(s.d) < 60 ? 'flat' : s.d > 0 ? 'up' : 'down'), text: D.enough ? sign(s.d) : '' }),
+                    h('div', { class: 'acts' }, offList(s) ? addBtns(s) : null))),
+                h('button', { class: 'disc' + (sugOpen ? ' open' : ''), 'aria-expanded': String(sugOpen), onclick: () => { this.ignOpen = !this.ignOpen; this.render(); } }, icon(ICONS.chev, 14),
+                    'Site suggestions · ' + D.sugs.length + (S.ignored.length ? ' · ' + S.ignored.length + ' ignored' : '')),
+                sugOpen ? [
+                    D.sugs.length ? D.sugs.map(s => h('div', { class: 'sug2' }, h('span', { class: 'mono', style: 'color:var(--text)', text: s.k }), h('span', { class: 'mono', text: fmtDur(s.now) + ' a day · not on your list' }), h('div', { class: 'acts' }, addBtns(s))))
+                        : h('div', { class: 'ign', text: 'No other busy sites off your list.' }),
+                    ...S.ignored.map(g => h('div', { class: 'ign' }, h('span', { class: 'mono', style: 'color:var(--text)', text: g.d }), h('span', { class: 'mono', text: fmtDur(g.avg) + ' a day when ignored' }),
+                        h('button', { class: 'link', text: 'Stop ignoring', onclick: () => { S.ignored = S.ignored.filter(x => x.d !== g.d); set('ignored', S.ignored); this.render(); } })))] : null));
 
-            // patterns + streak
-            const g2 = h('div', { class: 'grid2' });
-            const L = D.o.long, allSec = totalOf(D.o);
-            const stat = (big, small) => h('div', null, h('div', { class: 'mid', text: big }), h('div', { class: 'd', text: small }));
-            g2.append(h('div', { class: 'tile' }, this.label('Patterns', 'Today'),
-                h('div', { class: 'stats4' },
-                    stat(String(D.visits), 'Visits'),
-                    stat(D.visits ? fmtDur(allSec / D.visits) : '—', 'Average visit'),
-                    stat(L ? fmtDur(L.sec) : '—', L ? 'Longest visit · ' + L.d : 'Longest visit'),
-                    stat(allSec ? hourName(D.busiest) : '—', 'Busiest hour'),
-                    stat(D.o.first != null ? (Math.floor(D.o.first / 60) % 12 || 12) + ':' + pad(D.o.first % 60) + (D.o.first < 720 ? ' AM' : ' PM') : '—', 'First visit'),
-                    stat(String(Object.keys(D.o.s || {}).length), 'Sites visited'),
-                    stat(fmtDur(D.listen), 'Listening, any tab'),
-                    stat(fmtDur(nightTotal(D.nightKey, 'all')), (D.nightNow ? 'Tonight' : 'Last night') + ' after ' + shortU(S.cfg.bedS)))));
-            const goalTxt = fmtDur(D.goal);
-            g2.append(h('div', { class: 'tile' }, this.label('Streak', 'Days under ' + goalTxt),
-                h('div', { style: 'margin-bottom:10px' }, h('div', { class: 'mid', text: D.streak + (D.streak === 1 ? ' day' : ' days') }), h('div', { class: 'd', text: 'Best in the last 5 weeks: ' + D.best + (D.best === 1 ? ' day' : ' days') })),
-                h('div', { class: 'hdays' }, D.weekLetters.map(l => h('span', { text: l }))),
-                h('div', { class: 'heat', role: 'img', 'aria-label': 'Screen time per day, last 5 weeks' }, D.heat.map(c => {
-                    const has = c.v > 0;
-                    return h('div', { class: 'hc' + (c.future ? ' future' : '') + (c.today ? ' today' : '') + (has && c.v > D.goal ? ' over' : ''),
-                        title: c.dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + (c.future ? '' : ' · ' + fmtDur(c.v)),
-                        'data-tip': c.dt.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) + (c.future ? '' : ' · ' + fmtDur(c.v)),
-                        style: 'background:' + (has ? `rgba(${T.rgb},${(0.6 + Math.min(c.v / (D.goal * 1.6), 1) * 0.4).toFixed(2)})` : 'var(--ctl)') });
-                })),
-                h('div', { class: 'scale' }, 'Less', ...[.6, .75, .9, 1].map(a => h('i', { style: `background:rgba(${T.rgb},${a})` })), 'More',
-                    h('span', { style: 'margin-left:auto;display:inline-flex;align-items:center;gap:5px' }, h('span', { style: 'width:5px;height:5px;border-radius:50%;background:var(--text);opacity:.55;display:inline-block' }), 'over goal'))));
-            out.push(g2);
-
-            // consider adding
-            const sugMax = Math.max(3600, ...D.sugs.map(s => s.avg));
-            out.push(h('div', { class: 'tile full', style: 'margin-bottom:14px' }, this.label('Consider adding', 'Sites off your list averaging 30m+ a day this week'),
-                D.sugs.length ? D.sugs.map(s => h('div', { class: 'sug' },
-                    h('div', { class: 'fav', style: 'background:#AEAEB2', text: s.k[0].toUpperCase() }),
-                    h('div', { class: 'nm' }, h('b', { text: s.k }), h('small', { text: fmtDur(s.avg) + ' a day · suggested: ' + CAT[s.cat].n })),
-                    h('div', { class: 'tbar' }, h('i', { style: `width:${s.avg / sugMax * 100}%;background:#AEAEB2` })),
-                    h('button', { class: 'btn sm primary', onclick: () => this.addSite(s.k, s.cat) }, icon(ICONS.plus, 12, 2.4), 'Add'),
-                    h('button', { class: 'btn sm', text: 'Ignore', onclick: () => { S.ignored.push({ d: s.k, avg: s.avg }); set('ignored', S.ignored); this.render(); } })))
-                    : h('div', { class: 'd', style: 'padding:6px 0 10px', text: 'Nothing new. Every busy site is on your list or ignored.' }),
-                h('button', { class: 'disc' + (this.ignOpen ? ' open' : ''), 'aria-expanded': String(this.ignOpen), onclick: () => { this.ignOpen = !this.ignOpen; this.render(); } }, icon(ICONS.chev, 14), 'Ignored · ' + S.ignored.length),
-                this.ignOpen ? (S.ignored.length ? S.ignored.map(g => h('div', { class: 'ign' }, h('span', { class: 'mono', style: 'color:var(--text)', text: g.d }), h('span', { class: 'mono', text: fmtDur(g.avg) + ' a day when ignored' }),
-                    h('button', { class: 'link', text: 'Stop ignoring', onclick: () => { S.ignored = S.ignored.filter(x => x.d !== g.d); set('ignored', S.ignored); this.render(); } })))
-                    : h('div', { class: 'ign', text: 'Nothing ignored.' })) : null));
-            if (MOBILE) {
-                const week = g1.children[0], streak = g2.children[1];
-                week.classList.add('full'); streak.classList.add('full');
-                streak.style.marginBottom = '14px';
-                const pick = [out[0], out[1], week, out[3], streak];
-                for (const tile of [out[1], week, streak]) this.tapTips(tile);
-                return pick;
+            /* ── what's changing ── */
+            out.push(level("What's changing"));
+            let drAns;
+            if (!D.hTot) drAns = 'Nothing yet. Your busiest hours show up after a day of browsing.';
+            else {
+                drAns = `Your busiest hours ${D.inP} were ${hourName(D.peak)} to ${hourName((D.peak + 3) % 24)}.`;
+                if (D.cWas != null) {
+                    const r = Math.round((D.cNow - D.cWas) * 2) / 2, a = Math.abs(r);
+                    drAns += a < .5 ? " That's about the same time as before." : " That's about " + (a === .5 ? 'half an hour' : a === 1 ? 'an hour' : (Math.floor(a) + (a % 1 ? '½' : '')) + ' hours') + (r > 0 ? ' later' : ' earlier') + ' than before.';
+                }
             }
+            const gmax = Math.max(60, ...D.grid.flat());
+            const shade = v => v > 0 ? `rgba(${T.rgb},${(.56 + .44 * Math.pow(v / gmax, 1.3)).toFixed(2)})` : 'var(--ctl)';
+            const nightsTxt = D.win.length === 1 ? (D.lateNights ? 'You were online after ' : 'You were offline by ') + shortU(S.cfg.bedS) + ' on your first night.'
+                : `You were online after ${shortU(S.cfg.bedS)} on ${D.lateNights} of ${D.full ? 'the past ' + D.R : 'your first ' + D.win.length} nights.`;
+            const drift = card('When do you drift?', drAns, D.full,
+                !D.hTot ? null : h('div', { class: 'ch hmw', 'data-chart': 'hours', role: 'img', 'aria-label': 'Average time online by weekday and hour' },
+                    h('div', { class: 'hya', 'data-axis': 'y' }, D.order.map(d => h('span', { text: DAYS[d].slice(0, 3) }))),
+                    h('div', { class: 'hm' }, D.grid.flatMap((row, ri) => row.map((v, i) => {
+                        const tip = DAYS[D.order[ri]] + 's, ' + hourName(i) + ' · ' + fmtDur(v) + ' on average';
+                        return h('i', { style: 'background:' + shade(v), title: tip, 'data-tip': tip });
+                    }))),
+                    xHours(),
+                    h('div', { class: 'scale', 'data-axis': 'y' }, 'Less', ...[.56, .71, .85, 1].map(a => h('i', { style: `background:rgba(${T.rgb},${a})` })), 'More',
+                        h('span', { style: 'margin-left:6px', text: D.R === 7 ? '· time online in that hour' : '· average time online in that hour' }))),
+                D.hTot ? h('div', { class: 'd', style: 'margin-top:10px', text: `Those three hours hold ${Math.round(D.peakShare * 100)}% of your time online. ` + nightsTxt }) : null);
+            out.push(drift);
+
+            const g2 = h('div', { class: 'grid2' });
+            // Is lockdown working?
+            const n1 = v => String(Math.round(v * 10) / 10);
+            let lkAns;
+            if (!D.win.length) lkAns = 'Blocked tries show up here after your first full day.';
+            else if (D.triesNow == null) lkAns = `No lockdown ${D.inP}. Nothing was blocked.`;
+            else if (D.triesWas == null) lkAns = D.win.length === 1 ? `You tried a blocked site ${n1(D.triesNow)} times on your first day.` : `You tried a blocked site ${n1(D.triesNow)} times a lockdown day ${D.inP}.`;
+            else {
+                const r = D.triesNow / Math.max(.1, D.triesWas), now_ = n1(D.triesNow), was = n1(D.triesWas);
+                lkAns = r < .8 ? `Blocked tries fell ${D.inP}. You tried ${now_} times a lockdown day, down from ${was}.`
+                    : r > 1.25 ? `Blocked tries rose ${D.inP}. You tried ${now_} times a lockdown day, up from ${was}.`
+                        : `Blocked tries held steady ${D.inP}. You tried about ${now_} times a lockdown day.`;
+            }
+            const tmax = Math.max(4, ...D.win.map(D.att));
+            g2.append(card('Is lockdown working?', lkAns, D.full,
+                D.win.length ? barChart({ name: 'tries', aria: 'Blocked tries per day; dots are passes used', n: D.win.length, max: tmax, ticks: [{ v: tmax, text: tmax + ' tries' }], x: xDays(D.win),
+                    bars: D.win.map(x => {
+                        const n = D.att(x), p = (x.o?.pass || []).length, tip = dayTip(x) + ' · ' + n + (n === 1 ? ' try' : ' tries') + (p ? ', ' + p + (p === 1 ? ' pass' : ' passes') : '');
+                        return h('div', { class: 'bar' + (D.lockOn(x) ? '' : ' off'), title: tip, 'data-tip': tip }, p ? h('b', { class: 'pdot' }) : null, h('i', { style: `height:${n / tmax * 100}%` }));
+                    }) }) : null,
+                D.win.length ? h('div', { class: 'd', style: 'margin-top:8px' }, D.mostTried ? ['Most tried: ', h('b', { text: D.mostTried[0] }), ' · '] : null, (D.passesUsed ? D.passesUsed + (D.passesUsed === 1 ? ' pass' : ' passes') + ' used' : 'No passes used') + ' · dots mark days with a pass') : null));
+
+            // Are you under your goal? (the streak calendar: five whole weeks)
+            const goalTxt = fmtDur(D.goal);
+            const glAns = D.streak ? `You're on a ${D.streak}-day streak under your ${goalTxt} goal.` + (D.best > D.streak ? ` Your best run is ${D.best} days.` : '')
+                : `Today is over your ${goalTxt} goal.` + (D.best ? ` Your best run is ${D.best} day${D.best === 1 ? '' : 's'}.` : '');
+            const shown = D.cal.filter(c => c.counted && !c.future), underN = shown.filter(c => c.v <= D.goal).length;
+            const letters = S.cfg.weekStart === 'sun' ? ['S', 'M', 'T', 'W', 'T', 'F', 'S'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+            g2.append(card('Are you under your goal?', glAns, false,
+                h('div', { class: 'ch calw', 'data-chart': 'calendar', role: 'img', 'aria-label': 'The last five weeks: days under and over your goal' },
+                    h('div', { class: 'cya', 'data-axis': 'y' }, [0, 1, 2, 3, 4].map(r => h('span', { text: D.cal[r * 7].dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) }))),
+                    h('div', { class: 'cal' }, D.cal.map(c => {
+                        const tip = dayTip(c) + (c.future ? '' : !c.counted ? ' · before Hourglass' : ' · ' + fmtDur(c.v) + (c.v > D.goal ? ' · over goal' : ' · under goal'));
+                        return h('i', { class: (c.future ? 'future' : !c.counted ? 'none' : c.v > D.goal ? 'over' : 'under') + (c.today ? ' today' : ''), title: tip, 'data-tip': tip });
+                    })),
+                    h('div', { class: 'xa', 'data-axis': 'x', style: 'grid-template-columns:repeat(7,minmax(0,1fr))' }, letters.map(l => h('span', { text: l })))),
+                h('div', { class: 'key', style: 'margin-left:0' }, h('span', null, h('i', { class: 'sw2 cu' }), 'Under goal'), h('span', null, h('i', { class: 'sw2 co' }), 'Over goal')),
+                shown.length ? h('div', { class: 'd', style: 'margin-top:8px', text: `Under your goal on ${underN} of the ${shown.length} days shown.` }) : null));
+            out.push(g2);
+            if (MOBILE) { this.tapTips(whereCard, 'Tap an hour for details'); this.tapTips(drift, 'Tap an hour for details'); this.tapTips(weekCard); for (const c of g2.children) this.tapTips(c); }
             return out;
         },
 

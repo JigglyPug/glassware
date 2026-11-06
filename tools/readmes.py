@@ -31,12 +31,12 @@ S['desktop/prism'] = dict(name='Prism', tag="Every app title bar, in its site's 
 
 S['desktop/hourglass'] = dict(name='Hourglass', tag='Screen time and lockdown for every site.', sites='Every site',
  getting_started='A fresh install starts in setup mode: Hourglass counts your screen time but blocks nothing and locks no settings. Check your sites and schedule, then tap **Start lockdown** on the welcome card. If you start during scheduled hours, you can begin right away or wait until the current block ends.',
- phone=('The same script switches to a phone layout on its own: a bottom-sheet menu, a trimmed dashboard you can tap for details, and bigger touch targets. Open it from the Tampermonkey menu, or from the Open Hourglass link on any block screen.',
+ phone=('The same script switches to a phone layout on its own: a bottom-sheet menu, the same dashboard in one column with charts you can tap for details, and bigger touch targets. Open it from the Tampermonkey menu, or from the Open Hourglass link on any block screen.',
         [('phone-dashboard', 'Dashboard'), ('phone-schedule', 'Schedule'), ('phone-block', 'Block screen'), ('phone-nudge', 'Late-night nudge')]),
  intro='Hourglass tracks how long you spend on every site and blocks the distracting ones on a schedule. During lockdown the settings lock too, so you cannot talk yourself out of it in the moment.',
  features=[
-  '**Dashboard**: screen time today vs your average, a by-hour chart with lockdown hours shaded, week/month view, a "time online" ring, per-category trends, blocked attempts, passes used, top sites, visits, busiest hour, first visit and days under your goal.',
-  '**Suggestions**: sites not on your list that average 30m+ a day get suggested for a category (or ignored).',
+  '**Dashboard**: every card answers one question in a plain sentence: how today compares with your usual for this weekday, where today went hour by hour, how much you are online and on what over the past 7 days or 4 weeks, which sites rose or dropped, when you drift, whether lockdown is working, and your streak under your goal.',
+  '**Suggestions**: sites not on your list that average 30m+ a day get an Add button (or Ignore).',
   '**Schedule**: per-day lockdown blocks with drag handles in 30-minute steps, quick presets (9–5, 7–6, evenings, overnight, 24h), and copy-to-weekdays / every day.',
   '**Passes**: a set number of daily passes that open only the site you are on, with a pass length and a think-it-over wait.',
   '**Sites**: Socials, Shopping, Music and Custom lists; set each site to follow the schedule or always block.',

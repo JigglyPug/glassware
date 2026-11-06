@@ -211,6 +211,45 @@ change a number: edit `tools/tokens.json`, run `python3 tools/frame.py` and `pyt
 update the scripts' own glass where the recipe changed, recapture, and ship. `tools/check.py`
 fails if CLAUDE.md's tables disagree with the file or a tool keeps its own copy of a token value.
 
+## Dashboards (Hourglass's, and any panel that shows your history)
+
+A dashboard is there to tell people something about their habits, not to show the same numbers
+in more shapes.
+
+- **Every card answers one question, in plain short sentences.** The card's label is the question
+  ("What changed?", "When do you drift?") and its first line is the answer, naming what it found
+  ("youtube.com rose the most in the past 7 days. It went from 41m to 2h 05m a day."). At most
+  two sentences, each under 16 words with at most one comma: a chain of commas is hard to
+  follow. Charts and rows below back the answer up. A card with nothing to say yet says why
+  ("Changes show up after 13 more days of history.").
+- **Each chart lives on the card whose question it answers**, so a favorite view (hours stacked by
+  category, a bar per day, the category breakdown) is part of a card instead of a card of its own
+  that repeats another's numbers.
+- **No figure appears on two cards.** If two cards would show the same number, one of them is
+  asking the wrong question.
+- **Compare with the person's own history.** Use everything stored (up to the history setting),
+  not just the last few days: today against the usual for this weekday, the chosen range against
+  the weeks before it.
+- **Three levels, top to bottom**: *At a glance* (today's total against the usual, today's
+  lockdown), *Where and when* (today by hour, how much and on what over the range, the sites that
+  moved) and *What's changing* (when you drift, whether lockdown works, the goal streak). Each
+  level has a small heading; a new card goes in the level its question belongs to.
+- **Week and Month are ranges, not extra cards.** One switch above the range cards picks the
+  range (last 7 days or last 4 weeks) and every card that covers a period uses it; the sentences
+  say which period they mean. Today's cards cover today, and the streak calendar always shows
+  five whole weeks.
+- **Every chart has labelled axes**: what's along the bottom (hours, days) and what the height or
+  shade means (time, a scale with units), so nobody has to guess what a bar is.
+- Markup the checks read: each card is `[data-q]` (the question), its sentence is `.ans`, and
+  axis labels are `[data-axis]` (left out of the repeated-figure check).
+- `python3 tools/dash.py` runs the dashboard on several made-up histories (`tools/seeds/hourglass.py`:
+  a habit change, a good stretch, a new install, no data) and fails if a card has no sentence, a
+  figure shows on two cards, a chart has no axis labels, text says NaN or undefined, or a
+  sentence misses the change planted in that history. `tools/check.py` runs it when Hourglass
+  changes. A new dashboard card or scenario gets an entry there.
+- The demo history in `tools/seeds/hourglass.json` is written by `python3 tools/seeds/hourglass.py`
+  (six weeks with a clear change in the last one); edit the generator, not the JSON.
+
 ## After any change: rebuild the pages
 
 ```
@@ -267,7 +306,8 @@ python3 tools/check.py              # release check: everything below, plus the 
 - Link preview addresses carry a fingerprint of what they're made from (`og.png?v=…`), so Discord,
   Slack and others fetch the new image instead of a cached old one.
 - **Look at every changed screenshot before pushing** (`python3 tools/sheet.py`), dark and light,
-  every tab. The checks only catch the problems they were written for; looking catches the rest
+  every tab. It writes one page per screenshot, dark next to light, and cuts tall ones into parts so
+  every page can be read at full size; look at every page it prints. The checks only catch the problems they were written for; looking catches the rest
   (a knob out of place, a ring that shouldn't be there, a color that's off). When looking finds
   something a check could have caught, add the check too.
 - Panels open with focus on the panel itself, never on a control (that shows a focus ring on
@@ -275,6 +315,8 @@ python3 tools/check.py              # release check: everything below, plus the 
 - Screenshots use made-up demo data only (`tools/seeds/`). Never use real browsing data.
 - A panel change that only shows up with data (a counter line, a list, a status) needs demo data
   in `tools/seeds/` so the screenshots show it; otherwise the pages never show the new feature.
+- A capture shows the whole panel: `tools/screens.py` fails if anything in a cropped capture still
+  scrolls (part of the panel would be missing), so give long panels a taller `--vh`.
 - Captures repeat exactly (fixed clock, demo data, animations stopped), so `tools/check.py`
   recaptures every changed script's panels in a scratch folder and fails if a committed
   screenshot no longer matches its panel.
