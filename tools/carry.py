@@ -50,7 +50,7 @@ def live_source(p):
     return r.stdout
 
 def header(src, key):
-    m = re.search(r'//\s*@' + key + r'\s+(.+)', src); return m.group(1).strip() if m else None
+    m = re.search(r'(?m)^//[ \t]*@' + key + r'(?:[ \t]+(.*?))?[ \t]*$', src); return (m.group(1) or '') if m else None   # one line only: an empty @namespace is valid
 
 def run(script, p, mode, seed=None, seedls=None):
     url, cmd, extra, tabs = JOBS[p]

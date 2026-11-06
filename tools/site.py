@@ -43,6 +43,23 @@ CSS = r"""
 --bg:#e9ebf5;--b1:#b9a7ff;--b2:#ffb3d1;--b3:#9fe7d3;--b4:#9cc8ff;--chip:rgba(255,255,255,.6);--shadow:0 30px 70px -30px rgba(60,60,120,.35)}
 [data-theme=midnight]{--fg:#e8f1f8;--sub:rgba(232,241,248,.64);--glass:rgba(16,26,38,.55);--edge:rgba(255,255,255,.1);--hi:rgba(255,255,255,.06);
 --bg:#0b1622;--b1:#3db4f2;--b2:#7a5cff;--b3:#1f6f9f;--b4:#c063ff;--chip:rgba(255,255,255,.07)}
+/* light and dark: the sun/moon switch in the top bar (it follows the device until it's flipped) */
+[data-mode=light] body{--fg:#2a1d18;--sub:rgba(42,29,24,.64);--glass:rgba(255,255,255,.55);--edge:rgba(255,255,255,.75);--hi:rgba(255,255,255,.6);
+--bg:#fbf1ea;--chip:rgba(255,255,255,.6);--shadow:0 30px 70px -30px rgba(120,60,30,.3)}
+[data-mode=dark] [data-theme=frost]{--fg:#ecebf5;--sub:rgba(236,235,245,.64);--glass:rgba(22,22,34,.5);--edge:rgba(255,255,255,.1);--hi:rgba(255,255,255,.06);
+--bg:#0e0e18;--b1:#6c5ce7;--b2:#c2417d;--b3:#2b8f7c;--b4:#3d6fd6;--chip:rgba(255,255,255,.08);--shadow:0 30px 80px -30px rgba(0,0,0,.7)}
+[data-mode=light] [data-theme=midnight]{--fg:#1f2d3d;--sub:rgba(31,45,61,.66);--glass:rgba(255,255,255,.55);--edge:rgba(255,255,255,.75);--hi:rgba(255,255,255,.6);
+--bg:#edf1f5;--b1:#7cc9f5;--b2:#a99cff;--b3:#8fd0e8;--b4:#d6a5ff;--chip:rgba(255,255,255,.6);--shadow:0 30px 70px -30px rgba(40,60,90,.3)}
+[data-mode=light] .lava::after{opacity:.25}[data-mode=dark] .lava::after{opacity:.55}
+/* every screenshot comes in both; only the one for the current mode shows (lazy, so the other never loads) */
+[data-mode=light] .dk,html:not([data-mode=light]) .lt{display:none!important}
+.mode{position:relative;flex:none;width:58px;height:32px;border:0;border-radius:16px;background:var(--chip);padding:0 9px;display:flex;align-items:center;justify-content:space-between;color:var(--sub);cursor:pointer}
+.mode svg{position:relative;z-index:1;width:15px;height:15px;transition:color .18s}
+.mode .knob{position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
+[data-mode=dark] .mode .knob{transform:translateX(26px);background:#55555f}
+[data-mode=light] .mode .sun,[data-mode=dark] .mode .moon{color:var(--fg)}
+.mode:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+footer .match{border:0;background:none;padding:0;font:inherit;color:var(--fg);text-decoration:underline;cursor:pointer}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI Variable","Segoe UI",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit}
@@ -149,6 +166,31 @@ footer a{color:var(--fg)}
 if not ONLY: open(f'{D}/style.css', 'w', encoding='utf-8').write(CSS.strip() + '\n')
 
 SITE = f'https://{OWNER.lower()}.github.io/glassware/'
+# Light or dark: the visitor's choice (saved in this browser), otherwise their device's setting.
+MODE_HEAD = ('<script>(function(){var m;try{m=localStorage.getItem("glassware-mode")}catch(e){}'
+             'if(m!=="light"&&m!=="dark")m=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";'
+             'document.documentElement.dataset.mode=m})()</script>')
+SUN = ''.join(f'<path d="{d}"/>' for d in ['M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7', 'M12 2.5v2', 'M12 19.5v2', 'M2.5 12h2', 'M19.5 12h2', 'M5.3 5.3l1.4 1.4', 'M17.3 17.3l1.4 1.4', 'M5.3 18.7l1.4-1.4', 'M17.3 6.7l1.4-1.4'])
+MOON = '<path d="M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6Z"/>'
+SVG = '<svg class="{c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">{p}</svg>'
+MODE_SWITCH = ('<button class="mode" type="button" role="switch" aria-label="Dark mode" title="Light or dark"><span class="knob"></span>'
+               + SVG.format(c='sun', p=SUN) + SVG.format(c='moon', p=MOON) + '</button>')
+MODE_SCRIPT = '''<script>
+(function(){var h=document.documentElement,b=document.querySelector('.mode'),w=document.querySelector('.matchwrap'),q=matchMedia('(prefers-color-scheme: dark)');
+function saved(){try{return localStorage.getItem('glassware-mode')}catch(e){return null}}
+function show(){var d=h.dataset.mode==='dark';b.setAttribute('aria-checked',String(d));w.hidden=!saved()}
+b.addEventListener('click',function(){var m=h.dataset.mode==='dark'?'light':'dark';h.dataset.mode=m;try{localStorage.setItem('glassware-mode',m)}catch(e){}show()});
+w.querySelector('button').addEventListener('click',function(){try{localStorage.removeItem('glassware-mode')}catch(e){}h.dataset.mode=q.matches?'dark':'light';show()});
+q.addEventListener('change',function(){if(!saved()){h.dataset.mode=q.matches?'dark':'light';show()}});show()})();
+</script>'''
+
+LAZY = 'loading="lazy"'
+def shot(src_dark, alt, attrs=''):
+    """A screenshot in both modes: the dark capture and its -light twin; CSS shows the one that matches."""
+    light = src_dark[:-5] + '-light.webp'
+    local = os.path.join(D, re.sub(r'^(\.\./)+', '', light))
+    if not os.path.exists(local): return f'<img src="{src_dark}" alt="{alt}" {attrs}>'
+    return f'<img class="dk" src="{src_dark}" alt="{alt}" {attrs}><img class="lt" src="{light}" alt="{alt}" {attrs}>'
 def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=None):
     up = '../' * depth
     meta = (f'<link rel="canonical" href="{SITE}{path}">'
@@ -160,14 +202,16 @@ def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=Non
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}">
-<meta name="theme-color" content="{acc}">{meta}<meta name="color-scheme" content="{'light dark' if theme == 'frost' else 'dark'}"><link rel="stylesheet" href="{up}style.css">
+<meta name="theme-color" content="{acc}">{meta}<meta name="color-scheme" content="light dark"><link rel="stylesheet" href="{up}style.css">
+{MODE_HEAD}
 {('<link rel="icon" type="image/png" href="' + up + favicon + '">') if favicon else '''<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff8a3d'/%3E%3Cstop offset='.55' stop-color='%23ff2d6f'/%3E%3Cstop offset='1' stop-color='%237a2cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3C/svg%3E">'''}
 </head><body data-theme="{theme}" style="--acc:{acc}">
 <div class="lava" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="grain" aria-hidden="true"></div>
 <nav><div class="bar glass"><a class="brand" href="{up}"><span class="dot"></span>Glassware</a><span class="sp"></span>
-<a class="link sec" href="{up}#desktop">Desktop</a><a class="link sec" href="{up}#phone">Phone</a><a class="link" href="{REPO_URL}">GitHub</a></div></nav>
+<a class="link sec" href="{up}#desktop">Desktop</a><a class="link sec" href="{up}#phone">Phone</a><a class="link" href="{REPO_URL}">GitHub</a>{MODE_SWITCH}</div></nav>
 {body}
-<footer>Made by <b>JigglyPug</b> · Built for <a href="https://www.tampermonkey.net/">Tampermonkey</a> · <a href="{REPO_URL}">Source on GitHub</a></footer>
+<footer>Made by <b>JigglyPug</b> · Built for <a href="https://www.tampermonkey.net/">Tampermonkey</a> · <a href="{REPO_URL}">Source on GitHub</a><span class="matchwrap" hidden> · <button class="match" type="button">Match my device</button></span></footer>
+{MODE_SCRIPT}
 </body></html>
 """
 
@@ -183,7 +227,7 @@ def pair_chip(p):
 def card(p):
     s = S[p]; slug = p.split('/')[1]; th, acc = THEME[p]
     return f"""<article class="card glass" style="--acc:{acc}">
-<a class="shot" href="{p}/"><img src="img/{slug}/card.webp" alt="{html.escape(s['name'])} settings panel" loading="lazy"></a>
+<a class="shot" href="{p}/">{shot(f'img/{slug}/card.webp', html.escape(s['name']) + ' settings panel', LAZY)}</a>
 <div class="body"><h3><img class="appicon" src="img/{slug}/icon.png" alt="" width="40" height="40"><a href="{p}/">{html.escape(s['name'])}</a></h3><p>{md_inline(s['tag'])}</p>
 <div class="meta"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">{s['platform']}</span><span class="chip">v{v_of(p)}</span>{pair_chip(p)}</div>
 <div class="acts"><a class="btn pri" href="{install_url(p)}">Install</a><a class="btn sec" href="{p}/">Details</a></div></div></article>"""
@@ -223,7 +267,7 @@ for p, s in S.items():
     from features import F
     for t, b in F[p]:
         feats += f'<div class="feat glass">' + (f'<h4>{md_inline(t)}</h4>' if t else '') + f'<p>{md_inline(b)}</p></div>'
-    gal = ''.join(f'<figure class="glass"><img src="{img(f)}" alt="{html.escape(c)}" loading="lazy"><figcaption>{html.escape(c)}</figcaption></figure>' for f, c in rest)
+    gal = ''.join(f'<figure class="glass">{shot(img(f), html.escape(c), LAZY)}<figcaption>{html.escape(c)}</figcaption></figure>' for f, c in rest)
     where = RUNS[p]
     if where == 'both': sib = [q for q in S if q != p and RUNS[q] == 'both']
     else: sib = sorted([q for q in S if q != p and runs_on(q, where)], key=lambda q: (RUNS[q] != 'both',))
@@ -237,7 +281,7 @@ for p, s in S.items():
     phone_sec = ''
     if s.get('phone'):
         ptxt, pshots = s['phone']
-        pg = ''.join(f'<figure class="glass"><img src="{img(f)}" alt="{html.escape(c)} on a phone" loading="lazy"><figcaption>{html.escape(c)}</figcaption></figure>' for f, c in pshots)
+        pg = ''.join(f'<figure class="glass">{shot(img(f), html.escape(c) + " on a phone", LAZY)}<figcaption>{html.escape(c)}</figcaption></figure>' for f, c in pshots)
         phone_sec = f'<section><div class="label">On your phone</div><p class="lede">{md_inline(ptxt)}</p><div class="gal phone">{pg}</div></section>'
     body = f"""<main class="wrap">
 <header class="phero{' phone' if phone else ''}"><div>
@@ -246,7 +290,7 @@ for p, s in S.items():
 <h1>{html.escape(s['name'])}</h1><p class="tag">{md_inline(s['tag'])}</p><p class="intro">{md_inline(s['intro'])}</p>
 <div class="chips"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">{s['platform']}</span><span class="chip">v{v_of(p)}</span></div>
 <div class="acts"><a class="btn pri big" href="{install_url(p)}">Install {html.escape(s['name'])}</a><a class="btn sec big" href="{REPO_URL}/blob/main/{p}/{slug}.user.js">View source</a></div>{pair}
-</div><figure class="glass"><img src="{img(hero)}" alt="{html.escape(s['name'])} panel"></figure></header>
+</div><figure class="glass">{shot(img(hero), html.escape(s['name']) + ' panel', LAZY)}</figure></header>
 {start}
 <section><div class="label">Features</div><div class="feats">{feats}</div></section>
 {f'<section><div class="label">A closer look</div><div class="gal{" phone" if phone else ""}">{gal}</div></section>' if gal else ''}

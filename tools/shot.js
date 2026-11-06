@@ -127,6 +127,31 @@ function stubPage() {
       const fixedAnc = e => { for (let x = e; x; x = x.parentElement || (x.getRootNode() && x.getRootNode().host)) { if (x.nodeType === 1 && getComputedStyle(x).position === 'fixed') return x; } return null; };
       const parentOf = x => x.parentElement || (x.getRootNode && x.getRootNode().host) || null;
       const els = __all().filter(e => e.nodeType === 1 && !/^(STYLE|SCRIPT|svg|path|defs|g|circle|rect|line|polyline|polygon|ellipse|stop|linearGradient|radialGradient|filter|feGaussianBlur|feMerge|feMergeNode|feColorMatrix|use|clipPath|mask)$/i.test(e.tagName) && !(e instanceof SVGElement) && fixedAnc(e) && vis(e));
+      // The glass recipe (CLAUDE.md): every frosted surface is blur(28px) saturate(170%), light glass
+      // at 84% and dark at 80%. Only big surfaces count (panel, menus, cards, toasts), not chips.
+      const rgba = c => { const m = (c || '').match(/[\\d.]+/g) || [0, 0, 0, 0]; return [+m[0], +m[1], +m[2], m[3] === undefined ? 1 : +m[3]]; };
+      const glassA = window.__theme === 'light' ? 0.84 : 0.8;
+      for (const e of els) { const cs = getComputedStyle(e), f = cs.backdropFilter || cs.webkitBackdropFilter || '';
+        if (!/saturate/.test(f)) continue; const r = e.getBoundingClientRect(); if (r.width * r.height < 12000) continue;
+        if (f.replace(/\\s+/g, ' ') !== 'blur(28px) saturate(1.7)') add('glass off recipe', e, 'backdrop-filter ' + f + ', should be blur(28px) saturate(170%)');
+        const a = rgba(cs.backgroundColor)[3]; if (Math.abs(a - glassA) > 0.005) add('glass off recipe', e, 'glass at ' + Math.round(a * 100) + '%, should be ' + Math.round(glassA * 100) + '% in ' + (window.__theme || 'dark')); }
+      // Text too faint to read on its own background (contrast under 3:1). Dimmed rows (an off
+      // feature, a disabled control) are faint on purpose and skipped.
+      const page = window.__theme === 'light' ? [244, 245, 247] : [15, 15, 15];
+      const lum = c => { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); };
+      const over = (top, under) => [0, 1, 2].map(i => top[i] * top[3] + under[i] * (1 - top[3]));
+      for (const e of els) {
+        if (![...e.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim().length > 1)) continue;
+        let dim = false, layers = [];
+        for (let x = e; x && x.nodeType === 1; x = parentOf(x)) { const c = getComputedStyle(x);
+          if (+c.opacity < 1 || x.disabled || x.getAttribute('aria-disabled') === 'true') { dim = true; break; }
+          const b = rgba(c.backgroundColor); if (b[3] > 0) layers.push(b); if (b[3] >= 0.99) break; }
+        if (dim) continue;
+        let bg = page; for (const b of layers.reverse()) bg = over(b, bg);
+        const fg = over(rgba(getComputedStyle(e).color), bg), L1 = lum(fg), L2 = lum(bg);
+        const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+        if (ratio < 3) add('faint text', e, 'contrast ' + ratio.toFixed(1) + ':1 in ' + (window.__theme || 'dark'));
+      }
       for (const e of els) {
         const cs = getComputedStyle(e), r = e.getBoundingClientRect();
         if (cs.position === 'fixed' && cs.pointerEvents !== 'none' && !(r.width >= vw && r.height >= vh) && r.width * r.height > 400 && (r.top < -1 || r.left < -1 || r.right > vw + 1 || r.bottom > vh + 1) && !/translate/.test(cs.transform + '') ) add('off screen', e, 'box ' + [r.left, r.top, r.right, r.bottom].map(Math.round).join(',') + ' in ' + vw + 'x' + vh);
@@ -153,7 +178,7 @@ function stubPage() {
       return out;
     };
     window.__folds = () => __all().filter(e => e.nodeType === 1 && (e.matches('.ytt-pick,[aria-expanded="false"]')) && e.getBoundingClientRect().width > 0);`;
-  if (has('--audit')) await page.evaluate(auditJs);
+  if (has('--audit')) { await page.evaluate(t => { window.__theme = t; }, theme); await page.evaluate(auditJs); }
   if (opt('--maxfrac', '')) await page.evaluate(f => { window.__maxFrac = f; }, +opt('--maxfrac', '0.92'));
   if (has('--sheet')) await page.evaluate(() => { window.__sheet = true; });
   if (evalJs) { await page.evaluate(evalJs); await page.waitForTimeout(900); }

@@ -64,15 +64,15 @@ tools/                                builders for all of the above
 
 ## The panel frame (every script's settings panel)
 
-Every panel shares the same bones; each script keeps its own skin (colors, light or dark glass,
-icon, tagline, font: Kaleidoscope keeps AniList's font). Build new panels on this and keep
-existing ones on it.
+Every panel shares the same bones and the same glass; each script keeps only its own skin
+(accent color, icon, tagline, font: Kaleidoscope keeps AniList's font). Build new panels on this
+and keep existing ones on it.
 
 - **Shell.** Desktop: top right, 16px from the edges, 400px wide, 22px corners, scrolling inside
   (Hourglass stays at its fixed 760px top-right size for the dashboard; don't change it).
   Phones: a bottom sheet with a grab handle.
-- **Header.** Icon tile (the script's glyph on its own colors), then name and tagline, then a round
-  close button on the right.
+- **Header.** Icon tile (the script's glyph on its own colors), then name and tagline, then the
+  sun/moon switch (`aria-label` "Dark mode"), then a round close button on the right.
 - **Context line** under the header: the site or account in monospace, plus a status chip when the
   script has a status (On/Off, the color source, the list type...).
 - **Tabs** only for scripts with many settings or areas (Hourglass, Molten, Kaleidoscope). The tab
@@ -93,6 +93,8 @@ existing ones on it.
   "<Did> N <things> so far" ("Skipped 37 app prompts so far"), hidden while it's 0. Counts only,
   never time-saved estimates or dates; they're kept per device since install under the `counts`
   key (`COUNTS.bump(key)` to count, `COUNTS.line(row, key)` to show).
+- **Appearance** is a section with one toggle, "Match my device", placed just above Troubleshooting
+  (or as the last section of the script's own settings when there's no Troubleshooting).
 - **Troubleshooting** is always the last section of the tab that holds the script's own settings
   (or of the page), named exactly "Troubleshooting": console logging, diagnostics, layout report.
 - **Footer** (one line, pinned at the bottom): "Open from <launcher> or the Tampermonkey menu ·
@@ -102,6 +104,32 @@ existing ones on it.
   "Turn screenshot safe on/off", "Turn badges on/off for this site".
 - **Behaviour.** Esc closes the panel; changes apply live; clicks and keys inside the panel never
   reach the site. No new keyboard shortcuts (Prism's Alt+Shift+P is the only one).
+- **Light and dark.** Every panel follows the device's light or dark setting by default. The header
+  switch picks one and keeps it; turning "Match my device" back on returns to following the device.
+  The choice is saved as `appearance` (`auto`, `light` or `dark`, default `auto`), follows device
+  changes live (a `prefers-color-scheme` listener) and reaches every open tab. Everything a script
+  draws flips, not just the panel: menus, toasts, the block screen and lockdown card, the late-night
+  nudge, the badge menu. Only accents stay the same; accent-colored text uses a darker ink of the
+  accent on light glass so it stays readable.
+- **The glass recipe.** Every frosted surface (panel, menus, cards, toasts) uses the same numbers;
+  neutrals swap between themes and accents don't:
+
+  | | light | dark |
+  |---|---|---|
+  | glass | `rgba(255,255,255,.84)` | `rgba(22,22,28,.8)` |
+  | edge | `rgba(255,255,255,.8)` | `rgba(255,255,255,.12)` |
+  | top highlight (inset) | `#fff` | `rgba(255,255,255,.1)` |
+  | drop shadow | `rgba(0,0,0,.34)` | `rgba(0,0,0,.6)` |
+  | text | `#1d1d1f` | `#f2f2f5` |
+  | secondary text | `rgba(29,29,31,.64)` | `rgba(235,235,245,.62)` |
+
+  Both: `backdrop-filter: blur(28px) saturate(170%)`, plus an accent glow in the top-left corner,
+  `radial-gradient(120% 40% at 0% 0%, <accent at .16–.2>, transparent)`. Glass may be tinted
+  slightly toward the script's accent (Prism, Hourglass, Kaleidoscope's AniList navy) but keeps
+  the same opacity: 84% light, 80% dark. Kaleidoscope keeps AniList's own text colors (part of its
+  skin) and every other number above. Small chips over video (Looking-Glass badges) and
+  full-screen veils are not glass and keep their own lighter blur, without `saturate(170%)`.
+  `tools/check.py` and `tools/audit.py` enforce this (below).
 - `tools/frame_molten.py` and `tools/frame_kaleido.py` record the change that brought the Molten and
   Kaleidoscope panels onto this frame.
 - **Header icon tiles come in two kinds. Check which before changing one.**
@@ -140,7 +168,8 @@ python3 tools/check.py              # release check: everything below, plus the 
 - `tools/audit.py` opens every panel, tab and fold-out picker at laptop, desktop and phone sizes
   (phones in Roboto), once on a plain page and once with common site-wide CSS, and lists text
   spilling out of buttons, things cut off or off screen, sideways scrolling and overlaps. It also
-  flags phone sheets sized in plain `vh`. Fix what it finds before shipping; it should print
+  flags phone sheets sized in plain `vh`. It runs in both themes and also flags glass off the
+  recipe and text fainter than 3:1 against its background. Fix what it finds before shipping; it should print
   "clean" for every script.
 - Panels that live in the page (not a shadow root) inherit the site's CSS: undo text rules like
   `white-space` on the panel itself. Picker grids use equal columns
@@ -157,7 +186,14 @@ python3 tools/check.py              # release check: everything below, plus the 
   bump: the capture tool leaves version numbers out of the images, and the Install buttons
   and version chips on the pages carry the current number. Recapture just the scripts
   whose panels changed (`python3 tools/screens.py <script>`). `screens.py hourglass` also
-  refreshes Hourglass's phone shots; only `phone-nudge.webp` is captured by hand.
+  refreshes Hourglass's phone shots, the late-night nudge included.
+- Every screenshot is taken in both themes: `<name>.webp` (dark) and `<name>-light.webp`. The site
+  has a sun/moon switch in the top bar that follows the device until it's flipped (then remembers
+  the choice, with a "Match my device" link in the footer to go back) and swaps the site's palette
+  and every screenshot. READMEs use `<picture>` so GitHub shows the one matching its own theme.
+- Link previews (`docs/img/<script>/og.png`) show both themes at once: `tools/prismcut.py` cuts the
+  light and dark cards along a diagonal with a seam in the script's accent (a lava-lamp seam for
+  the Molten scripts). The cut is for previews and banners only, never on the site or READMEs.
 - Screenshots use made-up demo data only (`tools/seeds/`). Never use real browsing data.
 - A panel change that only shows up with data (a counter line, a list, a status) needs demo data
   in `tools/seeds/` so the screenshots show it; otherwise the pages never show the new feature.

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.1.2
+// @version      2.2.0
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.1.2';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.0';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -46,7 +46,7 @@
         { id: 'icon', on: true }, { id: 'manifest', on: true }, { id: 'meta', on: true },
         { id: 'favicon', on: true }, { id: 'header', on: false },
     ];
-    const DEFAULTS = { enabled: true, tone: 'exact', log: false, sources: DEFAULT_SOURCES };
+    const DEFAULTS = { enabled: true, tone: 'exact', log: false, sources: DEFAULT_SOURCES, appearance: 'auto' };   // appearance: auto (match the device) | light | dark
     const TONES = {
         exact:  { label: 'Exact',  desc: 'The color exactly as found' },
         dark:   { label: 'Dark',   desc: 'Deepened so the title text stays easy to read' },
@@ -66,6 +66,7 @@
         s.sources = (Array.isArray(s.sources) ? s.sources : []).filter(x => SOURCES[x?.id] && !seen.has(x.id) && seen.add(x.id));
         for (const d of DEFAULT_SOURCES) if (!seen.has(d.id)) s.sources.push({ ...d });
         if (!TONES[s.tone]) s.tone = 'exact';
+        if (!['auto', 'light', 'dark'].includes(s.appearance)) s.appearance = 'auto';
         return s;
     }
     const saveSettings = patch => { S.settings = Object.assign(loadSettings(), patch); set('settings', S.settings); };
@@ -134,6 +135,12 @@
         let [h, s, l] = rgbToHsl(...hexToRgb(hex));
         let rgb = hslToRgb(h, s, l);
         while (contrast(rgb, [255, 255, 255]) < ratio && l > 0) { l -= 0.03; rgb = hslToRgb(h, s, Math.max(l, 0)); }
+        return rgbToHex(...rgb);
+    }
+    function lightenTo(hex, ratio, bg) { // lighten until it reaches `ratio` against a dark background
+        let [h, s, l] = rgbToHsl(...hexToRgb(hex));
+        let rgb = hslToRgb(h, s, l);
+        while (contrast(rgb, bg) < ratio && l < 1) { l += 0.03; rgb = hslToRgb(h, s, Math.min(l, 1)); }
         return rgbToHex(...rgb);
     }
     function toned(hex, tone) {
@@ -605,6 +612,8 @@
         drop: ['m14.5 6.5 3 3', 'M19.4 4.6a2.1 2.1 0 0 0-3 0L13.5 7.5l3 3 2.9-2.9a2.1 2.1 0 0 0 0-3Z', 'M13.5 7.5 5 16v3h3l8.5-8.5'],
         refresh: ['M3 12a9 9 0 0 1 15.5-6.2L21 8', 'M21 3v5h-5', 'M21 12a9 9 0 0 1-15.5 6.2L3 16', 'M3 21v-5h5'],
         check: ['M5 12.5l4.5 4.5L19 7'],
+        sun: ['M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7', 'M12 2.5v2', 'M12 19.5v2', 'M2.5 12h2', 'M19.5 12h2', 'M5.3 5.3l1.4 1.4', 'M17.3 17.3l1.4 1.4', 'M5.3 18.7l1.4-1.4', 'M17.3 6.7l1.4-1.4'],
+        moon: ['M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6Z'],
     };
 
     function h(tagName, attrs, ...kids) {
@@ -626,16 +635,22 @@
 *{box-sizing:border-box;margin:0}
 [hidden]{display:none!important}
 .panel{
-  --text:#1d1d1f;--sub:rgba(29,29,31,.64);--line:rgba(0,0,0,.07);
+  /* light and dark glass: only these neutrals swap; the accent colors stay */
+  --text:#1d1d1f;--sub:rgba(29,29,31,.64);--line:rgba(0,0,0,.07);--ctl:rgba(0,0,0,.055);--ctl-hi:rgba(0,0,0,.1);--sw-off:rgba(0,0,0,.13);
+  --field:rgba(255,255,255,.6);--field-hi:#fff;--edge:rgba(255,255,255,.8);--hl:#fff;--drop:rgba(0,0,0,.34);--ck-edge:rgba(0,0,0,.22);
+  --knob:#fff;--stripe-a:#fff;--stripe-b:#f0f0f2;
   --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
   position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);overflow:auto;overscroll-behavior:contain;
   font:13px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",Inter,system-ui,sans-serif;
   color:var(--text);border-radius:22px;scrollbar-width:none;
   background:radial-gradient(120% 60% at 0% 0%,rgba(var(--a-rgb),var(--glow)),transparent 64%),var(--bg);
   backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);
-  border:1px solid rgba(255,255,255,.8);
-  box-shadow:0 0 0 .5px rgba(var(--a-rgb),.4),0 0 40px -12px rgba(var(--a-rgb),calc(var(--glow)*3)),0 28px 64px -18px rgba(0,0,0,.34),inset 0 1px 0 #fff;
+  border:1px solid var(--edge);
+  box-shadow:0 0 0 .5px rgba(var(--a-rgb),.4),0 0 40px -12px rgba(var(--a-rgb),calc(var(--glow)*3)),0 28px 64px -18px var(--drop),inset 0 1px 0 var(--hl);
   transition:background-color .2s,box-shadow .2s;animation:in .18s cubic-bezier(.2,.8,.2,1)}
+.panel[data-theme=dark]{--text:#f2f2f5;--sub:rgba(235,235,245,.62);--line:rgba(255,255,255,.09);--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);
+  --sw-off:rgba(255,255,255,.2);--field:rgba(255,255,255,.06);--field-hi:rgba(255,255,255,.12);--edge:rgba(255,255,255,.12);--hl:rgba(255,255,255,.1);
+  --drop:rgba(0,0,0,.6);--ck-edge:rgba(255,255,255,.3);--knob:#55555f;--stripe-a:#2c2c33;--stripe-b:#222228;color-scheme:dark}
 .panel::-webkit-scrollbar{display:none}
 @keyframes in{from{opacity:0;transform:translateY(-6px) scale(.98)}}
 @media (prefers-reduced-motion:reduce){.panel,.panel *{animation:none!important;transition:none!important}}
@@ -653,11 +668,18 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
 .title{font-weight:650;font-size:15.5px;letter-spacing:-.015em}
 .sub{font-size:11.5px;color:var(--sub)}
-.x{margin-left:auto;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.06);display:grid;place-items:center;color:var(--sub)}
-.x:hover{background:rgba(0,0,0,.1);color:var(--text)}
+.x{margin-left:auto;width:26px;height:26px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub)}
+.x:hover{background:var(--ctl-hi);color:var(--text)}
+/* sun/moon switch: light or dark glass (the device's choice until it's flipped) */
+.mode{position:relative;flex:none;margin-left:auto;width:48px;height:26px;border:0;border-radius:13px;background:var(--ctl);padding:0 6px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
+.mode .mi{position:relative;z-index:1;display:grid;transition:color .18s}
+.mode .knob{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
+.panel[data-theme=dark] .mode .knob{transform:translateX(22px)}
+.panel:not([data-theme=dark]) .mode .sun,.panel[data-theme=dark] .mode .moon{color:var(--text)}
+.mode+.x{margin-left:0}
 .siteline{display:flex;align-items:center;gap:8px;padding:6px 16px 12px;font:12px var(--mono);color:var(--sub)}
 .siteline b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pill{font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;background:rgba(0,0,0,.05);color:var(--sub);white-space:nowrap}
+.pill{font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;background:var(--ctl);color:var(--sub);white-space:nowrap}
 .card{margin:0 12px 6px;padding:12px 14px;border-radius:14px;background:rgba(var(--a-rgb),.09);border:1px solid rgba(var(--a-rgb),.22)}
 .sec{padding:13px 16px;border-top:1px solid var(--line)}
 .label{display:flex;align-items:center;gap:7px;font:600 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:10px}
@@ -667,24 +689,24 @@ button{font:inherit;color:inherit;cursor:pointer}
 .row+.row{margin-top:8px}
 .t{font-weight:500}
 .d{font-size:11.5px;color:var(--sub);margin-top:1px}
-.sw{flex:none;position:relative;width:38px;height:23px;border:0;border-radius:12px;background:rgba(0,0,0,.13);transition:background .18s}
+.sw{flex:none;position:relative;width:38px;height:23px;border:0;border-radius:12px;background:var(--sw-off);transition:background .18s}
 .sw::after{content:"";position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
 .sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px rgba(var(--a-rgb),.7)}
 .sw[aria-checked=true]::after{transform:translateX(15px)}
-.seg{display:flex;padding:2px;border-radius:10px;background:rgba(0,0,0,.055)}
+.seg{display:flex;padding:2px;border-radius:10px;background:var(--ctl)}
 .seg button{flex:1;border:0;background:none;padding:6px 0;border-radius:8px;font-size:12px;font-weight:500;transition:background .15s,color .15s}
 .seg button.on{background:var(--fill);color:var(--on);box-shadow:0 1px 4px rgba(0,0,0,.14),0 0 14px -4px rgba(var(--a-rgb),.8)}
 .hint{font-size:11.5px;color:var(--sub);margin-top:8px}
 .list{display:flex;flex-direction:column;gap:6px}
-.src{display:flex;align-items:center;gap:9px;padding:7px 10px 7px 6px;border-radius:11px;background:rgba(255,255,255,.55);border:1px solid var(--line);user-select:none;transition:box-shadow .15s,border-color .15s,opacity .15s}
+.src{display:flex;align-items:center;gap:9px;padding:7px 10px 7px 6px;border-radius:11px;background:var(--field);border:1px solid var(--line);user-select:none;transition:box-shadow .15s,border-color .15s,opacity .15s}
 .src.used{border-color:rgba(var(--a-rgb),.6);box-shadow:0 0 0 3px rgba(var(--a-rgb),.13),0 0 18px -6px rgba(var(--a-rgb),.8)}
 .src.failed .nm,.src.skipped .nm{opacity:.45}
-.src.drag{background:#fff;box-shadow:0 12px 26px -10px rgba(0,0,0,.35);transform:scale(1.015)}
+.src.drag{background:var(--bg-solid);box-shadow:0 12px 26px -10px rgba(0,0,0,.35);transform:scale(1.015)}
 .src.fb{border-style:dashed;background:transparent;padding-left:10px}
 .grip{border:0;background:none;color:var(--sub);padding:2px;border-radius:6px;cursor:grab;touch-action:none;display:grid}
 .grip:active{cursor:grabbing}
 .grip:focus-visible,.ck:focus-visible,.sw:focus-visible,.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
-.ck{flex:none;width:17px;height:17px;border-radius:5px;border:1.5px solid rgba(0,0,0,.22);background:#fff;display:grid;place-items:center;padding:0;color:var(--on)}
+.ck{flex:none;width:17px;height:17px;border-radius:5px;border:1.5px solid var(--ck-edge);background:var(--field-hi);display:grid;place-items:center;padding:0;color:var(--on)}
 .ck svg{opacity:0}
 .ck.on{background:var(--fill);border-color:var(--fill)}
 .ck.on svg{opacity:1}
@@ -692,10 +714,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .nm small{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chip{margin-left:auto;flex:none;font:600 9px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;border-radius:6px}
 .chip.used{background:var(--fill);color:var(--on)}
-.chip.failed,.chip.skipped{background:rgba(0,0,0,.05);color:var(--sub)}
+.chip.failed,.chip.skipped{background:var(--ctl);color:var(--sub)}
 code,.mono{font:12px var(--mono)}
-.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.65);font-size:12px;font-weight:500;transition:background .15s}
-.btn:hover{background:#fff}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--field);font-size:12px;font-weight:500;transition:background .15s}
+.btn:hover{background:var(--field-hi)}
 .btn.primary{background:var(--fill);color:var(--on);border-color:transparent;box-shadow:0 4px 14px -6px rgba(var(--a-rgb),1)}
 .btn.primary:hover{filter:brightness(1.06)}
 .btn.sm{height:26px;padding:0 9px;font-size:11.5px}
@@ -703,9 +725,9 @@ code,.mono{font:12px var(--mono)}
 .link:hover{text-decoration:underline}
 .pick{display:flex;align-items:center;gap:10px}
 .swatch{flex:none;width:48px;height:48px;border-radius:14px;background:var(--a);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.3),0 8px 18px -8px rgba(var(--a-rgb),1)}
-.swatch.none{background:repeating-linear-gradient(135deg,#fff 0 6px,#f0f0f2 6px 12px)}
+.swatch.none{background:repeating-linear-gradient(135deg,var(--stripe-a) 0 6px,var(--stripe-b) 6px 12px)}
 .hexcol{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
-.hex{display:flex;align-items:center;height:32px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.75);transition:border-color .15s,box-shadow .15s}
+.hex{display:flex;align-items:center;height:32px;padding:0 10px;border-radius:10px;border:1px solid var(--line);background:var(--field);transition:border-color .15s,box-shadow .15s}
 .hex:focus-within{border-color:var(--fill);box-shadow:0 0 0 3px rgba(var(--a-rgb),.18)}
 .hex.bad{border-color:#ff3b30;box-shadow:0 0 0 3px rgba(255,59,48,.15)}
 .hex span{font:13px var(--mono);color:var(--sub)}
@@ -716,18 +738,18 @@ code,.mono{font:12px var(--mono)}
 .foot{position:sticky;bottom:0;border-top:1px solid var(--line);background:var(--bg-solid);border-radius:0 0 20px 20px}
 .status{display:flex;align-items:center;gap:10px;padding:11px 14px 6px}
 .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--a);box-shadow:0 0 0 3px rgba(var(--a-rgb),.18),0 0 10px rgba(var(--a-rgb),.9)}
-.dot.none{background:#c7c7cc;box-shadow:0 0 0 3px rgba(0,0,0,.05)}
+.dot.none{background:var(--sub);box-shadow:0 0 0 3px var(--ctl)}
 .dot.pulse{animation:pulse .6s ease-out}
 @keyframes pulse{0%{transform:scale(1.7)}100%{transform:scale(1)}}
 .stxt{flex:1;font-size:11.5px;line-height:1.4;color:var(--sub);min-width:0}
 .stxt b{color:var(--text);font-weight:600}
 .stxt code{font-size:11px;color:var(--text)}
 .ibtn{flex:none;width:24px;height:24px;border:0;border-radius:7px;background:none;color:var(--sub);display:grid;place-items:center}
-.ibtn:hover{background:rgba(0,0,0,.06);color:var(--text)}
+.ibtn:hover{background:var(--ctl);color:var(--text)}
 .ibtn.spin svg{animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .keys{padding:0 14px 12px 34px;font-size:10.5px;line-height:1.7;color:var(--sub)}
-kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,0,.06)}
+kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:var(--ctl)}
 `;
 
     const ui = {
@@ -784,6 +806,9 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
             panel.append(
                 h('div', { class: 'head' }, E.logo,
                     h('div', null, h('div', { class: 'title', text: 'Prism' }), h('div', { class: 'sub', text: 'Title bar color for every app' })),
+                    E.mode = h('button', { class: 'mode', role: 'switch', 'aria-label': 'Dark mode', title: 'Light or dark',
+                        onclick: () => { saveSettings({ appearance: this.dark() ? 'light' : 'dark' }); this.refresh(); } },
+                        h('span', { class: 'knob' }), h('span', { class: 'mi sun' }, icon(ICONS.sun, 12)), h('span', { class: 'mi moon' }, icon(ICONS.moon, 12))),
                     h('button', { class: 'x', 'aria-label': 'Close', onclick: () => this.close() }, icon(ICONS.close, 13))),
                 h('div', { class: 'siteline' }, h('b', { text: HOST || location.href }), E.kind = h('span', { class: 'pill' })),
             );
@@ -834,6 +859,12 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
             E.hexIn.addEventListener('blur', () => { E.hexBox.classList.remove('bad'); this.refresh(); });
             E.hexIn.addEventListener('keydown', e => { if (e.key === 'Enter') E.hexIn.blur(); });
 
+            // APPEARANCE
+            E.auto2 = toggle(true, () => { saveSettings({ appearance: S.settings.appearance === 'auto' ? (this.dark() ? 'dark' : 'light') : 'auto' }); this.refresh(); }, 'Match my device');
+            panel.append(h('div', { class: 'sec' },
+                h('div', { class: 'label', text: 'Appearance' }),
+                h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Match my device' }), h('div', { class: 'd', text: 'Light or dark follows your device until you flip the switch up top' })), E.auto2)));
+
             // TROUBLESHOOTING
             E.log = toggle(false, () => { saveSettings({ log: !S.settings.log }); log('console logging on', S); this.refresh(); }, 'Log to the console');
             panel.append(h('div', { class: 'sec' },
@@ -868,25 +899,32 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
             setTimeout(() => { this.dropperOpen = false; }, 0);
         },
 
+        // light or dark glass: the saved choice, or the device's while it's on auto
+        dark() { const ap = S.settings.appearance; return ap === 'dark' || (ap === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches); },
+
         theme() {
             const off = ['disabled', 'off'].includes(S.mode);
             const a = S.mode === 'yielded' ? S.yieldColor : off ? null : S.applied;
             const p = this.root.querySelector('.panel'), st = p.style;
+            const dark = this.dark(), base = dark ? [22, 22, 28] : [255, 255, 255];
+            if (dark) p.setAttribute('data-theme', 'dark'); else p.removeAttribute('data-theme');
             if (!a) {
                 st.setProperty('--a', '#8e8e93'); st.setProperty('--a-rgb', '142,142,147'); st.setProperty('--glow', '0');
-                st.setProperty('--bg', 'rgba(255,255,255,.82)'); st.setProperty('--bg-solid', 'rgb(250,250,252)');
-                st.setProperty('--fill', '#8e8e93'); st.setProperty('--fill-hi', '#b8b8bd'); st.setProperty('--ink', '#6e6e73'); st.setProperty('--on', '#fff');
+                st.setProperty('--bg', dark ? 'rgba(22,22,28,.8)' : 'rgba(255,255,255,.84)'); st.setProperty('--bg-solid', dark ? 'rgb(30,30,36)' : 'rgb(250,250,252)');
+                st.setProperty('--fill', '#8e8e93'); st.setProperty('--fill-hi', '#b8b8bd'); st.setProperty('--ink', dark ? '#aeaeb2' : '#6e6e73'); st.setProperty('--on', '#fff');
                 return;
             }
             const rgb = hexToRgb(a);
-            const mix = (t, alpha) => `rgba(${rgb.map(v => Math.round(255 + (v - 255) * t)).join(',')},${alpha})`;
-            const fill = contrast(rgb, [255, 255, 255]) < 1.6 ? darkenTo(a, 1.6) : a;
+            // the glass is the base tinted a little toward the color
+            const tint = t => rgb.map((v, i) => Math.round(base[i] + (v - base[i]) * t));
+            const mix = (t, alpha) => `rgba(${tint(t).join(',')},${alpha})`;
+            const fill = dark ? (contrast(rgb, base) < 1.6 ? lightenTo(a, 1.6, base) : a) : (contrast(rgb, [255, 255, 255]) < 1.6 ? darkenTo(a, 1.6) : a);
             const [hh, ss, ll] = rgbToHsl(...hexToRgb(fill));
             st.setProperty('--a', a); st.setProperty('--a-rgb', rgb.join(','));
-            st.setProperty('--glow', '.2');
-            st.setProperty('--bg', mix(0.1, 0.8)); st.setProperty('--bg-solid', mix(0.07, 1));
+            st.setProperty('--glow', dark ? '.26' : '.2');
+            st.setProperty('--bg', mix(dark ? 0.12 : 0.1, dark ? 0.8 : 0.84)); st.setProperty('--bg-solid', mix(dark ? 0.09 : 0.07, 1));
             st.setProperty('--fill', fill); st.setProperty('--fill-hi', rgbToHex(...hslToRgb(hh, ss, Math.min(ll + 0.14, 0.92))));
-            st.setProperty('--ink', darkenTo(a, 4.2));
+            st.setProperty('--ink', dark ? lightenTo(a, 4.5, tint(0.09)) : darkenTo(a, 4.2));
             st.setProperty('--on', lum(hexToRgb(fill)) > 0.42 ? '#1d1d1f' : '#fff');
         },
 
@@ -894,6 +932,8 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
             if (!this.root) return;
             const E = this.el, set_ = S.settings;
             this.theme();
+            E.mode.setAttribute('aria-checked', String(this.dark()));
+            E.auto2.setAttribute('aria-checked', String(set_.appearance === 'auto'));
 
             const app = isApp();
             E.kind.textContent = app ? 'Installed app' : 'Browser tab';
@@ -1056,7 +1096,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:rgba(0,0,
     // 3. Keep up with single-page navigation, dark mode flips, and settings changed in other tabs.
     addEventListener('popstate', checkNav);
     try { ['navigatesuccess', 'currententrychange'].forEach(ev => window.navigation?.addEventListener(ev, checkNav)); } catch {}
-    matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => resolve());
+    matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { resolve(); ui.refresh(); });
     if (typeof GM_addValueChangeListener === 'function') {
         GM_addValueChangeListener('settings', (k, o, n, remote) => { if (remote) resolve(); });
         GM_addValueChangeListener('sites', (k, o, n, remote) => {

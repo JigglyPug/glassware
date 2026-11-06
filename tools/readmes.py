@@ -141,6 +141,15 @@ for _p, _s in S.items():
     _s['platform'] = PLATFORM[RUNS[_p]]
     _s['kicker'] = dict(GROUPS)[RUNS[_p]] + ' userscript'
 
+
+# Screenshots on GitHub follow the visitor's GitHub theme: the dark capture, or its -light twin.
+W = lambda n: f'width="{n}"'
+W200, W380 = W(200), W(380)
+def pic(p, src, attrs, root=False):
+    light = src[:-5] + '-light.webp'
+    if not os.path.exists(f'{R}/{light}' if root else f'{R}/{p}/{light}'): return f'<img src="{src}" {attrs}>'
+    return f'<picture><source media="(prefers-color-scheme: light)" srcset="{light}"><img src="{src}" {attrs}></picture>'
+
 ACCENT = {'desktop/prism':'3b6fd6','desktop/hourglass':'5b5bd6','desktop/looking-glass':'3b6fd6','desktop/molten-tools':'ff8a3d',
           'desktop/molten-for-reddit':'ff8a3d','desktop/kaleidoscope':'3db4f2','mobile/kaleidoscope-mobile':'3db4f2','mobile/molten-for-reddit-mobile':'ff8a3d'}
 HERO = {'desktop/molten-tools':'general','desktop/molten-for-reddit':'general','mobile/molten-for-reddit-mobile':'lava'}
@@ -159,7 +168,7 @@ for p, s in S.items():
     md += f'[![Install]({badge("Install", "v" + v, c)})]({url}) [![Website]({badge("Website", "product page", "222")})]({SITE}{p}/)\n\n'
     md += f'![Runs on]({badge("runs on", s["sites"], "555", "flat-square")}) '
     md += f'![Platform]({badge("platform", s["platform"], "555", "flat-square")})\n\n'
-    md += f'<img src="images/{hero}.webp" width="{300 if phone else 620}">\n\n</div>\n\n'
+    md += pic(p, f'images/{hero}.webp', f'width="{300 if phone else 620}"') + '\n\n</div>\n\n'
     md += s['intro'] + '\n\n'
     if s.get('getting_started'): md += '## Getting started\n\n' + s['getting_started'] + '\n\n'
     md += '## Features\n\n' + '\n'.join(f'- **{t}**: {b}' for t, b in F[p]) + '\n'
@@ -169,18 +178,18 @@ for p, s in S.items():
         per = 4 if phone else 2; w = 200 if phone else 400
         md += '<table>\n'
         for i in range(0, len(rest), per):
-            md += '<tr>' + ''.join(f'<td align="center" valign="top"><img src="images/{f}.webp" width="{w}"><br><sub><b>{cap}</b></sub></td>' for f, cap in rest[i:i+per]) + '</tr>\n'
+            md += '<tr>' + ''.join(f'<td align="center" valign="top">{pic(p, f"images/{f}.webp", W(w))}<br><sub><b>{cap}</b></sub></td>' for f, cap in rest[i:i+per]) + '</tr>\n'
         md += '</table>\n'
     if s.get('phone'):
         txt, shots = s['phone']
-        md += '\n## On your phone\n\n' + txt + '\n\n<table>\n<tr>' + ''.join(f'<td align="center" valign="top"><img src="images/{f}.webp" width="200"><br><sub><b>{cap}</b></sub></td>' for f, cap in shots) + '</tr>\n</table>\n'
+        md += '\n## On your phone\n\n' + txt + '\n\n<table>\n<tr>' + ''.join(f'<td align="center" valign="top">{pic(p, f"images/{f}.webp", W200)}<br><sub><b>{cap}</b></sub></td>' for f, cap in shots) + '</tr>\n</table>\n'
     open(f'{R}/{p}/README.md', 'w', encoding='utf-8').write(md)
 
 def card(p):
     s = S[p]; slug = p.split('/')[1]; url = f'{RAW}/{p}/{slug}.user.js'; hero = HERO.get(p, s['shots'][0][0])
     pair = PAIR.get(p)
     also = (f'<br><sub>{"Phone version" if RUNS[pair] == "phone" else "Desktop version"}: <a href="{pair}">{S[pair]["name"]}</a></sub>') if pair else ''
-    return (f'<td align="center" valign="top" width="50%"><a href="{p}"><img src="{p}/images/card.webp" width="380"></a><br>'
+    return (f'<td align="center" valign="top" width="50%"><a href="{p}">{pic(p, f"{p}/images/card.webp", W380, root=True)}</a><br>'
             f'<h3><img src="assets/icons/{slug}.png" alt="" width="44" align="center"> <a href="{p}">{s["name"]}</a></h3>{s["tag"]}<br><sub>{s["sites"]}</sub>{also}<br><br>'
             f'<a href="{url}"><img src="{badge("Install", "v" + ver(f"{p}/{slug}.user.js"), ACCENT[p])}"></a></td>')
 

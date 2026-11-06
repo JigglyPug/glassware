@@ -13,6 +13,9 @@ It checks, in order:
              @version, and a changed script has a higher @version than the live one
   frame      panel rules from CLAUDE.md: menu wording, on/off wording, no dropdowns, Esc closes,
              footer, Troubleshooting (when the script has logging), static vs live icon tiles
+  theme      light and dark from CLAUDE.md: the sun/moon switch, Appearance and "Match my device",
+             appearance defaults to auto and follows the device live, the glass recipe numbers, and
+             a -light twin for every screenshot
   privacy    no personal info, Greasy Fork links, local paths or chat links in scripts, pages
              or tools
   pages      every page and README shows each script's current version; icons are in place;
@@ -21,7 +24,8 @@ It checks, in order:
   commits    commits not yet pushed are by JigglyPug and carry no chat or session links
   generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
-  glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes (changed scripts)
+  glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
+             recipe and no faint text, in both themes (changed scripts)
   screenshots the committed panel screenshots still match the panels (changed scripts)
 """
 import glob, os, re, subprocess, sys
@@ -45,7 +49,7 @@ paths = sorted(glob.glob(f'{R}/*/*/*.user.js'))
 S = {p: open(p, encoding='utf-8').read() for p in paths}
 def info(p): plat, slug = p.split('/')[-3:-1]; return plat, slug
 def hdr(src, k):
-    m = re.search(r'//\s*@' + k + r'\s+(.+)', src); return m.group(1).strip() if m else None
+    m = re.search(r'(?m)^//[ \t]*@' + k + r'(?:[ \t]+(.*?))?[ \t]*$', src); return (m.group(1) or '') if m else None   # one line only: an empty @namespace is valid
 
 import carry   # shares the GitHub lookups, which fail closed
 try: LIVE_SHA = carry.fetch_live()
@@ -107,6 +111,30 @@ for f in ['CLAUDE.md', 'tools/readmes.py', 'tools/features.py', 'tools/site_them
     for i, line in enumerate(open(f'{R}/{f}', encoding='utf-8'), 1):
         m = re.search(r'\b\d+\.\d+\.\d+\b', re.sub(r'https?://\S+', '', line)); n += 1
         ok(not m or HISTORY.search(line), f'{f}:{i} names version {m.group(0) if m else ""}; pages take versions from @version, so write it without one' if m else '')
+done(n)
+
+# ------------------------------------------------------------------ theme
+# The glass recipe and light/dark rules in CLAUDE.md. tools/audit.py checks the same recipe on the
+# rendered panels (opacity and blur of every frosted surface, faint text) in both themes.
+head('theme'); n = 0
+RECIPE = [('rgba(255,255,255,.8)', 'light edge'), ('rgba(255,255,255,.12)', 'dark edge'), ('rgba(255,255,255,.1)', 'dark top highlight'),
+          ('rgba(0,0,0,.34)', 'light drop shadow'), ('rgba(0,0,0,.6)', 'dark drop shadow')]
+TEXT = [('#1d1d1f', 'light text'), ('#f2f2f5', 'dark text'), ('rgba(29,29,31,.64)', 'light secondary text'), ('rgba(235,235,245,.62)', 'dark secondary text')]
+for p, src in S.items():
+    plat, slug = info(p); n += 7
+    ok("'Dark mode'" in src, f'{slug}: header needs the sun/moon switch (aria-label "Dark mode")')
+    ok("'Appearance'" in src and 'Match my device' in src, f'{slug}: needs an "Appearance" section with a "Match my device" toggle')
+    ok(re.search(r"appearance\W{1,6}'auto'|'appearance',\s*'auto'", src), f"{slug}: appearance should default to 'auto' (follow the device)")
+    ok('prefers-color-scheme: dark' in src and re.search(r"addEventListener(\?\.)?\(\s*'change'", src), f'{slug}: should follow the device live (a prefers-color-scheme change listener)')
+    bad = [m.group(0) for m in re.finditer(r'blur\([^)]*\)\s*saturate\(170%\)', src) if not m.group(0).startswith('blur(28px)')]
+    ok(not bad, f'{slug}: glass blur should be blur(28px) saturate(170%), found {bad[:1]}')
+    ok(re.search(r'rgba\((2[4-5]\d),\s*(2[4-5]\d),\s*(2[4-5]\d),\s*\.84\)', src), f'{slug}: light glass should be rgba(255,255,255,.84) (or tinted, at .84)')
+    ok(re.search(r'rgba\(([0-4]?\d),\s*([0-4]?\d),\s*([0-4]?\d),\s*\.8\)', src), f'{slug}: dark glass should be rgba(22,22,28,.8) (or tinted, at .8)')
+    for tok, what in RECIPE + ([] if slug.startswith('kaleidoscope') else TEXT):
+        n += 1; ok(tok in src, f'{slug}: missing the recipe\'s {what} {tok}')
+    for img in glob.glob(f'{R}/{plat}/{slug}/images/*.webp'):
+        if img.endswith('-light.webp'): continue
+        n += 1; ok(os.path.exists(img[:-5] + '-light.webp'), f'{slug}: {os.path.basename(img)} has no light twin (python3 tools/screens.py {slug})')
 done(n)
 
 # ------------------------------------------------------------------ privacy

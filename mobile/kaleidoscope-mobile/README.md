@@ -4,11 +4,11 @@
 
 <img src="images/banner.svg" alt="Kaleidoscope Mobile: Kaleidoscope, made for your phone." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.2.5-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/kaleidoscope-mobile/)
+[![Install](https://img.shields.io/badge/Install-v1.3.0-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/kaleidoscope-mobile/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Phone-555?style=flat-square)
 
-<img src="images/main.webp" width="300">
+<picture><source media="(prefers-color-scheme: light)" srcset="images/main-light.webp"><img src="images/main.webp" width="300"></picture>
 
 </div>
 
@@ -26,5 +26,5 @@ This is the phone version of Kaleidoscope, built for Edge on Android. It uses th
 ## A closer look
 
 <table>
-<tr><td align="center" valign="top"><img src="images/sequels.webp" width="200"><br><sub><b>Sequels</b></sub></td><td align="center" valign="top"><img src="images/settings.webp" width="200"><br><sub><b>Settings</b></sub></td></tr>
+<tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/sequels-light.webp"><img src="images/sequels.webp" width="200"></picture><br><sub><b>Sequels</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/settings-light.webp"><img src="images/settings.webp" width="200"></picture><br><sub><b>Settings</b></sub></td></tr>
 </table>

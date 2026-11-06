@@ -6,7 +6,7 @@
 Each panel is opened in a stubbed page by shot.js, captured at full height, cropped to
 the panel, saved as WebP in <platform>/<script>/images/, and the landing-page card is
 cut from the top of the lead image. Hourglass also gets its phone shots (dashboard,
-schedule, block screen); only phone-nudge.webp is still captured by hand.
+schedule, block screen, late-night nudge).
 Run tools/pages.py afterwards to copy the images into the site.
 """
 import os, subprocess, sys, tempfile
@@ -35,33 +35,47 @@ def webp(src, dst):
     if im.width > 1400: im = im.resize((1400, round(im.height * 1400 / im.width)), Image.LANCZOS)
     im.save(dst, 'WEBP', quality=90, method=6)
 
+# Every screenshot is taken twice: dark (<name>.webp) and light (<name>-light.webp). The panels follow
+# the device's light or dark setting by default, so the capture just sets the browser's.
+THEMES = (('dark', ''), ('light', '-light'))
+
+NUDGE = ("(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));__clickTab('Settings');await w(600);"
+         "const b=__all().find(e=>e.tagName==='BUTTON'&&e.textContent.trim()==='Preview');b.scrollIntoView();b.click();await w(300);"
+         "const x=__all().find(e=>e.tagName==='BUTTON'&&/^close/i.test(e.getAttribute('aria-label')||''));x&&x.click();})()")
+
 def hourglass_phone(imgs=None):
-    tmp = tempfile.mkdtemp(); js = f'{R}/desktop/hourglass/hourglass.user.js'; imgs = imgs or f'{R}/desktop/hourglass/images'
+    js = f'{R}/desktop/hourglass/hourglass.user.js'; imgs = imgs or f'{R}/desktop/hourglass/images'
     seed = ['--seed', f'{HERE}/seeds/hourglass.json']
-    subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop',
-                    '--vh', '2600', '--clipsel', '.frame.m .panel', '--clock', CLOCK, '--tabs', 'Schedule'] + seed, check=True, capture_output=True)
-    # the block screen: a weekday morning, inside the demo lockdown
-    subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/block.png', '--cmd', 'none', '--mobile',
-                    '--clock', '2026-11-03T11:48:00-05:00'] + seed, check=True, capture_output=True)
-    webp(f'{tmp}/phone.png', f'{imgs}/phone-dashboard.webp'); webp(f'{tmp}/phone-schedule.png', f'{imgs}/phone-schedule.webp')
-    webp(f'{tmp}/block.png', f'{imgs}/phone-block.webp')
+    for theme, sfx in THEMES:
+        tmp = tempfile.mkdtemp()
+        subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop', '--theme', theme,
+                        '--vh', '2600', '--clipsel', '.frame.m .panel', '--clock', CLOCK, '--tabs', 'Schedule'] + seed, check=True, capture_output=True)
+        # the block screen: a weekday morning, inside the demo lockdown
+        subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/block.png', '--cmd', 'none', '--mobile', '--theme', theme,
+                        '--clock', '2026-11-03T11:48:00-05:00'] + seed, check=True, capture_output=True)
+        webp(f'{tmp}/phone.png', f'{imgs}/phone-dashboard{sfx}.webp'); webp(f'{tmp}/phone-schedule.png', f'{imgs}/phone-schedule{sfx}.webp')
+        # the late-night nudge, from the Preview button in Settings, at 11:40 PM
+        subprocess.run(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/nudge.png', '--cmd', 'Open', '--mobile', '--theme', theme,
+                        '--clock', '2026-11-03T23:40:00-05:00', '--eval', NUDGE] + seed, check=True, capture_output=True)
+        webp(f'{tmp}/block.png', f'{imgs}/phone-block{sfx}.webp'); webp(f'{tmp}/nudge.png', f'{imgs}/phone-nudge{sfx}.webp')
     print('captured desktop/hourglass phone shots')
 
 def run(p, imgs=None):
     """Capture one script's panels into its images folder (or into imgs, to compare without touching it)."""
     url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]; mobile = '--mobile' in extra
-    tmp = tempfile.mkdtemp(); out = f'{tmp}/{slug}.png'
-    args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, out, '--cmd', cmd, '--crop', '--clock', CLOCK,
-            '--vh', '2600' if mobile else '3000'] + extra + (['--tabs', ','.join(tabs)] if tabs else [])
-    subprocess.run(args, check=True, capture_output=True)
     imgs = imgs or f'{R}/{p}/images'; os.makedirs(imgs, exist_ok=True)
     lead = FIRST.get(p, 'main')
-    webp(out, f'{imgs}/{lead}.webp')
-    for t in tabs:
-        webp(f'{tmp}/{slug}-{t.lower()}.png', f'{imgs}/{t.lower()}.webp')
-    im = Image.open(f'{imgs}/{lead}.webp').convert('RGB'); w, h = im.size; ch = min(h, int(w * 0.8))
-    im.crop((0, 0, w, ch)).resize((800, round(ch * 800 / w)), Image.LANCZOS).save(f'{imgs}/card.webp', 'WEBP', quality=90, method=6)
-    print('captured', p, [lead] + [t.lower() for t in tabs])
+    for theme, sfx in THEMES:
+        tmp = tempfile.mkdtemp(); out = f'{tmp}/{slug}.png'
+        args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, out, '--cmd', cmd, '--crop', '--clock', CLOCK, '--theme', theme,
+                '--vh', '2600' if mobile else '3000'] + extra + (['--tabs', ','.join(tabs)] if tabs else [])
+        subprocess.run(args, check=True, capture_output=True)
+        webp(out, f'{imgs}/{lead}{sfx}.webp')
+        for t in tabs:
+            webp(f'{tmp}/{slug}-{t.lower()}.png', f'{imgs}/{t.lower()}{sfx}.webp')
+        im = Image.open(f'{imgs}/{lead}{sfx}.webp').convert('RGB'); w, h = im.size; ch = min(h, int(w * 0.8))
+        im.crop((0, 0, w, ch)).resize((800, round(ch * 800 / w)), Image.LANCZOS).save(f'{imgs}/card{sfx}.webp', 'WEBP', quality=90, method=6)
+    print('captured', p, [lead] + [t.lower() for t in tabs], 'in dark and light')
 
 if __name__ == '__main__':
     want = sys.argv[1:]

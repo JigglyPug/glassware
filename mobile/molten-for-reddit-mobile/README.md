@@ -4,11 +4,11 @@
 
 <img src="images/banner.svg" alt="Molten for Reddit Mobile: Molten glass for Reddit, pocket size." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.3.4-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/molten-for-reddit-mobile/)
+[![Install](https://img.shields.io/badge/Install-v1.4.0-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/molten-for-reddit-mobile/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Phone-555?style=flat-square)
 
-<img src="images/lava.webp" width="300">
+<picture><source media="(prefers-color-scheme: light)" srcset="images/lava-light.webp"><img src="images/lava.webp" width="300"></picture>
 
 </div>
 
@@ -26,5 +26,5 @@ This is the phone version of Molten for Reddit: a gentle lava background from th
 ## A closer look
 
 <table>
-<tr><td align="center" valign="top"><img src="images/general.webp" width="200"><br><sub><b>General</b></sub></td><td align="center" valign="top"><img src="images/video.webp" width="200"><br><sub><b>Video</b></sub></td><td align="center" valign="top"><img src="images/reddit.webp" width="200"><br><sub><b>Reddit</b></sub></td><td align="center" valign="top"><img src="images/search.webp" width="200"><br><sub><b>Search</b></sub></td></tr>
+<tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/general-light.webp"><img src="images/general.webp" width="200"></picture><br><sub><b>General</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/video-light.webp"><img src="images/video.webp" width="200"></picture><br><sub><b>Video</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/reddit-light.webp"><img src="images/reddit.webp" width="200"></picture><br><sub><b>Reddit</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/search-light.webp"><img src="images/search.webp" width="200"></picture><br><sub><b>Search</b></sub></td></tr>
 </table>

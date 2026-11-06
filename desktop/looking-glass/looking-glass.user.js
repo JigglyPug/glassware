@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.1.5
+// @version      1.2.0
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,13 +31,14 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.1.5';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.0';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
     const DEFAULTS = {
         on: true, corner: 'tr', size: 'm', idle: 90, which: 'all', show: 'always', minSize: 160, cover: true,
         active: false, quality: 'best', noDirect: 'post', deep: true, hold: true, recent: true,
+        appearance: 'auto',   // auto (match the device) | light | dark
     };
     const SIZES = { s: 26, m: 32, l: 40 };
     const INSET = 10;
@@ -67,6 +68,7 @@
     const S = {};
     function load() {
         S.cfg = Object.assign({}, DEFAULTS, get('settings', {}));
+        if (!['auto', 'light', 'dark'].includes(S.cfg.appearance)) S.cfg.appearance = 'auto';
         S.sites = get('sites', {});
         S.recent = get('recent', []);
     }
@@ -587,6 +589,17 @@
             on: L > .55 ? '#1d1d1f' : '#fff',
         };
     }
+    // light or dark glass: the saved choice, or the device's while it's on auto
+    const isDark = () => S.cfg.appearance === 'dark' || (S.cfg.appearance === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    // On dark glass, very dark site colors (X, Threads) are lifted so switches and text stay visible.
+    function forTheme(T) {
+        if (!isDark()) return T;
+        const c = rgbOf(T.hex), L = lum(c);
+        const fill = L < .04 ? toHex(...mix(c, [255, 255, 255], .7)) : T.fill;
+        const fl = lum(rgbOf(fill));
+        return Object.assign({}, T, { fill, bg: T.bg === T.hex ? fill : T.bg,
+            ink: toHex(...mix(c, [255, 255, 255], L < .1 ? .7 : L < .3 ? .45 : .2)), on: fl > .55 ? '#1d1d1f' : '#fff' });
+    }
     let COLOR = { name: 'Default', ...themeOf(FALLBACK) };
     function setColor(hex, fill, name) {
         COLOR = Object.assign(themeOf(hex, fill), { name });
@@ -703,6 +716,8 @@
         mirror: ['M12 2.5c3.3 0 6 3 6 6.8s-2.7 6.7-6 6.7-6-3-6-6.7 2.7-6.8 6-6.8Z', 'M12 16v5.5', 'M9.5 21.5h5', 'M9.3 7.2c.5-1.2 1.5-2 2.7-2.2'],
         arrow: ['M7 17 17 7', 'M8.5 7H17v8.5'],
         close: ['M6 6l12 12', 'M18 6 6 18'],
+        sun: ['M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7', 'M12 2.5v2', 'M12 19.5v2', 'M2.5 12h2', 'M19.5 12h2', 'M5.3 5.3l1.4 1.4', 'M17.3 17.3l1.4 1.4', 'M5.3 18.7l1.4-1.4', 'M17.3 6.7l1.4-1.4'],
+        moon: ['M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6Z'],
         check: ['M5 12.5l4.5 4.5L19 7'],
         copy: ['M9 9h11v11H9z', 'M5 15H4V4h11v1'],
         link: ['M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4l-1 1', 'M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1-1'],
@@ -758,13 +773,20 @@
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
 button:disabled{cursor:not-allowed}
-.vars{--text:#1d1d1f;--sub:rgba(29,29,31,.66);--line:rgba(0,0,0,.07);--mono:${MONO};
+.vars{--text:#1d1d1f;--sub:rgba(29,29,31,.64);--line:rgba(0,0,0,.07);--mono:${MONO};
+  /* light and dark glass: only these neutrals swap; the site's color stays */
+  --glass:rgba(255,255,255,.84);--glass-solid:rgba(250,250,252,.92);--edge:rgba(255,255,255,.8);--hl:#fff;--drop:rgba(0,0,0,.34);
+  --ctl:rgba(0,0,0,.055);--ctl-hi:rgba(0,0,0,.1);--sw-off:rgba(0,0,0,.13);--field:rgba(255,255,255,.65);--field-hi:#fff;--track:rgba(0,0,0,.1);--knob:#fff;
   font:13px/1.35 ${FONT};color:var(--text);-webkit-font-smoothing:antialiased}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.7);font-size:12px;font-weight:500;transition:background .15s;white-space:nowrap}
-.btn:hover{background:#fff}
+.vars[data-theme=dark] .btn.danger{color:#ff8a80}
+.vars[data-theme=dark]{--text:#f2f2f5;--sub:rgba(235,235,245,.62);--line:rgba(255,255,255,.09);
+  --glass:rgba(22,22,28,.8);--glass-solid:rgba(30,30,36,.94);--edge:rgba(255,255,255,.12);--hl:rgba(255,255,255,.1);--drop:rgba(0,0,0,.6);
+  --ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);--sw-off:rgba(255,255,255,.2);--field:rgba(255,255,255,.06);--field-hi:rgba(255,255,255,.12);--track:rgba(255,255,255,.16);--knob:#55555f;color-scheme:dark}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px;border-radius:10px;border:1px solid var(--line);background:var(--field);font-size:12px;font-weight:500;transition:background .15s;white-space:nowrap}
+.btn:hover{background:var(--field-hi)}
 .btn.sm{height:28px;padding:0 10px;font-size:11.5px;border-radius:8px}
 .btn.danger{color:#b4271b}
-.pill{display:inline-flex;align-items:center;gap:5px;font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 7px;border-radius:6px;background:rgba(0,0,0,.05);color:var(--sub);white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:5px;font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:5px 7px;border-radius:6px;background:var(--ctl);color:var(--sub);white-space:nowrap}
 .pill.acc{background:rgba(var(--a-rgb),.16);color:var(--ink)}
 .link{border:0;background:none;padding:0;color:var(--ink);font-size:11.5px;font-weight:500}
 .link:hover{text-decoration:underline}
@@ -797,9 +819,9 @@ button:disabled{cursor:not-allowed}
 .tip small{font:500 10px/1 ${MONO};opacity:.7;margin-left:6px;letter-spacing:.04em}
 .b.l .tip{right:auto;left:calc(100% + 8px);transform:translate(-4px,-50%)}
 @media (hover:hover){.b.in:hover .tip{opacity:1;transform:translate(0,-50%)}}
-.menu{position:absolute;width:240px;padding:6px;border-radius:18px;pointer-events:auto;background:rgba(255,255,255,.9);
-  backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.9);
-  box-shadow:0 0 0 .5px rgba(var(--a-rgb),.5),0 24px 50px -16px rgba(0,0,0,.45),0 0 34px -12px rgba(var(--a-rgb),.9),inset 0 1px 0 #fff;
+.menu{position:absolute;width:240px;padding:6px;border-radius:18px;pointer-events:auto;background:var(--glass);
+  backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border:1px solid var(--edge);
+  box-shadow:0 0 0 .5px rgba(var(--a-rgb),.5),0 24px 50px -16px var(--drop),0 0 34px -12px rgba(var(--a-rgb),.9),inset 0 1px 0 var(--hl);
   animation:min .18s cubic-bezier(.2,.8,.2,1);transform-origin:var(--ox) var(--oy)}
 @keyframes min{from{opacity:0;transform:scale(.94)}}
 .mh{display:flex;align-items:center;gap:8px;padding:8px 10px 8px}
@@ -816,8 +838,8 @@ button:disabled{cursor:not-allowed}
 .mi.dim svg{color:var(--sub)}
 .msep{height:1px;background:var(--line);margin:4px 8px}
 .toast{position:absolute;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100vw - 32px);display:flex;align-items:center;gap:10px;
-  padding:11px 16px 11px 12px;border-radius:16px;background:rgba(255,255,255,.92);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);
-  border:1px solid #fff;box-shadow:0 0 0 .5px rgba(var(--a-rgb),.5),0 18px 40px -16px rgba(0,0,0,.4),0 0 30px -10px rgba(var(--a-rgb),.9);font-size:12.5px;font-weight:500;
+  padding:11px 16px 11px 12px;border-radius:16px;background:var(--glass);backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);
+  border:1px solid var(--edge);box-shadow:0 0 0 .5px rgba(var(--a-rgb),.5),0 18px 40px -16px var(--drop),0 0 30px -10px rgba(var(--a-rgb),.9);font-size:12.5px;font-weight:500;
   animation:tin .3s cubic-bezier(.2,.8,.2,1)}
 @keyframes tin{from{opacity:0;transform:translate(-50%,10px)}}
 .toast .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--fill);box-shadow:0 0 0 3px rgba(var(--a-rgb),.2),0 0 10px rgba(var(--a-rgb),.9)}
@@ -847,7 +869,8 @@ button:disabled{cursor:not-allowed}
         },
         paint() {
             if (!this.wrap) return;
-            const st = this.wrap.style, T = COLOR;
+            const st = this.wrap.style, T = forTheme(COLOR);
+            if (isDark()) this.wrap.setAttribute('data-theme', 'dark'); else this.wrap.removeAttribute('data-theme');
             for (const [k, v] of Object.entries({ '--a-rgb': T.rgb, '--fill': T.fill, '--bg': T.bg, '--ink': T.ink, '--on': T.on, '--s': badgeSize() + 'px', '--idle': (S.cfg.idle / 100).toFixed(2) })) st.setProperty(k, v);
             for (const it of items.values()) if (it.b) this.glyph(it);
         },
@@ -1097,9 +1120,9 @@ button:disabled{cursor:not-allowed}
 
     const PANEL_CSS = BASE_CSS + `
 .panel{position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);display:flex;flex-direction:column;overflow:hidden;border-radius:22px;
-  background:radial-gradient(120% 40% at 0% 0%,rgba(var(--a-rgb),.2),transparent 64%),rgba(255,255,255,.86);
-  backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border:1px solid rgba(255,255,255,.8);
-  box-shadow:0 0 0 .5px rgba(var(--a-rgb),.4),0 0 40px -12px rgba(var(--a-rgb),.6),0 28px 64px -18px rgba(0,0,0,.34),inset 0 1px 0 #fff;
+  background:radial-gradient(120% 40% at 0% 0%,rgba(var(--a-rgb),.2),transparent 64%),var(--glass);
+  backdrop-filter:blur(28px) saturate(170%);-webkit-backdrop-filter:blur(28px) saturate(170%);border:1px solid var(--edge);
+  box-shadow:0 0 0 .5px rgba(var(--a-rgb),.4),0 0 40px -12px rgba(var(--a-rgb),.6),0 28px 64px -18px var(--drop),inset 0 1px 0 var(--hl);
   animation:in .18s cubic-bezier(.2,.8,.2,1)}
 @keyframes in{from{opacity:0;transform:translateY(-6px) scale(.98)}}
 .scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-bottom:4px}
@@ -1116,15 +1139,23 @@ button:disabled{cursor:not-allowed}
 .logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
 .title{font-weight:650;font-size:16px;letter-spacing:-.015em}
 .sub{font-size:11.5px;color:var(--sub)}
-.x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.06);display:grid;place-items:center;color:var(--sub);flex:none}
-.x:hover{background:rgba(0,0,0,.1);color:var(--text)}
+.x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub);flex:none}
+.x:hover{background:var(--ctl-hi);color:var(--text)}
+/* sun/moon switch: light or dark glass (the device's choice until it's flipped) */
+.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
+.mode .mi2{position:relative;z-index:1;display:grid;transition:color .18s}
+.mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
+.vars[data-theme=dark] .mode .knob{transform:translateX(22px)}
+.vars:not([data-theme=dark]) .mode .sun,.vars[data-theme=dark] .mode .moon{color:var(--text)}
+.mode+.x{margin-left:0}
+.mode:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
 .siteline{display:flex;align-items:center;gap:8px;padding:6px 18px 12px;font:12px var(--mono);color:var(--sub);min-width:0}
 .siteline b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sw8{width:12px;height:12px;border-radius:4px;flex:none;background:var(--bg-fill);box-shadow:0 0 0 1px rgba(0,0,0,.08)}
-.tile.master{padding:10px 16px;background:rgba(255,255,255,.75)}
+.tile.master{padding:10px 16px;background:var(--field)}
 .tile.master .t{font-weight:650}
 .card{margin:0 14px 10px;padding:14px 16px;border-radius:16px;background:rgba(var(--a-rgb),.09);border:1px solid rgba(var(--a-rgb),.22)}
-.tile{margin:0 14px 10px;padding:15px 16px;border-radius:16px;background:rgba(255,255,255,.6);border:1px solid var(--line);min-width:0}
+.tile{margin:0 14px 10px;padding:15px 16px;border-radius:16px;background:var(--field);border:1px solid var(--line);min-width:0}
 .label{display:flex;align-items:center;gap:7px;font:600 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);margin-bottom:12px;min-height:12px}
 .label::before{content:"";width:5px;height:5px;transform:rotate(45deg);background:var(--fill);box-shadow:0 0 6px rgba(var(--a-rgb),.9);flex:none}
 .label i{font-style:normal;letter-spacing:.02em;text-transform:none;font-family:inherit;color:var(--sub);font-weight:400;margin-left:auto}
@@ -1134,19 +1165,19 @@ button:disabled{cursor:not-allowed}
 .t{font-weight:500}
 .d{font-size:11.5px;color:var(--sub);margin-top:2px}
 .d b{color:var(--text);font-weight:600}
-.sw{flex:none;position:relative;width:40px;height:24px;border:0;border-radius:12px;background:rgba(0,0,0,.13);transition:background .18s}
+.sw{flex:none;position:relative;width:40px;height:24px;border:0;border-radius:12px;background:var(--sw-off);transition:background .18s}
 .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
 .sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px rgba(var(--a-rgb),.7)}
 .sw[aria-checked=true]::after{transform:translateX(16px)}
 .sw:disabled{opacity:.45}
-.seg{display:flex;padding:3px;border-radius:12px;background:rgba(0,0,0,.055);gap:2px;flex:none}
+.seg{display:flex;padding:3px;border-radius:12px;background:var(--ctl);gap:2px;flex:none}
 .seg button{flex:1;border:0;background:none;min-height:30px;padding:4px 10px;border-radius:9px;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s,color .15s;white-space:nowrap}
-.seg button:hover{background:rgba(255,255,255,.5)}
+.seg button:hover{background:var(--field-hi)}
 .seg button.on{background:var(--fill);color:var(--on);box-shadow:0 1px 4px rgba(0,0,0,.14),0 0 14px -4px rgba(var(--a-rgb),.8)}
 .slr{display:grid;grid-template-columns:minmax(0,1fr) minmax(110px,150px) 58px;align-items:center;gap:12px;min-height:44px}
 .r1{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:none;margin:0;outline:none}
-.r1::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--fill) var(--p),rgba(0,0,0,.1) var(--p))}
-.r1::-moz-range-track{height:6px;border-radius:3px;background:rgba(0,0,0,.1)}
+.r1::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--fill) var(--p),var(--track) var(--p))}
+.r1::-moz-range-track{height:6px;border-radius:3px;background:var(--track)}
 .r1::-moz-range-progress{height:6px;border-radius:3px;background:var(--fill)}
 .r1::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;margin-top:-7px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.3),0 0 0 3px rgba(var(--a-rgb),.2);cursor:grab}
 .r1::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:grab}
@@ -1161,7 +1192,7 @@ button:disabled{cursor:not-allowed}
 .cp .tl{left:1px;top:1px}.cp .tr{right:1px;top:1px}.cp .bl{left:1px;bottom:1px}.cp .br{right:1px;bottom:1px}
 .cpw{display:flex;align-items:center;gap:10px}
 .ibtn{flex:none;width:30px;height:30px;border:0;border-radius:8px;background:none;color:var(--sub);display:grid;place-items:center}
-.ibtn:hover{background:rgba(0,0,0,.06);color:var(--text)}
+.ibtn:hover{background:var(--ctl);color:var(--text)}
 .rrow{display:grid;grid-template-columns:10px minmax(0,1fr) auto 30px 30px;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
 .rrow:first-of-type{border-top:0}
 .rrow i{width:10px;height:10px;border-radius:50%}
@@ -1169,13 +1200,13 @@ button:disabled{cursor:not-allowed}
 .rrow .nm b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rrow .nm small{font-size:11px;color:var(--sub)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 6px 0 11px;border-radius:15px;border:1px solid var(--line);background:rgba(255,255,255,.7);font:12px var(--mono)}
-.chip span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.06);color:var(--sub)}
-.chip:hover span{background:rgba(0,0,0,.12);color:var(--text)}
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 6px 0 11px;border-radius:15px;border:1px solid var(--line);background:var(--field);font:12px var(--mono)}
+.chip span{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ctl);color:var(--sub)}
+.chip:hover span{background:var(--ctl-hi);color:var(--text)}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:12px}
 .kv span{color:var(--sub)}
 .kv b{font:500 12px var(--mono);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.foot{border-top:1px solid var(--line);background:rgba(250,250,252,.92)}
+.foot{border-top:1px solid var(--line);background:var(--glass-solid)}
 .status{display:flex;align-items:center;gap:10px;padding:11px 14px 6px 18px}
 .dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--fill);box-shadow:0 0 0 3px rgba(var(--a-rgb),.18),0 0 10px rgba(var(--a-rgb),.9)}
 .dot.off{background:#8e8e93;box-shadow:none}
@@ -1185,7 +1216,7 @@ button:disabled{cursor:not-allowed}
 @media (max-width:620px){
   .panel{top:auto;bottom:0;left:0;right:0;width:100%;max-width:none;max-height:88vh;max-height:88dvh;border-radius:24px 24px 0 0;animation:up .26s cubic-bezier(.2,.8,.2,1);padding-bottom:env(safe-area-inset-bottom,0px)}
   @keyframes up{from{transform:translateY(40px);opacity:0}}
-  .grab{display:block;width:38px;height:5px;border-radius:3px;background:rgba(0,0,0,.16);margin:8px auto 0}
+  .grab{display:block;width:38px;height:5px;border-radius:3px;background:var(--sw-off);margin:8px auto 0}
   .head{padding-top:10px}
   .x{width:34px;height:34px}
   .sw{width:46px;height:28px;border-radius:14px}.sw::after{width:24px;height:24px}.sw[aria-checked=true]::after{transform:translateX(18px)}
@@ -1222,7 +1253,8 @@ button:disabled{cursor:not-allowed}
             this.host.remove(); this.host = this.root = this.panel = this.scroll = null;
         },
         theme() {
-            const st = this.panel.style, T = COLOR;
+            const st = this.panel.style, T = forTheme(COLOR);
+            if (isDark()) this.panel.setAttribute('data-theme', 'dark'); else this.panel.removeAttribute('data-theme');
             for (const [k, v] of Object.entries({ '--a-rgb': T.rgb, '--fill': T.fill, '--bg-fill': T.bg, '--ink': T.ink, '--on': T.on })) st.setProperty(k, v);
         },
         label(text, right) { return h('div', { class: 'label' }, text, right == null ? null : typeof right === 'string' ? h('i', { text: right }) : right); },
@@ -1253,6 +1285,9 @@ button:disabled{cursor:not-allowed}
             const head = h('div', { class: 'head' },
                 h('div', { class: 'logo' }, glassGlyph('magnifier')),
                 h('div', null, h('div', { class: 'title', text: 'Looking-Glass' }), h('div', { class: 'sub', text: 'Open any video on its own' })),
+                h('button', { class: 'mode', role: 'switch', 'aria-checked': String(isDark()), 'aria-label': 'Dark mode', title: 'Light or dark',
+                    onclick: () => { S.cfg.appearance = isDark() ? 'light' : 'dark'; saveCfg(); layer.paint(); this.render(); } },
+                    h('span', { class: 'knob' }), h('span', { class: 'mi2 sun' }, icon(ICONS.sun, 13)), h('span', { class: 'mi2 moon' }, icon(ICONS.moon, 13))),
                 h('button', { class: 'x', 'aria-label': 'Close', onclick: () => this.close() }, icon(ICONS.close, 13, 2.2)));
             const siteline = h('div', { class: 'siteline' },
                 h('span', { class: 'sw8' }), h('b', { text: HOST || location.host }),
@@ -1327,6 +1362,10 @@ button:disabled{cursor:not-allowed}
                 h('div', { class: 'chips' }, offSites.map(d => h('button', { class: 'chip', 'aria-label': 'Turn back on for ' + d, onclick: () => { const s = S.sites[d]; delete s.off; if (!Object.keys(s).length) delete S.sites[d]; set('sites', S.sites); this.render(); } }, d, h('span', null, icon(ICONS.close, 9, 2.6)))))));
 
 
+            out.push(h('div', { class: 'tile' }, this.label('Appearance'),
+                this.row('Match my device', 'Light or dark follows your device until you flip the switch up top',
+                    toggle(S.cfg.appearance === 'auto', () => { S.cfg.appearance = S.cfg.appearance === 'auto' ? (isDark() ? 'dark' : 'light') : 'auto'; saveCfg(); layer.paint(); this.render(); }, 'Match my device'))));
+
             out.push(h('div', { class: 'tile', style: 'margin-bottom:14px' }, this.label('Troubleshooting', SITE ? SITE.name : 'Generic'),
                 h('div', { class: 'kv' },
                     h('span', { text: 'Video links learned' }), h('b', { text: String(IDX.size) }),
@@ -1347,6 +1386,7 @@ button:disabled{cursor:not-allowed}
         GM_registerMenuCommand('Turn Looking-Glass on/off', () => { S.cfg.on = !S.cfg.on; saveCfg(); layer.paint(); kick(); try { ui.render(); } catch (e) { /* closed */ } layer.toast(S.cfg.on ? 'Looking-Glass on' : 'Looking-Glass off'); });
         GM_registerMenuCommand('Turn badges on/off for this site', () => { setSite({ off: !siteCfg().off }); kick(); layer.toast(siteCfg().off ? 'Off on ' + HOST : 'On for ' + HOST); });
     } catch {}
+    try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { layer.paint(); if (ui.host) ui.render(); }); } catch {}
     try {
         for (const k of ['settings', 'sites']) GM_addValueChangeListener(k, (n, o, v, remote) => {
             if (!remote) return;

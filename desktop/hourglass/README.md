@@ -4,11 +4,11 @@
 
 <img src="images/banner.svg" alt="Hourglass: Screen time and lockdown for every site." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.3.0-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
+[![Install](https://img.shields.io/badge/Install-v1.4.0-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
-<img src="images/main.webp" width="620">
+<picture><source media="(prefers-color-scheme: light)" srcset="images/main-light.webp"><img src="images/main.webp" width="620"></picture>
 
 </div>
 
@@ -34,8 +34,8 @@ A fresh install starts in setup mode: Hourglass counts your screen time but bloc
 ## A closer look
 
 <table>
-<tr><td align="center" valign="top"><img src="images/schedule.webp" width="400"><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><img src="images/sites.webp" width="400"><br><sub><b>Sites</b></sub></td></tr>
-<tr><td align="center" valign="top"><img src="images/settings.webp" width="400"><br><sub><b>Settings</b></sub></td></tr>
+<tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/schedule-light.webp"><img src="images/schedule.webp" width="400"></picture><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/sites-light.webp"><img src="images/sites.webp" width="400"></picture><br><sub><b>Sites</b></sub></td></tr>
+<tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/settings-light.webp"><img src="images/settings.webp" width="400"></picture><br><sub><b>Settings</b></sub></td></tr>
 </table>
 
 ## On your phone
@@ -43,5 +43,5 @@ A fresh install starts in setup mode: Hourglass counts your screen time but bloc
 The same script switches to a phone layout on its own: a bottom-sheet menu, a trimmed dashboard you can tap for details, and bigger touch targets. Open it from the Tampermonkey menu, or from the Open Hourglass link on any block screen.
 
 <table>
-<tr><td align="center" valign="top"><img src="images/phone-dashboard.webp" width="200"><br><sub><b>Dashboard</b></sub></td><td align="center" valign="top"><img src="images/phone-schedule.webp" width="200"><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><img src="images/phone-block.webp" width="200"><br><sub><b>Block screen</b></sub></td><td align="center" valign="top"><img src="images/phone-nudge.webp" width="200"><br><sub><b>Late-night nudge</b></sub></td></tr>
+<tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-dashboard-light.webp"><img src="images/phone-dashboard.webp" width="200"></picture><br><sub><b>Dashboard</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-schedule-light.webp"><img src="images/phone-schedule.webp" width="200"></picture><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-block-light.webp"><img src="images/phone-block.webp" width="200"></picture><br><sub><b>Block screen</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-nudge-light.webp"><img src="images/phone-nudge.webp" width="200"></picture><br><sub><b>Late-night nudge</b></sub></td></tr>
 </table>

@@ -8,8 +8,10 @@ picker looks for text that spills out of its box or is cut short, things clipped
 container or pushed off screen, sideways scrolling and overlapping controls. Desktop scripts
 are checked at laptop and desktop sizes; scripts that run on phones (RUNS in readmes.py) are
 also checked at small and large phone sizes. Prints one line per problem; no output under a
-script means it's clean. Every size runs twice: on a plain page, and with the global CSS
-big sites ship ("with site CSS"), which panels outside a shadow root inherit. "text cut with …" is usually on purpose (long names), so check those
+script means it's clean. It also checks the glass recipe (blur 28px, saturate 170%, light glass
+at 84%, dark at 80%) and flags text fainter than 3:1 against its background. Every size runs in dark
+on a plain page and with the global CSS big sites ship ("with site CSS"), which panels outside a
+shadow root inherit, then in light on a plain page. "text cut with …" is usually on purpose (long names), so check those
 by eye. Phone scripts are also read for bottom sheets sized in plain vh: on phones vh ignores the
 address and tool bars, so the sheet's top slides under them; they need a dvh size as well.
 Phone sizes render in Roboto, Android's font (install it into ~/.fonts first), because
@@ -35,11 +37,11 @@ open(FONTS, 'w').write('<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.
 if 'Roboto' not in subprocess.run(['fc-list'], capture_output=True, text=True).stdout:
     print('note: Roboto is not installed, so phone sizes use the desktop font')
 
-def audit(p, w, h, phone, hostile=False):
+def audit(p, w, h, phone, hostile=False, theme='dark'):
     url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]
     extra = [x for x in extra if x != '--mobile']
     args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--audit', '--clock', CLOCK,
-            '--vw', str(w), '--vh', str(h)] + (['--mobile'] if phone else []) + (['--hostile'] if hostile else []) + extra + (['--tabs', ','.join(tabs)] if tabs else [])
+            '--vw', str(w), '--vh', str(h), '--theme', theme] + (['--mobile'] if phone else []) + (['--hostile'] if hostile else []) + extra + (['--tabs', ','.join(tabs)] if tabs else [])
     r = subprocess.run(args, capture_output=True, text=True, timeout=180, env=dict(os.environ, FONTCONFIG_FILE=FONTS) if phone else None)
     line = next((l for l in r.stdout.splitlines() if l.startswith('AUDIT ')), None)
     if line is None: return [f'could not run: {(r.stderr or r.stdout)[-300:]}']
@@ -52,10 +54,12 @@ if __name__ == '__main__':
         sizes = ([] if RUNS[p] == 'phone' else [(w, h, False) for w, h in DESKTOP]) + ([(w, h, True) for w, h in PHONE] if RUNS[p] != 'desktop' else [])
         found = {}
         from concurrent.futures import ThreadPoolExecutor
-        runs = [(w, h, phone, hostile) for w, h, phone in sizes for hostile in (False, True)]
+        # dark on a plain page and with site CSS, then light on a plain page (layout is the same in both
+        # themes; light adds its own glass and contrast checks)
+        runs = [(w, h, phone, hostile, 'dark') for w, h, phone in sizes for hostile in (False, True)] + [(w, h, phone, False, 'light') for w, h, phone in sizes]
         with ThreadPoolExecutor(4) as ex:
-            for (w, h, phone, hostile), res in zip(runs, ex.map(lambda a: audit(p, *a), runs)):
-                for issue in res: found.setdefault(issue, []).append(f'{w}x{h}' + (' with site CSS' if hostile else ''))
+            for (w, h, phone, hostile, theme), res in zip(runs, ex.map(lambda a: audit(p, *a), runs)):
+                for issue in res: found.setdefault(issue, []).append(f'{w}x{h}' + (' with site CSS' if hostile else '') + (' light' if theme == 'light' else ''))
         if RUNS[p] != 'desktop':
             import re
             code = open(f'{R}/{p}/{p.split("/")[1]}.user.js', encoding='utf-8').read()

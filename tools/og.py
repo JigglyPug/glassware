@@ -5,7 +5,7 @@
 Writes docs/og.png (landing, also used as the GitHub social preview) and
 docs/img/<script>/og.png. Rendered with Playwright from the panel screenshots.
 """
-import base64, html, os, sys
+import base64, html, os, sys, tempfile
 from playwright.sync_api import sync_playwright
 
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE); D = f'{R}/docs'
@@ -13,6 +13,7 @@ sys.path.insert(0, HERE)
 RP = os.path.join(HERE, 'readmes.py'); src = open(RP, encoding='utf-8').read(); ns = {'__file__': RP}
 exec(src[:src.index('\nACCENT = {')], ns); S = ns['S']
 from site_themes import THEME
+import prismcut
 
 BG = {'molten': ('#0c0a0d', '#f6f1ec', 'rgba(246,241,236,.72)', ['#ff6a1f', '#ff2d6f', '#ffb23d', '#7a2cff']),
       'frost': ('#e9ebf5', '#1d1d26', 'rgba(29,29,38,.62)', ['#b9a7ff', '#ffb3d1', '#9fe7d3', '#9cc8ff']),
@@ -22,6 +23,7 @@ def data_uri_png(path):
     return 'data:image/png;base64,' + base64.b64encode(open(path, 'rb').read()).decode()
 
 def data_uri(path):
+    if path.endswith('.png'): return data_uri_png(path)
     return 'data:image/webp;base64,' + base64.b64encode(open(path, 'rb').read()).decode()
 
 def card_html(theme, kicker, title, sub, shots, gradient_title=False, icons=()):
@@ -68,7 +70,14 @@ if __name__ == '__main__':
         for p, s in S.items():
             slug = p.split('/')[1]; th = THEME[p][0]
             kicker = s['kicker']
-            shot = [(f'{R}/{p}/images/card.webp', 4, -80, 120, 1)]
+            # the prism cut: light and dark in one picture, since a preview can't follow a switch
+            # (Molten gets the lava edge; everything else a straight one), seam in the script's accent
+            card, light = f'{R}/{p}/images/card.webp', f'{R}/{p}/images/card-light.webp'
+            if os.path.exists(light):
+                tmp = os.path.join(tempfile.mkdtemp(), 'cut.png')
+                prismcut.cut(light, card, tmp, THEME[p][1], lava=slug.startswith('molten'))
+                card = tmp
+            shot = [(card, 4, -80, 120, 1)]
             os.makedirs(f'{D}/img/{slug}', exist_ok=True)
             render(card_html(th, kicker, s['name'], s['tag'], shot, False, [f'{R}/assets/icons/{slug}.png']), f'{D}/img/{slug}/og.png')
         b.close()

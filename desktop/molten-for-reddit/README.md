@@ -4,11 +4,11 @@
 
 <img src="images/banner.svg" alt="Molten for Reddit: Molten glass for new Reddit." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.3.4-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)
+[![Install](https://img.shields.io/badge/Install-v2.4.0-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com%20%28new%20Reddit%29-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
-<img src="images/general.webp" width="620">
+<picture><source media="(prefers-color-scheme: light)" srcset="images/general-light.webp"><img src="images/general.webp" width="620"></picture>
 
 </div>
 
@@ -27,6 +27,6 @@ Molten for Reddit puts a lava-lamp background made from the image or video you a
 ## A closer look
 
 <table>
-<tr><td align="center" valign="top"><img src="images/lava.webp" width="400"><br><sub><b>Lava</b></sub></td><td align="center" valign="top"><img src="images/video.webp" width="400"><br><sub><b>Video</b></sub></td></tr>
-<tr><td align="center" valign="top"><img src="images/reddit.webp" width="400"><br><sub><b>Reddit</b></sub></td><td align="center" valign="top"><img src="images/search.webp" width="400"><br><sub><b>Search</b></sub></td></tr>
+<tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/lava-light.webp"><img src="images/lava.webp" width="400"></picture><br><sub><b>Lava</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/video-light.webp"><img src="images/video.webp" width="400"></picture><br><sub><b>Video</b></sub></td></tr>
+<tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/reddit-light.webp"><img src="images/reddit.webp" width="400"></picture><br><sub><b>Reddit</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/search-light.webp"><img src="images/search.webp" width="400"></picture><br><sub><b>Search</b></sub></td></tr>
 </table>

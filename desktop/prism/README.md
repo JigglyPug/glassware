@@ -4,11 +4,11 @@
 
 <img src="images/banner.svg" alt="Prism: Every app title bar, in its site's own color." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.1.2-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/prism/)
+[![Install](https://img.shields.io/badge/Install-v2.2.0-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/prism/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
-<img src="images/main.webp" width="620">
+<picture><source media="(prefers-color-scheme: light)" srcset="images/main-light.webp"><img src="images/main.webp" width="620"></picture>
 
 </div>
 
