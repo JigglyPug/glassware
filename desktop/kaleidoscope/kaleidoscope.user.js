@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.2
+// @version      2.10.3
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -1113,11 +1113,21 @@
       // sun/moon switch: light or dark glass (the device's choice until it's flipped)
       // accent text on light glass uses the deeper blue so it stays readable
       '#kaleidoscope-panel[data-theme=light] .kld-tab.on,#kaleidoscope-panel[data-theme=light] .kld-reload:hover,#kaleidoscope-panel[data-theme=light] .kld-more:hover,#kaleidoscope-panel[data-theme=light] .kld-item:hover .kld-it,#kaleidoscope-panel[data-theme=light] .kld-title b{color:var(--k-ink)}' +
-      '#kaleidoscope-panel .kld-mode-sw{position:relative;flex:none;width:50px;height:28px;border:0;border-radius:14px;background:var(--k-well);padding:0 7px;margin:0 8px 0 auto;display:flex;align-items:center;justify-content:space-between;color:var(--k-dim);cursor:pointer}' +
-      '#kaleidoscope-panel .kld-mode-sw svg{position:relative;z-index:1;width:13px;height:13px;display:block;transition:color .18s}' +
-      '#kaleidoscope-panel .kld-mode-sw .kld-knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--k-knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}' +
-      '#kaleidoscope-panel[data-theme=dark] .kld-mode-sw .kld-knob{transform:translateX(22px)}' +
-      '#kaleidoscope-panel[data-theme=light] .kld-mode-sw .kld-sun,#kaleidoscope-panel[data-theme=dark] .kld-mode-sw .kld-moon{color:var(--k-strong)}' +
+      // glassware:frame start: shared controls, stamped by tools/frame.py; edit them there
+      '#kaleidoscope-panel .kld-mode-sw{position:relative!important;flex:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;width:50px!important;height:28px!important;margin:0 0 0 auto!important;padding:0 7px!important;border:0!important;border-radius:14px!important;background:var(--k-well)!important;color:var(--k-muted)!important;cursor:pointer!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important}' +
+      '#kaleidoscope-panel .kld-mode-sw svg{position:relative!important;z-index:1!important;flex:none!important;display:block!important;width:13px!important;height:13px!important;transition:color .18s!important}' +
+      '#kaleidoscope-panel .kld-mode-sw .kld-knob{position:absolute!important;top:3px!important;left:3px!important;width:22px!important;height:22px!important;border-radius:50%!important;background:var(--k-knob)!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transition:transform .2s cubic-bezier(.3,.7,.3,1)!important}' +
+      '#kaleidoscope-panel[data-theme=dark] .kld-mode-sw .kld-knob{transform:translateX(22px)!important}' +
+      '#kaleidoscope-panel .kld-mode-sw .kld-sun,#kaleidoscope-panel[data-theme=dark] .kld-mode-sw .kld-moon{color:var(--k-strong)!important}' +
+      '#kaleidoscope-panel[data-theme=dark] .kld-mode-sw .kld-sun{color:var(--k-muted)!important}' +
+      '#kaleidoscope-panel .kld-x{flex:none!important;display:grid!important;place-items:center!important;width:28px!important;height:28px!important;margin:0 0 0 8px!important;padding:0!important;border:0!important;border-radius:50%!important;background:var(--k-well)!important;color:var(--k-muted)!important;cursor:pointer!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important}' +
+      '#kaleidoscope-panel .kld-x:hover{background:var(--k-well-hi)!important;color:var(--k-strong)!important}' +
+      '#kaleidoscope-panel input.kld-switch{flex:none!important;position:relative!important;width:40px!important;height:24px!important;margin:0!important;padding:0!important;border:0!important;border-radius:12px!important;background:var(--k-sw-off)!important;cursor:pointer!important;transition:background .18s!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important;appearance:none!important;-webkit-appearance:none!important}' +
+      '#kaleidoscope-panel input.kld-switch::after{content:""!important;position:absolute!important;top:2px!important;left:2px!important;width:20px!important;height:20px!important;border-radius:50%!important;background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transition:transform .18s cubic-bezier(.3,.7,.3,1)!important}' +
+      '#kaleidoscope-panel input.kld-switch:checked{background:' + ACCENT + '!important;box-shadow:0 0 12px -2px color-mix(in srgb,' + ACCENT + ' 70%,transparent)!important}' +
+      '#kaleidoscope-panel input.kld-switch:checked::after{transform:translateX(16px)!important}' +
+      '#kaleidoscope-panel .kld-mode-sw:focus-visible,#kaleidoscope-panel .kld-x:focus-visible,#kaleidoscope-panel input.kld-switch:focus-visible{outline:2px solid ' + ACCENT + '!important;outline-offset:2px!important}' +
+      // glassware:frame end
       '#kaleidoscope-panel{position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);height:auto;min-height:0;' +
       'display:flex;flex-direction:column;z-index:2147483647;background:radial-gradient(120% 40% at 0% 0%,rgba(61,180,242,.16),transparent 64%),var(--k-glass);' +
       '-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);color:var(--k-text);' +
@@ -1135,9 +1145,6 @@
       'padding:0;border:0;border-radius:50%;background:transparent;color:var(--k-dim);font-size:13px;line-height:1;cursor:pointer;vertical-align:-3px}' +
       '#kaleidoscope-panel .kld-reload:hover{color:' + ACCENT + ';background:rgba(61,180,242,.12)}' +
       '#kaleidoscope-panel .kld-reload.spin{color:' + ACCENT + ';animation:kld-spin .8s linear infinite}' +
-      '#kaleidoscope-panel .kld-x{width:28px;height:28px;border:0;border-radius:50%;background:var(--k-line);color:var(--k-text);' +
-      'cursor:pointer;font-size:16px;line-height:28px;padding:0;flex:none}' +
-      '#kaleidoscope-panel .kld-x:hover{background:var(--k-btn-hi);color:var(--k-title)}' +
       '#kaleidoscope-panel .kld-tabs{display:flex;gap:4px;margin:0 12px 6px;padding:4px;background:var(--k-well);border-radius:12px}' +
       '#kaleidoscope-panel .kld-tab{flex:1;padding:7px 4px;border:0;border-radius:9px;background:transparent;color:var(--k-muted);' +
       'cursor:pointer;font-size:12.5px;font-weight:600}' +
@@ -1159,12 +1166,6 @@
       '#kaleidoscope-panel label.kld-row{cursor:pointer}' +
       '#kaleidoscope-panel .kld-label{flex:1;min-width:0;color:var(--k-strong)}' +
       '#kaleidoscope-panel .kld-hint{display:block;color:var(--k-dim);font-size:11.5px;margin-top:1px}' +
-      '#kaleidoscope-panel input.kld-switch{appearance:none;-webkit-appearance:none;width:40px;height:24px;border-radius:12px;' +
-      'background:var(--k-sw-off);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0;border:0}' +
-      '#kaleidoscope-panel input.kld-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;' +
-      'background:#fff;transition:transform .15s}' +
-      '#kaleidoscope-panel input.kld-switch:checked{background:' + ACCENT + '}' +
-      '#kaleidoscope-panel input.kld-switch:checked::after{transform:translateX(16px)}' +
       '#kaleidoscope-panel .kld-seg{display:flex;gap:4px;padding:4px;background:var(--k-well);border-radius:12px}' +
       '#kaleidoscope-panel .kld-segbtn{flex:1;padding:8px 4px;border:0;border-radius:9px;background:transparent;color:var(--k-muted);' +
       'cursor:pointer;font-size:12.5px;font-weight:600}' +
@@ -1282,6 +1283,12 @@
     navBtn.setAttribute('aria-label', 'Kaleidoscope');
     navRoot.append(navStyle, navBtn);
 
+    function gwCloseIcon() {   // glassware:icon (the close button's ×, stamped by tools/frame.py)
+        const NS = 'http://www.w3.org/2000/svg', s = document.createElementNS(NS, 'svg');
+        for (const [k, v] of [['viewBox', '0 0 24 24'], ['width', '13'], ['height', '13'], ['fill', 'none'], ['stroke', 'currentColor'], ['stroke-width', '2.2'], ['stroke-linecap', 'round'], ['aria-hidden', 'true']]) s.setAttribute(k, v);
+        for (const d of ['M6 6l12 12', 'M18 6 6 18']) { const q = document.createElementNS(NS, 'path'); q.setAttribute('d', d); s.append(q); }
+        return s;
+    }   // glassware:icon end
     const el = (tag, cls, text) => {
       const e = document.createElement(tag);
       if (cls) e.className = cls;
@@ -2146,7 +2153,7 @@
       title.append(el('b', null, 'scope'));
       subEl = el('div', 'kld-sub');
       t.append(title, el('div', 'kld-tagline', 'AI recommendations from your list'));
-      const x = el('button', 'kld-x', '×');
+      const x = el('button', 'kld-x'); x.append(gwCloseIcon());
       x.type = 'button';
       x.title = 'Close';
       x.addEventListener('click', close);

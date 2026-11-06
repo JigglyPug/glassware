@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.7.2
+// @version      3.7.3
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -4545,12 +4545,21 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '--mt-hl:#fff;--mt-drop:rgba(0,0,0,.34);--mt-ctl:rgba(0,0,0,.055);--mt-ctl-hi:rgba(0,0,0,.07);--mt-btn:rgba(0,0,0,.06);--mt-btn-hi:rgba(0,0,0,.11);' +
       '--mt-sw-off:rgba(0,0,0,.16);--mt-input:rgba(255,255,255,.75);--mt-input-edge:rgba(0,0,0,.12);--mt-ink:#a8550a;--mt-good:#1f7a3a;--mt-bad:#b4271b;--mt-knob:#fff;color-scheme:light}' +
       // sun/moon switch: light or dark glass (the device's choice until it's flipped)
-      '#ytt-panel .ytt-mode{position:relative;flex:none;width:50px;height:28px;border:0;border-radius:14px;background:var(--mt-ctl-hi);padding:0 7px;margin:0 8px 0 auto;display:flex;align-items:center;justify-content:space-between;color:var(--mt-sub);cursor:pointer}' +
-      '#ytt-panel .ytt-mode svg{position:relative;z-index:1;width:13px;height:13px;display:block;transition:color .18s}' +
-      '#ytt-panel .ytt-mode .ytt-knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--mt-knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}' +
-      '#ytt-panel[data-theme=dark] .ytt-mode .ytt-knob{transform:translateX(22px)}' +
-      '#ytt-panel[data-theme=light] .ytt-mode .ytt-sun,#ytt-panel[data-theme=dark] .ytt-mode .ytt-moon{color:var(--mt-text)}' +
-      '#ytt-panel .ytt-head .ytt-x{flex:none}' +
+      // glassware:frame start: shared controls, stamped by tools/frame.py; edit them there
+      '#ytt-panel .ytt-mode{position:relative!important;flex:none!important;display:flex!important;align-items:center!important;justify-content:space-between!important;width:50px!important;height:28px!important;margin:0 0 0 auto!important;padding:0 7px!important;border:0!important;border-radius:14px!important;background:var(--mt-ctl-hi)!important;color:var(--mt-sub)!important;cursor:pointer!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important}' +
+      '#ytt-panel .ytt-mode svg{position:relative!important;z-index:1!important;flex:none!important;display:block!important;width:13px!important;height:13px!important;transition:color .18s!important}' +
+      '#ytt-panel .ytt-mode .ytt-knob{position:absolute!important;top:3px!important;left:3px!important;width:22px!important;height:22px!important;border-radius:50%!important;background:var(--mt-knob)!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transition:transform .2s cubic-bezier(.3,.7,.3,1)!important}' +
+      '#ytt-panel[data-theme=dark] .ytt-mode .ytt-knob{transform:translateX(22px)!important}' +
+      '#ytt-panel .ytt-mode .ytt-sun,#ytt-panel[data-theme=dark] .ytt-mode .ytt-moon{color:var(--mt-text)!important}' +
+      '#ytt-panel[data-theme=dark] .ytt-mode .ytt-sun{color:var(--mt-sub)!important}' +
+      '#ytt-panel .ytt-x{flex:none!important;display:grid!important;place-items:center!important;width:28px!important;height:28px!important;margin:0 0 0 8px!important;padding:0!important;border:0!important;border-radius:50%!important;background:var(--mt-ctl-hi)!important;color:var(--mt-sub)!important;cursor:pointer!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important}' +
+      '#ytt-panel .ytt-x:hover{background:var(--mt-btn-hi)!important;color:var(--mt-text)!important}' +
+      '#ytt-panel input.ytt-switch{flex:none!important;position:relative!important;width:40px!important;height:24px!important;margin:0!important;padding:0!important;border:0!important;border-radius:12px!important;background:var(--mt-sw-off)!important;cursor:pointer!important;transition:background .18s!important;box-sizing:border-box!important;min-width:0!important;min-height:0!important;max-height:none!important;line-height:1!important;text-transform:none!important;letter-spacing:normal!important;appearance:none!important;-webkit-appearance:none!important}' +
+      '#ytt-panel input.ytt-switch::after{content:""!important;position:absolute!important;top:2px!important;left:2px!important;width:20px!important;height:20px!important;border-radius:50%!important;background:#fff!important;box-shadow:0 1px 3px rgba(0,0,0,.25)!important;transition:transform .18s cubic-bezier(.3,.7,.3,1)!important}' +
+      '#ytt-panel input.ytt-switch:checked{background:' + ACCENT + '!important;box-shadow:0 0 12px -2px color-mix(in srgb,' + ACCENT + ' 70%,transparent)!important}' +
+      '#ytt-panel input.ytt-switch:checked::after{transform:translateX(16px)!important}' +
+      '#ytt-panel .ytt-mode:focus-visible,#ytt-panel .ytt-x:focus-visible,#ytt-panel input.ytt-switch:focus-visible{outline:2px solid ' + ACCENT + '!important;outline-offset:2px!important}' +
+      // glassware:frame end
       '#ytt-panel{position:fixed;top:16px;right:16px;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);' +
       'display:flex;flex-direction:column;z-index:2147483647;background:radial-gradient(120% 40% at 0% 0%,rgba(255,154,61,.16),transparent 64%),var(--mt-glass);' +
       '-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);color:var(--mt-text);' +
@@ -4562,9 +4571,6 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel .ytt-title{font-weight:650;font-size:16px}' +
       '#ytt-panel .ytt-sub{opacity:.55;font-size:12px}' +
       '#ytt-panel .ytt-tagline{font-size:12px;color:var(--mt-ink);margin:1px 0 2px}' +
-      '#ytt-panel .ytt-x{width:28px;height:28px;border:0;border-radius:50%;background:var(--mt-ctl-hi);color:var(--mt-text);' +
-      'cursor:pointer;font-size:16px;line-height:28px;padding:0}' +
-      '#ytt-panel .ytt-x:hover{background:var(--mt-btn-hi)}' +
       '#ytt-panel .ytt-tabs{display:flex;gap:4px;margin:0 12px 6px;padding:4px;background:var(--mt-ctl);border-radius:12px}' +
       '#ytt-panel .ytt-tab{flex:1;padding:7px 4px;border:0;border-radius:9px;background:transparent;color:var(--mt-text);' +
       'cursor:pointer;font-size:12.5px;font-weight:550;opacity:.65}' +
@@ -4606,12 +4612,6 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel .ytt-label{flex:1;min-width:0}' +
       '#ytt-panel .ytt-count{opacity:.9}#ytt-panel .ytt-count[hidden]{display:none}' +
       '#ytt-panel .ytt-hint{display:block;opacity:.65;font-size:11.5px;margin-top:1px}' +
-      '#ytt-panel input.ytt-switch{appearance:none;-webkit-appearance:none;width:40px;height:24px;border-radius:12px;' +
-      'background:var(--mt-sw-off);position:relative;cursor:pointer;flex:none;transition:background .15s;margin:0;border:0}' +
-      '#ytt-panel input.ytt-switch::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;' +
-      'background:#fff;transition:transform .15s}' +
-      '#ytt-panel input.ytt-switch:checked{background:' + ACCENT + '}' +
-      '#ytt-panel input.ytt-switch:checked::after{transform:translateX(16px)}' +
       '#ytt-panel .ytt-field{padding:7px 0}' +
       '#ytt-panel .ytt-field-head{display:flex;justify-content:space-between;gap:8px}' +
       '#ytt-panel .ytt-default{opacity:.4;font-size:11px;white-space:nowrap}' +
@@ -4650,6 +4650,12 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel summary{cursor:pointer;opacity:.7;font-size:12px;padding:4px 0}'
     );
 
+    function gwCloseIcon() {   // glassware:icon (the close button's ×, stamped by tools/frame.py)
+        const NS = 'http://www.w3.org/2000/svg', s = document.createElementNS(NS, 'svg');
+        for (const [k, v] of [['viewBox', '0 0 24 24'], ['width', '13'], ['height', '13'], ['fill', 'none'], ['stroke', 'currentColor'], ['stroke-width', '2.2'], ['stroke-linecap', 'round'], ['aria-hidden', 'true']]) s.setAttribute(k, v);
+        for (const d of ['M6 6l12 12', 'M18 6 6 18']) { const q = document.createElementNS(NS, 'path'); q.setAttribute('d', d); s.append(q); }
+        return s;
+    }   // glassware:icon end
     const el = (tag, cls, text) => {
       const e = document.createElement(tag);
       if (cls) e.className = cls;
@@ -5110,7 +5116,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       const head = el('div', 'ytt-head');
       const t = el('div');
       t.append(el('div', 'ytt-title', 'Molten Tools'), el('div', 'ytt-tagline', 'YouTube QOL tools'));
-      const x = el('button', 'ytt-x', '×');
+      const x = el('button', 'ytt-x'); x.append(gwCloseIcon());
       x.type = 'button';
       x.title = 'Close';
       x.addEventListener('click', close);

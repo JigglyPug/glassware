@@ -125,6 +125,7 @@ def register(s):
     insert_after(f'{HERE}/screens.py', 'JOBS = {\n', f"    {py(p)}: ({py(s.get('url', 'https://example.com/'))}, {py('Open ' + s['name'])}, {extra_src}, {py(s.get('tabs', [])[1:])}),\n")
     if s.get('tabs'): insert_after(f'{HERE}/carry.py', 'FIRST = {', f"{py(p)}: {py(s['tabs'][0])}, ")
     insert_after(f'{HERE}/check.py', "STATIC = {", f"{py(slug)}, ")
+    insert_after(f'{HERE}/frame.py', "    'tools/kit/template': KIT,\n", f"    {py(p)}: KIT,\n")   # its shared controls stay stamped
     insert_after(f'{HERE}/panel_icons.py', "SCRIPTS = {   # static header tiles only\n", f"    {py(p)}: {py(slug)},\n")
     ic = s['icon']
     glyph = ic['glyph']   # JS: tube('<path>', { glow: g, w: 4, core: 1.5, fill: .07 }) and friends, with g the glow color

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.4.2
+// @version      1.4.3
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.4.2';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.4.3';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -447,6 +447,12 @@
         sun: ['M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7', 'M12 2.5v2', 'M12 19.5v2', 'M2.5 12h2', 'M19.5 12h2', 'M5.3 5.3l1.4 1.4', 'M17.3 17.3l1.4 1.4', 'M5.3 18.7l1.4-1.4', 'M17.3 6.7l1.4-1.4'],
         headphones: ['M4 15v-3a8 8 0 0 1 16 0v3', 'M4 15a2 2 0 0 1 2-2h1v7H6a2 2 0 0 1-2-2Z', 'M20 15a2 2 0 0 0-2-2h-1v7h1a2 2 0 0 0 2-2Z'],
     };
+    function gwCloseIcon() {   // glassware:icon (the close button's ×, stamped by tools/frame.py)
+        const NS = 'http://www.w3.org/2000/svg', s = document.createElementNS(NS, 'svg');
+        for (const [k, v] of [['viewBox', '0 0 24 24'], ['width', '13'], ['height', '13'], ['fill', 'none'], ['stroke', 'currentColor'], ['stroke-width', '2.2'], ['stroke-linecap', 'round'], ['aria-hidden', 'true']]) s.setAttribute(k, v);
+        for (const d of ['M6 6l12 12', 'M18 6 6 18']) { const q = document.createElementNS(NS, 'path'); q.setAttribute('d', d); s.append(q); }
+        return s;
+    }   // glassware:icon end
     function h(tagName, attrs, ...kids) {
         const el = document.createElement(tagName);
         for (const [k, v] of Object.entries(attrs || {})) {
@@ -803,9 +809,9 @@ h1 span{color:var(--ink)}
 .nudge .btn:hover{background:var(--n-ctl-hi)}
 .nudge .btn.primary{background:var(--n-primary);color:var(--n-primary-ink);border-color:transparent;box-shadow:0 4px 14px -6px rgba(94,92,230,.6)}
 .nudge .link{color:var(--n-sub);margin-left:auto}
-.nudge .x{flex:none;width:26px;height:26px;border-radius:50%;border:0;background:var(--n-ctl);color:var(--n-sub);display:grid;place-items:center;padding:0}
-.nudge .x:hover{background:var(--n-ctl-hi);color:var(--n-text)}
-.nudge .btn:focus-visible,.nudge .link:focus-visible,.nudge .x:focus-visible{outline:2px solid #9391F7;outline-offset:2px}
+.nudge .nx{flex:none;width:26px;height:26px;border-radius:50%;border:0;background:var(--n-ctl);color:var(--n-sub);display:grid;place-items:center;padding:0}
+.nudge .nx:hover{background:var(--n-ctl-hi);color:var(--n-text)}
+.nudge .btn:focus-visible,.nudge .link:focus-visible,.nudge .nx:focus-visible{outline:2px solid #9391F7;outline-offset:2px}
 `;
     const nudge = {
         el: null,
@@ -847,7 +853,7 @@ h1 span{color:var(--ink)}
                         h('button', { class: 'btn primary', text: 'Close this tab', onclick: () => { this.hide(); try { window.close(); } catch {} } }),
                         h('button', { class: 'btn', text: '15 more minutes', onclick: later }),
                         h('button', { class: 'link', text: 'Not tonight', onclick: mute }))),
-                h('button', { class: 'x', 'aria-label': 'Hide for now', title: 'Hide for now. It comes back after another ' + S.cfg.nudgeAfter + ' min of late-night browsing.', onclick: () => this.hide() }, icon(ICONS.close, 11, 2.4)));
+                h('button', { class: 'nx', 'aria-label': 'Hide for now', title: 'Hide for now. It comes back after another ' + S.cfg.nudgeAfter + ' min of late-night browsing.', onclick: () => this.hide() }, icon(ICONS.close, 11, 2.4)));
             blocker.wrap.append(this.el);
         },
         hide() { this.el?.remove(); this.el = null; },
@@ -952,16 +958,29 @@ h1 span{color:var(--ink)}
 .logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
 .title{font-weight:650;font-size:16px;letter-spacing:-.015em}
 .sub{font-size:12px;color:var(--sub)}
-.x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub);flex:none}
-.x:hover{background:var(--ctl-hi);color:var(--text)}
 /* sun/moon switch: light or dark glass (the device's choice until it's flipped) */
-.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;margin-right:-3px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
-.mode .mi2{position:relative;z-index:1;display:grid;transition:color .18s}
-.mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
+/* glassware:frame start: shared controls, stamped by tools/frame.py; edit them there */
+.vars .mode{position:relative;flex:none;display:flex;align-items:center;justify-content:space-between;width:50px;height:28px;margin:0 0 0 auto;padding:0 7px;border:0;border-radius:14px;background:var(--ctl);color:var(--sub);cursor:pointer;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.vars .mode svg{position:relative;z-index:1;flex:none;display:block;width:13px;height:13px;transition:color .18s}
+.vars .mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
 .vars[data-theme=dark] .mode .knob{transform:translateX(22px)}
-.vars:not([data-theme=dark]) .mode .sun,.vars[data-theme=dark] .mode .moon{color:var(--text)}
-.mode+.x{margin-left:0}
-.mode:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
+.vars .mode .sun,.vars[data-theme=dark] .mode .moon{color:var(--text)}
+.vars[data-theme=dark] .mode .sun{color:var(--sub)}
+.vars .x{flex:none;display:grid;place-items:center;width:28px;height:28px;margin:0 0 0 -3px;padding:0;border:0;border-radius:50%;background:var(--ctl);color:var(--sub);cursor:pointer;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.vars .x:hover{background:var(--ctl-hi);color:var(--text)}
+.vars .sw{flex:none;position:relative;width:40px;height:24px;margin:0;padding:0;border:0;border-radius:12px;background:var(--sw-off);cursor:pointer;transition:background .18s;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.vars .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
+.vars .sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px color-mix(in srgb,var(--fill) 70%,transparent)}
+.vars .sw[aria-checked=true]::after{transform:translateX(16px)}
+.vars .mode:focus-visible,.vars .x:focus-visible,.vars .sw:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
+.m .vars .x{flex:none;display:grid;place-items:center;width:36px;height:36px;margin:0 0 0 -3px;padding:0;border:0;border-radius:50%;background:var(--ctl);color:var(--sub);cursor:pointer;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.m .vars .x:hover{background:var(--ctl-hi);color:var(--text)}
+.m .vars .sw{flex:none;position:relative;width:46px;height:28px;margin:0;padding:0;border:0;border-radius:14px;background:var(--sw-off);cursor:pointer;transition:background .18s;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.m .vars .sw::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
+.m .vars .sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px color-mix(in srgb,var(--fill) 70%,transparent)}
+.m .vars .sw[aria-checked=true]::after{transform:translateX(18px)}
+.m .vars .mode:focus-visible, .m .vars .x:focus-visible, .m .vars .sw:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
+/* glassware:frame end */
 .siteline{display:flex;align-items:center;gap:8px;padding:6px 18px 12px;font:12px var(--mono);color:var(--sub)}
 .siteline b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tabs{margin:0 14px 12px}
@@ -993,10 +1012,6 @@ h1 span{color:var(--ink)}
 .mid{font-weight:650;font-size:22px;letter-spacing:-.03em;line-height:1.1}
 .mid small{font-size:13px;color:var(--sub);font-weight:500;letter-spacing:0}
 .mono{font:12px var(--mono)}
-.sw{flex:none;position:relative;width:40px;height:24px;border:0;border-radius:12px;background:var(--sw-off);transition:background .18s}
-.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
-.sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px rgba(var(--a-rgb),.7)}
-.sw[aria-checked=true]::after{transform:translateX(16px)}
 .sw:disabled{opacity:.45}
 .ibtn{flex:none;width:30px;height:30px;border:0;border-radius:8px;background:none;color:var(--sub);display:grid;place-items:center}
 .ibtn:hover{background:var(--ctl);color:var(--text)}
@@ -1189,10 +1204,8 @@ h1 span{color:var(--ink)}
 @keyframes sheet{from{opacity:0;transform:translateY(48px)}}
 .grab{width:42px;height:5px;border-radius:3px;background:var(--sw-off);margin:9px auto 0;flex:none}
 .m .head{padding-top:8px}
-.m .x{width:36px;height:36px}
 .m .tabs .seg button{min-height:40px;font-size:13px}
 .m .seg.sm button{min-height:34px}
-.m .sw{width:46px;height:28px;border-radius:14px}.m .sw::after{width:24px;height:24px}.m .sw[aria-checked=true]::after{transform:translateX(18px)}
 .m .r1{height:40px}
 .m .r1::-webkit-slider-thumb{width:26px;height:26px;margin-top:-10px}
 .m .rng::-webkit-slider-thumb{width:28px;height:28px;margin-top:8px}
@@ -1282,7 +1295,7 @@ h1 span{color:var(--ink)}
                 h('button', { class: 'mode', role: 'switch', 'aria-checked': String(isDark()), 'aria-label': 'Dark mode', title: 'Light or dark',
                     onclick: () => { set('appearance', isDark() ? 'light' : 'dark'); blocker.retheme(); this.render(); } },
                     h('span', { class: 'knob' }), h('span', { class: 'mi2 sun' }, icon(ICONS.sun, 13)), h('span', { class: 'mi2 moon' }, icon(ICONS.moon, 13))),
-                h('button', { class: 'x', 'aria-label': 'Close', onclick: () => this.close() }, icon(ICONS.close, 13, 2.2)));
+                h('button', { class: 'x', 'aria-label': 'Close', onclick: () => this.close() }, gwCloseIcon()));
             const siteline = h('div', { class: 'siteline' },
                 h('b', { text: HOST || location.href }),
                 h('span', { class: 'pill', text: m ? CAT[m.cat].n + ' · ' + (m.on ? (m.rule === 'always' ? 'Always' : 'Schedule') : 'Counted only') : 'Not on your list' }),

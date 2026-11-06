@@ -13,7 +13,8 @@ It checks, in order:
              @version, and a changed script has a higher @version than the live one
   frame      panel rules from CLAUDE.md: menu wording, on/off wording, no dropdowns, Esc closes,
              footer, Troubleshooting (when the script has logging), static vs live icon tiles; also
-             run on a script freshly made by tools/new_script.py from tools/kit/example.json
+             run on a script freshly made by tools/new_script.py from tools/kit/example.json; the
+             shared controls match tools/frame.py in every script and aren't styled anywhere else
   theme      light and dark from CLAUDE.md: the sun/moon switch, Appearance and "Match my device",
              appearance defaults to auto and follows the device live, the glass recipe numbers, and
              a -light twin for every screenshot, selection and focus rings in the accent
@@ -88,6 +89,12 @@ with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-
 
 # ------------------------------------------------------------------ frame
 head('frame'); n = 0
+# the shared controls are stamped from tools/frame.py: every copy must match it, and nothing else may style them
+r = subprocess.run([sys.executable, f'{HERE}/frame.py', '--check'], capture_output=True, text=True); n += 1
+ok(r.returncode == 0, 'shared panel frame: ' + ('; '.join(l[2:] for l in r.stdout.splitlines() if l.startswith('✗'))[:400] or r.stderr.strip()[-300:]))
+import frame as _frame
+for p in paths:
+    n += 1; ok(f'{info(p)[0]}/{info(p)[1]}' in _frame.FRAMES, f'{info(p)[1]}: list it in FRAMES in tools/frame.py so its shared controls are stamped')
 ok(subprocess.run(['node', '--check', _f.name], capture_output=True).returncode == 0, 'tools/kit/template.js makes a script with a syntax error (python3 tools/new_script.py tools/kit/example.json --dry)'); n += 1
 for p, src in {**S, **KIT}.items():
     plat, slug = info(p); name = hdr(src, 'name'); n += 6

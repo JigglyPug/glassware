@@ -38,7 +38,8 @@ tools/                                builders for all of the above
 - The registries the kit fills in (and `tools/check.py` checks agree): `S`, `RUNS` and `ACCENT` in
   `tools/readmes.py`, `F` in `tools/features.py`, `THEME` in `tools/site_themes.py`, `JOBS` in
   `tools/screens.py`, `FIRST` in `tools/carry.py` (tabbed panels), `STATIC` or `LIVE` in
-  `tools/check.py`, `SCRIPTS` in `tools/panel_icons.py` (static tiles) and `ICONS` in `tools/icons.js`.
+  `tools/check.py`, `SCRIPTS` in `tools/panel_icons.py` (static tiles), `ICONS` in `tools/icons.js` and
+  `FRAMES` in `tools/frame.py`.
 - The kit is part of the release check: `tools/check.py` generates a script from
   `tools/kit/example.json` and runs every frame and theme rule on it, so the template can't drift
   from this file. When a rule here changes, change the template too.
@@ -96,8 +97,12 @@ and keep existing ones on it.
   | close button | 28×28 round, 8px after the switch | 36×36 |
   | toggle | 40×24 track, 20px knob, 2px in | 46×28, 24px knob |
 
-  A site's own button rules (min-heights, centering, fixed heights) must not reach these: reset
-  them on the control itself, as Molten for Reddit Mobile does for Reddit's buttons.
+  These controls are written once, in `tools/frame.py`, and stamped into every script (and the kit's
+  template) between `glassware:frame start` / `end` markers, with `!important` for panels that
+  live in the page so a site's own button rules can't reach them. To change one, change
+  `tools/frame.py`, run `python3 tools/frame.py`, recapture and ship. `tools/check.py` fails if a
+  stamped copy was edited by hand, if a script styles these controls anywhere else, or if a script
+  isn't listed in `FRAMES`. The close button's × is stamped the same way (`gwCloseIcon()`).
 - **Context line** under the header: the site or account in monospace, plus a status chip when the
   script has a status (On/Off, the color source, the list type...).
 - **Tabs** only for scripts with many settings or areas (Hourglass, Molten, Kaleidoscope). The tab

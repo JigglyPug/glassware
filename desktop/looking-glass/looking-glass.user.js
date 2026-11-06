@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.1
+// @version      1.2.2
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.1';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.2';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -728,6 +728,12 @@
         trash: ['M4 7h16', 'M9 7V4h6v3', 'M6 7l1 13h10l1-13'],
         play: ['M9 7v10l8-5z'],
     };
+    function gwCloseIcon() {   // glassware:icon (the close button's ×, stamped by tools/frame.py)
+        const NS = 'http://www.w3.org/2000/svg', s = document.createElementNS(NS, 'svg');
+        for (const [k, v] of [['viewBox', '0 0 24 24'], ['width', '13'], ['height', '13'], ['fill', 'none'], ['stroke', 'currentColor'], ['stroke-width', '2.2'], ['stroke-linecap', 'round'], ['aria-hidden', 'true']]) s.setAttribute(k, v);
+        for (const d of ['M6 6l12 12', 'M18 6 6 18']) { const q = document.createElementNS(NS, 'path'); q.setAttribute('d', d); s.append(q); }
+        return s;
+    }   // glassware:icon end
     function h(tagName, attrs, ...kids) {
         const el = document.createElement(tagName);
         for (const [k, v] of Object.entries(attrs || {})) {
@@ -1139,17 +1145,24 @@ button:disabled{cursor:not-allowed}
 .logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
 .title{font-weight:650;font-size:16px;letter-spacing:-.015em}
 .sub{font-size:12px;color:var(--sub)}
-.x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub);flex:none}
-.x:hover{background:var(--ctl-hi);color:var(--text)}
 .panel:focus{outline:none}
 /* sun/moon switch: light or dark glass (the device's choice until it's flipped) */
-.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;margin-right:-3px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
-.mode .mi2{position:relative;z-index:1;display:grid;transition:color .18s}
-.mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
+/* glassware:frame start: shared controls, stamped by tools/frame.py; edit them there */
+.vars .mode{position:relative;flex:none;display:flex;align-items:center;justify-content:space-between;width:50px;height:28px;margin:0 0 0 auto;padding:0 7px;border:0;border-radius:14px;background:var(--ctl);color:var(--sub);cursor:pointer;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.vars .mode svg{position:relative;z-index:1;flex:none;display:block;width:13px;height:13px;transition:color .18s}
+.vars .mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
 .vars[data-theme=dark] .mode .knob{transform:translateX(22px)}
-.vars:not([data-theme=dark]) .mode .sun,.vars[data-theme=dark] .mode .moon{color:var(--text)}
-.mode+.x{margin-left:0}
-.mode:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
+.vars .mode .sun,.vars[data-theme=dark] .mode .moon{color:var(--text)}
+.vars[data-theme=dark] .mode .sun{color:var(--sub)}
+.vars .x{flex:none;display:grid;place-items:center;width:28px;height:28px;margin:0 0 0 -3px;padding:0;border:0;border-radius:50%;background:var(--ctl);color:var(--sub);cursor:pointer;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.vars .x:hover{background:var(--ctl-hi);color:var(--text)}
+.vars .sw{flex:none;position:relative;width:40px;height:24px;margin:0;padding:0;border:0;border-radius:12px;background:var(--sw-off);cursor:pointer;transition:background .18s;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.vars .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
+.vars .sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px color-mix(in srgb,var(--fill) 70%,transparent)}
+.vars .sw[aria-checked=true]::after{transform:translateX(16px)}
+.vars .mode:focus-visible,.vars .x:focus-visible,.vars .sw:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
+@media (max-width:620px){.vars .x{flex:none;display:grid;place-items:center;width:36px;height:36px;margin:0 0 0 -3px;padding:0;border:0;border-radius:50%;background:var(--ctl);color:var(--sub);cursor:pointer;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}.vars .x:hover{background:var(--ctl-hi);color:var(--text)}.vars .sw{flex:none;position:relative;width:46px;height:28px;margin:0;padding:0;border:0;border-radius:14px;background:var(--sw-off);cursor:pointer;transition:background .18s;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}.vars .sw::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}.vars .sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px color-mix(in srgb,var(--fill) 70%,transparent)}.vars .sw[aria-checked=true]::after{transform:translateX(18px)}.vars .mode:focus-visible,.vars .x:focus-visible,.vars .sw:focus-visible{outline:2px solid var(--fill);outline-offset:2px}}
+/* glassware:frame end */
 .siteline{display:flex;align-items:center;gap:8px;padding:6px 18px 12px;font:12px var(--mono);color:var(--sub);min-width:0}
 .siteline b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sw8{width:12px;height:12px;border-radius:4px;flex:none;background:var(--bg-fill);box-shadow:0 0 0 1px rgba(0,0,0,.08)}
@@ -1166,10 +1179,6 @@ button:disabled{cursor:not-allowed}
 .t{font-weight:500}
 .d{font-size:11.5px;color:var(--sub);margin-top:2px}
 .d b{color:var(--text);font-weight:600}
-.sw{flex:none;position:relative;width:40px;height:24px;border:0;border-radius:12px;background:var(--sw-off);transition:background .18s}
-.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
-.sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px rgba(var(--a-rgb),.7)}
-.sw[aria-checked=true]::after{transform:translateX(16px)}
 .sw:disabled{opacity:.45}
 .seg{display:flex;padding:3px;border-radius:12px;background:var(--ctl);gap:2px;flex:none}
 .seg button{flex:1;border:0;background:none;min-height:30px;padding:4px 10px;border-radius:9px;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s,color .15s;white-space:nowrap}
@@ -1219,8 +1228,6 @@ button:disabled{cursor:not-allowed}
   @keyframes up{from{transform:translateY(40px);opacity:0}}
   .grab{display:block;width:38px;height:5px;border-radius:3px;background:var(--sw-off);margin:8px auto 0}
   .head{padding-top:10px}
-  .x{width:36px;height:36px}
-  .sw{width:46px;height:28px;border-radius:14px}.sw::after{width:24px;height:24px}.sw[aria-checked=true]::after{transform:translateX(18px)}
   .seg button{min-height:36px}
   .slr{grid-template-columns:minmax(0,1fr) 58px}.slr>div:first-child{grid-column:1/-1}
   .ibtn{width:38px;height:38px}
@@ -1290,7 +1297,7 @@ button:disabled{cursor:not-allowed}
                 h('button', { class: 'mode', role: 'switch', 'aria-checked': String(isDark()), 'aria-label': 'Dark mode', title: 'Light or dark',
                     onclick: () => { S.cfg.appearance = isDark() ? 'light' : 'dark'; saveCfg(); layer.paint(); this.render(); } },
                     h('span', { class: 'knob' }), h('span', { class: 'mi2 sun' }, icon(ICONS.sun, 13)), h('span', { class: 'mi2 moon' }, icon(ICONS.moon, 13))),
-                h('button', { class: 'x', 'aria-label': 'Close', onclick: () => this.close() }, icon(ICONS.close, 13, 2.2)));
+                h('button', { class: 'x', 'aria-label': 'Close', onclick: () => this.close() }, gwCloseIcon()));
             const siteline = h('div', { class: 'siteline' },
                 h('span', { class: 'sw8' }), h('b', { text: HOST || location.host }),
                 h('span', { class: 'pill', text: COLOR.name }),

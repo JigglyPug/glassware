@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.2
+// @version      2.2.3
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.2';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.3';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -615,6 +615,12 @@
         sun: ['M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7', 'M12 2.5v2', 'M12 19.5v2', 'M2.5 12h2', 'M19.5 12h2', 'M5.3 5.3l1.4 1.4', 'M17.3 17.3l1.4 1.4', 'M5.3 18.7l1.4-1.4', 'M17.3 6.7l1.4-1.4'],
         moon: ['M20 14.6A8.2 8.2 0 1 1 9.4 4a6.6 6.6 0 0 0 10.6 10.6Z'],
     };
+    function gwCloseIcon() {   // glassware:icon (the close button's ×, stamped by tools/frame.py)
+        const NS = 'http://www.w3.org/2000/svg', s = document.createElementNS(NS, 'svg');
+        for (const [k, v] of [['viewBox', '0 0 24 24'], ['width', '13'], ['height', '13'], ['fill', 'none'], ['stroke', 'currentColor'], ['stroke-width', '2.2'], ['stroke-linecap', 'round'], ['aria-hidden', 'true']]) s.setAttribute(k, v);
+        for (const d of ['M6 6l12 12', 'M18 6 6 18']) { const q = document.createElementNS(NS, 'path'); q.setAttribute('d', d); s.append(q); }
+        return s;
+    }   // glassware:icon end
 
     function h(tagName, attrs, ...kids) {
         const el = document.createElement(tagName);
@@ -668,15 +674,22 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logo svg.gg{width:88%;height:88%;filter:none;overflow:visible}
 .title{font-weight:650;font-size:16px;letter-spacing:-.015em}
 .sub{font-size:12px;color:var(--sub)}
-.x{margin-left:auto;width:28px;height:28px;border-radius:50%;border:0;background:var(--ctl);display:grid;place-items:center;color:var(--sub)}
-.x:hover{background:var(--ctl-hi);color:var(--text)}
 /* sun/moon switch: light or dark glass (the device's choice until it's flipped) */
-.mode{position:relative;flex:none;margin-left:auto;width:50px;height:28px;border:0;border-radius:14px;background:var(--ctl);padding:0 7px;margin-right:-3px;display:flex;align-items:center;justify-content:space-between;color:var(--sub)}
-.mode .mi{position:relative;z-index:1;display:grid;transition:color .18s}
-.mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
+/* glassware:frame start: shared controls, stamped by tools/frame.py; edit them there */
+.panel .mode{position:relative;flex:none;display:flex;align-items:center;justify-content:space-between;width:50px;height:28px;margin:0 0 0 auto;padding:0 7px;border:0;border-radius:14px;background:var(--ctl);color:var(--sub);cursor:pointer;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.panel .mode svg{position:relative;z-index:1;flex:none;display:block;width:13px;height:13px;transition:color .18s}
+.panel .mode .knob{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s cubic-bezier(.3,.7,.3,1)}
 .panel[data-theme=dark] .mode .knob{transform:translateX(22px)}
-.panel:not([data-theme=dark]) .mode .sun,.panel[data-theme=dark] .mode .moon{color:var(--text)}
-.mode+.x{margin-left:0}
+.panel .mode .sun,.panel[data-theme=dark] .mode .moon{color:var(--text)}
+.panel[data-theme=dark] .mode .sun{color:var(--sub)}
+.panel .x{flex:none;display:grid;place-items:center;width:28px;height:28px;margin:0 0 0 -3px;padding:0;border:0;border-radius:50%;background:var(--ctl);color:var(--sub);cursor:pointer;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.panel .x:hover{background:var(--ctl-hi);color:var(--text)}
+.panel .sw{flex:none;position:relative;width:40px;height:24px;margin:0;padding:0;border:0;border-radius:12px;background:var(--sw-off);cursor:pointer;transition:background .18s;box-sizing:border-box;min-width:0;min-height:0;max-height:none;line-height:1;text-transform:none;letter-spacing:normal}
+.panel .sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
+.panel .sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px color-mix(in srgb,var(--fill) 70%,transparent)}
+.panel .sw[aria-checked=true]::after{transform:translateX(16px)}
+.panel .mode:focus-visible,.panel .x:focus-visible,.panel .sw:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
+/* glassware:frame end */
 .siteline{display:flex;align-items:center;gap:8px;padding:6px 16px 12px;font:12px var(--mono);color:var(--sub)}
 .siteline b{color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pill{font:600 9.5px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:6px;background:var(--ctl);color:var(--sub);white-space:nowrap}
@@ -689,10 +702,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .row+.row{margin-top:8px}
 .t{font-weight:500}
 .d{font-size:11.5px;color:var(--sub);margin-top:1px}
-.sw{flex:none;position:relative;width:40px;height:24px;border:0;border-radius:12px;background:var(--sw-off);transition:background .18s}
-.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,.7,.3,1)}
-.sw[aria-checked=true]{background:var(--fill);box-shadow:0 0 12px -2px rgba(var(--a-rgb),.7)}
-.sw[aria-checked=true]::after{transform:translateX(16px)}
 .seg{display:flex;padding:2px;border-radius:10px;background:var(--ctl)}
 .seg button{flex:1;border:0;background:none;padding:6px 0;border-radius:8px;font-size:12px;font-weight:500;transition:background .15s,color .15s}
 .seg button.on{background:var(--fill);color:var(--on);box-shadow:0 1px 4px rgba(0,0,0,.14),0 0 14px -4px rgba(var(--a-rgb),.8)}
@@ -809,7 +818,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:var(--ctl
                     E.mode = h('button', { class: 'mode', role: 'switch', 'aria-label': 'Dark mode', title: 'Light or dark',
                         onclick: () => { saveSettings({ appearance: this.dark() ? 'light' : 'dark' }); this.refresh(); } },
                         h('span', { class: 'knob' }), h('span', { class: 'mi sun' }, icon(ICONS.sun, 12)), h('span', { class: 'mi moon' }, icon(ICONS.moon, 12))),
-                    h('button', { class: 'x', 'aria-label': 'Close', onclick: () => this.close() }, icon(ICONS.close, 13))),
+                    h('button', { class: 'x', 'aria-label': 'Close', onclick: () => this.close() }, gwCloseIcon())),
                 h('div', { class: 'siteline' }, h('b', { text: HOST || location.href }), E.kind = h('span', { class: 'pill' })),
             );
 
