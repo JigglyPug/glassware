@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.1
+// @version      1.5.2
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.1';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.2';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -518,6 +518,8 @@ button:disabled{cursor:not-allowed}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px;border-radius:10px;border:1px solid var(--line);background:var(--field);font-size:12px;font-weight:500;transition:background .15s,opacity .5s,transform .5s;white-space:nowrap}
 .btn:hover{background:var(--field-hi)}
 .btn:disabled{opacity:.45}
+.dbtns{display:grid;grid-template-columns:repeat(3,max-content) 1fr;gap:8px}
+.dbtns .danger{justify-self:end}
 .btn.primary{background:var(--fill);color:var(--on);border-color:transparent;box-shadow:0 4px 14px -6px rgba(var(--a-rgb),1)}
 .btn.primary:hover{filter:brightness(1.06)}
 .btn.sm{height:28px;padding:0 10px;font-size:11.5px;border-radius:8px}
@@ -1168,10 +1170,11 @@ h1 span{color:var(--ink)}
 .rng::-moz-range-thumb{pointer-events:auto;width:22px;height:22px;border-radius:50%;background:#fff;border:0;box-shadow:0 1px 4px rgba(0,0,0,.3),0 0 0 4px rgba(var(--a-rgb),.2);cursor:grab}
 .rng:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px var(--fill)}
 .ht{display:flex;justify-content:space-between;padding:0 4px;font:10px var(--mono);color:var(--sub)}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{height:32px;padding:0 12px;border-radius:16px;border:1px solid var(--line);background:var(--field);font-size:12px;font-weight:500}
+/* presets and data buttons sit in equal columns, never a ragged wrap */
+.chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.chip{display:inline-flex;align-items:center;justify-content:center;flex-wrap:wrap;column-gap:4px;min-height:32px;height:auto;padding:4px 10px;border-radius:16px;text-align:center;border:1px solid var(--line);background:var(--field);font-size:12px;font-weight:500}
 .chip:hover{background:var(--field-hi);border-color:rgba(var(--a-rgb),.5)}
-.chip small{color:var(--sub);font:10.5px var(--mono);margin-left:4px}
+.chip small{color:var(--sub);font:10.5px var(--mono)}
 .slr{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,210px) 66px;align-items:center;gap:14px;min-height:44px}
 .slr+.slr{margin-top:6px}
 .r1{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:none;margin:0;outline:none}
@@ -1241,6 +1244,7 @@ h1 span{color:var(--ink)}
 .m .foot{padding-bottom:4px}
 .m .site{grid-template-columns:30px minmax(0,1fr) 46px 36px}.m .site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
 .m .slr{grid-template-columns:minmax(0,1fr) 66px}.m .slr>div:first-child{grid-column:1/-1}
+.m .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.m .dbtns .btn{justify-self:stretch}.m .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
 .m .srow2,.m .srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.m .srow2 .spk{display:none}.m .srow2 .acts{grid-column:2/-1;justify-content:flex-start}.m .srow2 .acts:empty{display:none}
 /* the accent, never a neutral: browsers that darken pages themselves leave outlines alone */
 .bar.tapped>i,.bar.tapped>.sb,.hm i.tapped,.cal i.tapped{outline:2px solid var(--fill);outline-offset:2px;box-shadow:0 0 12px -2px rgba(var(--a-rgb),.9)}
@@ -1248,6 +1252,7 @@ h1 span{color:var(--ink)}
 .readout{margin-top:10px;font:500 11.5px var(--mono);color:var(--sub);min-height:16px}
 .readout.on{color:var(--text)}
 @media (max-width:620px){
+  .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.dbtns .btn{justify-self:stretch}.chips{grid-template-columns:repeat(2,minmax(0,1fr))}
   .srow2,.srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.srow2 .spk{display:none}.srow2 .acts{grid-column:2/-1;justify-content:flex-start}.srow2 .acts:empty{display:none}
   .site{grid-template-columns:30px minmax(0,1fr) 40px 30px}.site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
   .slr{grid-template-columns:minmax(0,1fr) 66px}.slr>div:first-child{grid-column:1/-1}
@@ -1880,11 +1885,11 @@ h1 span{color:var(--ink)}
             const armed = Date.now() - this.resetArm < 4000;
             const data = h('div', { class: 'tile full', style: 'margin-bottom:14px' }, this.label('Your data'),
                 h('div', { class: 'd', style: 'margin:-4px 0 12px', text: 'Saved only in Tampermonkey on this PC. Only site names are kept, never full addresses or page titles.' }),
-                h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' },
+                h('div', { class: 'dbtns' },
                     h('button', { class: 'btn', onclick: () => exportCSV() }, icon(ICONS.down, 13, 2.2), 'Export CSV'),
                     h('button', { class: 'btn', onclick: () => exportSettings() }, icon(ICONS.down, 13, 2.2), 'Export settings'),
                     h('button', { class: 'btn', disabled: lock, title: lock ? 'Import after lockdown' : null, onclick: () => importSettings(() => this.render()) }, icon(ICONS.up, 13, 2.2), 'Import settings'),
-                    h('button', { class: 'btn danger', style: 'margin-left:auto', disabled: lock, text: armed ? 'Click again to erase all stats' : 'Reset all stats',
+                    h('button', { class: 'btn danger', disabled: lock, text: armed ? 'Click again to erase' : 'Reset all stats',
                         onclick: () => { if (inLockdown()) return; if (Date.now() - this.resetArm < 4000) { resetStats(); this.resetArm = 0; } else this.resetArm = Date.now(); this.render(); } })));
             const look = h('div', { class: 'tile full' }, this.label('Appearance'),
                 h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Match my device' }), h('div', { class: 'd', text: 'Light or dark follows your device until you flip the switch up top' })),

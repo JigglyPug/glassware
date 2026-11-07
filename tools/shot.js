@@ -276,6 +276,20 @@ function stubPage() {
         for (let i = 0; i < kids.length; i++) for (let j = i + 1; j < kids.length; j++) { const A = kids[i].getBoundingClientRect(), B = kids[j].getBoundingClientRect();
           const w = Math.min(A.right, B.right) - Math.max(A.left, B.left), h = Math.min(A.bottom, B.bottom) - Math.max(A.top, B.top); if (w > 2 && h > 2) add('overlaps', kids[i], 'with ' + name(kids[j]) + ' by ' + Math.round(w) + 'x' + Math.round(h)); }
       }
+      // button rows that wrap: a row of buttons (30px tall or more: actions, not chips) that spills onto a
+      // second line has to land as a grid, every line's buttons in the same columns; anything else (2 then 2
+      // of different widths, a lone button pushed to the right) reads as a mistake. Lay them out on purpose.
+      const groups = new Map();
+      for (const e of els) { if (e.tagName !== 'BUTTON') continue; const q = e.getBoundingClientRect(); if (q.height < 30 || !q.width) continue;
+        const p = e.parentElement; if (!p) continue; (groups.get(p) || groups.set(p, []).get(p)).push(q); }
+      for (const [p, qs] of groups) {
+        if (qs.length < 2) continue;
+        const rows = []; for (const q of qs.sort((a, b) => a.top - b.top || a.left - b.left)) { const r = rows.find(r => Math.abs(r[0].top - q.top) < 6); r ? r.push(q) : rows.push([q]); }
+        if (rows.length < 2) continue;
+        const cols = rows[0].map(q => q.left), w0 = rows[0].map(q => q.width);
+        const grid = rows.every(r => r.every((q, i) => i < cols.length && Math.abs(q.left - cols[i]) < 1.5 && Math.abs(q.width - w0[i]) < 1.5));
+        if (!grid) add('wrapped buttons', p, qs.length + ' buttons wrap onto ' + rows.length + ' lines (' + rows.map(r => r.length).join(' + ') + ') without lining up in columns; make them one row, or a grid of equal columns');
+      }
       // shape (tools/tokens.json): the panel's width and corners, the header's and tab bar's insets from
       // the panel's edge, and every rounded corner inside the panel on the radius scale (or nested
       // inside its parent's corner: the parent's radius less its padding)

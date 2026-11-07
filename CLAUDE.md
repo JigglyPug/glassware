@@ -283,14 +283,16 @@ python3 tools/check.py              # release check: everything below, plus the 
   ("hard to see"), switches whose knob isn't centered, shared controls off the sizes above, and
   labels that take the site's own text color (the site CSS uses the opposite theme's colors),
   with a chart bar tapped as well, and does the same for what a script draws
-  outside its panel (`SURFACES` in `tools/audit.py`: block screen, nudge, badge menu; add new ones there). `node tools/shot.js … --forcedark` opens a page
+  outside its panel (`SURFACES` in `tools/audit.py`: block screen, nudge, badge menu; add new ones there). It also flags
+  a row of buttons (30px and taller) that wraps onto a second line without lining up in columns:
+  lay such rows out as one row, or as a grid of equal columns (two per row on phones). `node tools/shot.js … --forcedark` opens a page
   the way browsers that darken pages themselves show it, to look at by eye. Fix what it finds before shipping; it should print
   "clean" for every script.
 - Panels that live in the page (not a shadow root) inherit the site's CSS: undo text rules like
   `white-space` on the panel itself. Their buttons get one reset in the stamped frame (normal
   display, auto height, centered content), because sites like Reddit give every button a fixed
   height with its text pushed to the bottom; the audit's site CSS does the same and flags any
-  button whose text isn't centered. Picker grids use equal columns
+  button whose text isn't centered. Picker grids and any group of buttons that can wrap use equal columns
   (`minmax(0,1fr)`) and drop to 3 per row when a label is long, so labels wrap instead of
   spilling. Phone sheets size with `dvh` (after a `vh` fallback) so the address and tool bars
   never cover the top.
