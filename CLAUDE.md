@@ -112,9 +112,14 @@ tools/                                builders for all of the above
   requests through `gwPublicUrl()`, one shared helper: public `http(s)` addresses only, never this
   computer or a private network unless the page itself is on one, and without cookies.
 - **Console logging is off by default** and never prints account or channel names, emails or ids,
-  even when it's on: people share console captures.
-- `tools/check.py` enforces the last two (permissions, privacy) on every run and runs the
-  Kaleidoscope tests when Kaleidoscope changes.
+  even when it's on: people share console captures. That includes messages built for failures ("could
+  not find …"): say what was missing, never whose. `tools/logtest.py` turns every logging switch in
+  Molten Tools on, saves a made-up account and walks every path that handles account names (switching
+  on YouTube Music with the account missing or the menu not opening, YouTube's account picker with
+  and without the account, Screenshot safe learning names), and fails if a console line names either
+  made-up account. A new path that touches account names gets a case there.
+- `tools/check.py` enforces the last two (permissions, privacy) on every run, runs the Kaleidoscope
+  tests when Kaleidoscope changes and the logging test when Molten Tools changes (GitHub runs both every time).
 
 ## The panel frame (every script's settings panel)
 
@@ -431,12 +436,17 @@ python3 tools/check.py              # release check: everything below, plus the 
   shows the latest.
 - Pull before you start and rebase on anything new before pushing; other chats work on
   this repo too.
-- Never force-push or rewrite history. A ruleset on `main` (repo Settings → Rules → Rulesets, set by
-  hand: this workflow can't write repo settings) blocks force pushes and deleting the branch; normal
-  pushes still go through. `tools/check.py` warns while it's missing. Installed copies update straight from
-  `main`, so whoever can push to it can ship code to everyone: keep two-step sign-in on the account.
+- **Ship with `python3 tools/push.py`**, never `git push` to `main`. A ruleset on `main` (repo Settings →
+  Rules → Rulesets, set by hand: this workflow can't write repo settings) blocks force pushes and
+  deleting the branch, and takes only a commit whose "checks" run has already passed. So `tools/push.py`
+  pushes the commit to the holding branch `ready`, waits for GitHub's run on it, and moves `main` to that
+  same commit once it passes; if the run fails, `main` stays put. `tools/check.py` warns while the
+  ruleset or its required check is missing.
+- Never force-push or rewrite history, on any branch (`ready` included). Installed copies update straight
+  from `main`, so whoever can push to it can ship code to everyone: keep two-step sign-in on the account.
 - **Rolling back** a bad release: put the last good code back and give it a *higher* `@version` than the
   bad one (Tampermonkey never installs a lower number, so a plain revert reaches nobody), then run the
-  usual checks and push. Say in the commit which version it restores.
+  usual checks and ship it (`tools/push.py`). Say in the commit which version it restores. A rollback
+  hasn't been tried end to end yet (issue #1).
 - Don't create a repo named `userscripts` on this account: GitHub redirects that old name
   here, and installed copies may still rely on the redirect.

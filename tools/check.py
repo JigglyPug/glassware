@@ -35,6 +35,8 @@ It checks, in order:
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
              recipe, nothing faint or hard to see, in both themes (changed scripts)
+  logging    tools/logtest.py: with logging on, Molten Tools never prints an account's name, handle,
+             email or id (when Molten Tools changed)
   kaleidoscope  tools/boardtest.py: a hostile board can't send anything out; tools/handofftest.py:
              a prompt goes only to the claude.ai tab opened for it (when Kaleidoscope changed)
   dashboard  the demo history matches its generator; tools/dash.py: every Hourglass card answers
@@ -237,7 +239,8 @@ for f in sorted(glob.glob(f'{R}/*/*/*.user.js')):
     t = open(f, encoding='utf-8').read(); rel = os.path.relpath(f, R); n += 2
     m = re.search(r"""(?:gmGet|GM_getValue|get)\(\s*'[^']*(?:[Dd]ebug|[Ll]og)[^']*'\s*,\s*true\s*\)""", t)
     ok(not m, f'{rel}: console logging is on by default ({m.group(0)}); default it to off' if m else '')
-    m = re.search(r"\blog\w*\([^)\n]*\b(?:cfg|acct|account)\.(?:name|email|handle)\b", t)
+    # any logging or failure-reporting call (log, glog, fail, warn, console.*) with an account name in it
+    m = re.search(r"\b(?:\w*log\w*|fail|warn\w*|error|debug|console\.\w+)\([^\n]*\b(?:cfg|acct|account|priv)\.(?:name|email|handle|found)\b(?!\.length)", t)
     ok(not m, f'{rel}: a log line prints an account name ({m.group(0)}); leave names out of logs' if m else '')
 done(n)
 
@@ -260,12 +263,14 @@ have['playwright (node)'] = r.stdout.strip() or 'missing'
 for k, v in have.items():
     want = pins.get(k.split(' ')[0])
     if v != want: print(f'  ⚠ {k} {v} is installed; the pinned version is {want} (screenshots may differ)')
-# main is protected against force pushes and deletion (a ruleset, set by hand in the repo's settings)
+# main is protected against force pushes and deletion and takes only commits whose checks passed (a
+# ruleset, set by hand in the repo's settings; tools/push.py is how changes reach it)
 r = subprocess.run(['gh', 'api', 'repos/JigglyPug/glassware/rules/branches/main'], capture_output=True, text=True)
 try: kinds = {x.get('type') for x in json.loads(r.stdout)}
 except ValueError: kinds = None
 if kinds is None: print("  ⚠ couldn't read main's rules from GitHub")
 elif not {'non_fast_forward', 'deletion'} <= kinds: print('  ⚠ main has no ruleset blocking force pushes and deletion (repo Settings → Rules → Rulesets)')
+elif 'required_status_checks' not in kinds: print("  ⚠ main doesn't require the checks to pass before it moves (repo Settings → Rules → Rulesets)")
 done(n)
 
 # ------------------------------------------------------------------ permissions
@@ -404,6 +409,18 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kal
         for l in lines:
             if l.startswith('== ') and l.endswith('clean'): print('  ✓ ' + good)
             elif not l.startswith('== '): ok(False, l[3:].split(':')[0] + ': ' + l.strip() if l.startswith('== ') else 'kaleidoscope: ' + l.strip())
+
+# ------------------------------------------------------------------ logging
+# tools/logtest.py: with every logging switch on, Molten Tools' account paths never print an account's
+# name, handle, email or id (and giving up on a missing account doesn't bounce between pages)
+if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/molten-tools' in changed)):
+    head('logging')
+    r = subprocess.run([sys.executable, f'{HERE}/logtest.py'], capture_output=True, text=True)
+    seen = 0
+    for l in r.stdout.splitlines():
+        if l.startswith('== '): seen += 1; (print(f'  ✓ {l[3:].split(": ")[0]}: no account names in the console') if l.endswith('clean') else None)
+        elif l.strip(): ok(False, 'molten-tools logging: ' + l.strip())
+    ok(seen >= 5, f'the logging test reported {seen} of 5 paths: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
 
 # ------------------------------------------------------------------ screenshots
 if '--quick' not in args:

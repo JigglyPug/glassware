@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.7.7
+// @version      3.7.8
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -271,8 +271,9 @@
         return null;
       });
       if (!el) {
-        log('Could not find the saved default account on the picker; giving up.');
+        log('Could not find the saved default account on the picker; giving up until you reload.');
         ss.del('pending');
+        ss.set('override', '1');   // or the page we go back to would send us straight here again
         location.href = ss.get('next') || '/';
         return;
       }
@@ -379,7 +380,7 @@
       clickIt(sw);
 
       const target = await waitFor(() => findText(t => t.startsWith(want) && /subscriber/.test(t)), 6000);
-      if (!target) return fail('account "' + cfg.name + '" not found in list');
+      if (!target) return fail('the saved default account is not in the list');
       log('Clicking the saved default account');
       clickIt(target);
     }

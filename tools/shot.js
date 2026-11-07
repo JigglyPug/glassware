@@ -123,9 +123,13 @@ function stubPage() {
     W.__perfObservers = () => [...watching.values()].filter(ts => ts.some(r => { const t = r.deref(); return t && t.isConnected; })).length;
   })();`);
   // --noscript: the same page without the script, for a baseline
+  // --init <file>: page script that runs before the userscript (a made-up page state, tools/logtest.py)
+  if (opt('--init', '')) await ctx.addInitScript(fs.readFileSync(opt('--init', ''), 'utf8'));
   await ctx.addInitScript(shim + '\n;(function(){try{\n' + (has('--noscript') ? '' : src) + '\n}catch(e){console.error("SCRIPT ERR",e)}})();');
   const page = await ctx.newPage();
   page.on('console', m => { if (m.type() === 'error') console.log('[console]', m.text().slice(0, 200)); });
+  // --console: every console line, in full (tools/logtest.py)
+  if (has('--console')) page.on('console', m => console.log('CONSOLE ' + m.type() + ' ' + JSON.stringify(m.text())));
   page.on('pageerror', e => console.log('[pageerror]', String(e).slice(0, 300)));
   // --commit: don't wait for the page's load event (a Kaleidoscope board stops the page and replaces it)
   await page.goto(url, { waitUntil: has('--commit') ? 'commit' : 'load' });
@@ -412,6 +416,8 @@ function stubPage() {
   if (opt('--maxfrac', '')) await page.evaluate(f => { window.__maxFrac = f; }, +opt('--maxfrac', '0.92'));
   if (has('--sheet')) await page.evaluate(() => { window.__sheet = true; });
   if (evalJs) { const v = await page.evaluate(evalJs); if (has('--print')) console.log('EVAL ' + JSON.stringify(v)); await page.waitForTimeout(900); }   // --print: show what --eval returned
+  // nothing to capture: a test that only wanted what --eval found (and the requests and console lines on the way)
+  if (evalJs && out === '/dev/null' && !has('--audit')) { await browser.close(); return; }
   async function snap(file) {
     await page.evaluate(() => __hideErr());
     // Screenshots never show the version: they only need recapturing when a panel changes.
