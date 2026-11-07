@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.4.5
+// @version      2.4.6
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1999,7 +1999,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-names:hover .ytt-names-list{filter:none}' +
       '#ytt-panel select.ytt-sel{max-width:170px;cursor:pointer}' +
       '#ytt-panel select.ytt-sel option{background:var(--mt-solid);color:var(--mt-text)}' +
-      '#ytt-panel .ytt-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}' +
+      '#ytt-panel .ytt-btns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:14px}.ytt-btns>.ytt-btn{text-align:center}' +
       '#ytt-panel .ytt-btn{padding:7px 11px;border:0;border-radius:8px;background:var(--mt-btn);color:var(--mt-text);cursor:pointer;font-size:12.5px}' +
       '#ytt-panel .ytt-btn:hover{background:var(--mt-btn-hi)}' +
       '#ytt-panel .ytt-btn.primary{background:' + ACCENT + ';color:#1a1a1a;font-weight:650}' +

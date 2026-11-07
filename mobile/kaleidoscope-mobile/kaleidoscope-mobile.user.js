@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.3.5
+// @version      1.3.6
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -610,7 +610,7 @@
       '#kaleidoscope-panel .kld-mode .kld-go{color:var(--c);font-size:16px;font-weight:800;flex:none;width:18px;text-align:center}' +
       '@keyframes kld-spin{to{transform:rotate(360deg)}}' +
       '#kaleidoscope-panel .kld-mode[disabled]{opacity:.35;cursor:not-allowed}' +
-      '#kaleidoscope-panel .kld-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}' +
+      '#kaleidoscope-panel .kld-btns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;margin-top:12px}.kld-btns>.kld-btn{text-align:center}' +
       '#kaleidoscope-panel .kld-btn{min-height:40px;padding:9px 14px;border:0;border-radius:10px;background:var(--k-btn);color:var(--k-strong);cursor:pointer;font-size:13.5px}' +
       '#kaleidoscope-panel .kld-btn:active{background:var(--k-btn-hi)}' +
       '#kaleidoscope-panel .kld-btn.primary{background:' + ACCENT + ';color:#0B1622;font-weight:650}' +

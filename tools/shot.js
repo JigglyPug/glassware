@@ -290,6 +290,18 @@ function stubPage() {
         const grid = rows.every(r => r.every((q, i) => i < cols.length && Math.abs(q.left - cols[i]) < 1.5 && Math.abs(q.width - w0[i]) < 1.5));
         if (!grid) add('wrapped buttons', p, qs.length + ' buttons wrap onto ' + rows.length + ' lines (' + rows.map(r => r.length).join(' + ') + ') without lining up in columns; make them one row, or a grid of equal columns');
       }
+      // button rows that leave space unused: a row holding only action buttons (two or more, 30px and taller;
+      // not a segmented control, which sits on its own filled bar) spans the full width of its row and splits
+      // it evenly, so nothing sits pushed to one side with an empty stretch beside it
+      for (const [p, qs] of groups) {
+        if (qs.length < 2) continue;
+        const pc = getComputedStyle(p), filled = (pc.backgroundColor !== 'rgba(0, 0, 0, 0)' && pc.backgroundColor !== 'transparent') || parseFloat(pc.borderTopWidth) > 0;
+        if (filled || [...p.children].some(k => k.tagName !== 'BUTTON' && k.getBoundingClientRect().width > 0)) continue;
+        const pr = p.getBoundingClientRect(), L = pr.left + parseFloat(pc.paddingLeft), R = pr.right - parseFloat(pc.paddingRight);
+        const rows = []; for (const q of [...qs].sort((a, b) => a.top - b.top || a.left - b.left)) { const r = rows.find(r => Math.abs(r[0].top - q.top) < 6); r ? r.push(q) : rows.push([q]); }
+        const bad = rows.find(r => r.length > 1 && (Math.abs(r[0].left - L) > 2 || Math.abs(r[r.length - 1].right - R) > 2 || r.some(q => Math.abs(q.width - r[0].width) > 2)));
+        if (bad) add('uneven buttons', p, bad.length + ' buttons in a row ' + (Math.abs(bad[bad.length - 1].right - R) > 2 || Math.abs(bad[0].left - L) > 2 ? 'leave ' + Math.round((bad[0].left - L) + (R - bad[bad.length - 1].right)) + 'px of the row empty' : 'have different widths') + '; split the row evenly (equal columns, full width)');
+      }
       // shape (tools/tokens.json): the panel's width and corners, the header's and tab bar's insets from
       // the panel's edge, and every rounded corner inside the panel on the radius scale (or nested
       // inside its parent's corner: the parent's radius less its padding)

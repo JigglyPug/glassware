@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.7.5
+// @version      3.7.6
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -4637,7 +4637,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel .ytt-names:hover .ytt-names-list{filter:none}' +
       '#ytt-panel select.ytt-sel{max-width:170px;cursor:pointer}' +
       '#ytt-panel select.ytt-sel option{background:var(--mt-solid);color:var(--mt-text)}' +
-      '#ytt-panel .ytt-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}' +
+      '#ytt-panel .ytt-btns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:14px}.ytt-btns>.ytt-btn{text-align:center}' +
       '#ytt-panel .ytt-btn{padding:7px 11px;border:0;border-radius:8px;background:var(--mt-btn);color:var(--mt-text);cursor:pointer;font-size:12.5px}' +
       '#ytt-panel .ytt-btn:hover{background:var(--mt-btn-hi)}' +
       '#ytt-panel .ytt-btn.primary{background:' + ACCENT + ';color:#1a1a1a;font-weight:650}' +
@@ -4879,7 +4879,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       const status = el('div', 'ytt-status');
       const say = (msg, err) => { status.textContent = msg; status.classList.toggle('err', !!err); };
       const btns = el('div', 'ytt-btns');
-      btn(btns, 'Save current account as default', () => {
+      btn(btns, 'Save as default', () => {
         const name = input.value.trim();
         if (!name) return say('Enter the channel name first.', true);
         ACCT.saveCfg({ enabled, name, id: ACCT.currentId() });

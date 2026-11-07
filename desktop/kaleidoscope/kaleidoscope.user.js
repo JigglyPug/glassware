@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.5
+// @version      2.10.6
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -1191,7 +1191,7 @@
       '@keyframes kld-spin{to{transform:rotate(360deg)}}' +
       '#kaleidoscope-panel .kld-mode[disabled]{opacity:.35;cursor:not-allowed}' +
       '#kaleidoscope-panel .kld-mode[disabled]:hover{background:var(--k-well)}' +
-      '#kaleidoscope-panel .kld-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}' +
+      '#kaleidoscope-panel .kld-btns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:12px}.kld-btns>.kld-btn{text-align:center}' +
       '#kaleidoscope-panel .kld-btn{padding:7px 12px;border:0;border-radius:8px;background:var(--k-btn);color:var(--k-strong);cursor:pointer;font-size:12.5px}' +
       '#kaleidoscope-panel .kld-btn:hover{background:var(--k-btn-hi)}' +
       '#kaleidoscope-panel .kld-btn.primary{background:' + ACCENT + ';color:#0B1622;font-weight:650}' +
@@ -1251,7 +1251,7 @@
       '#kaleidoscope-job .kld-jfill{height:100%;width:0;background:linear-gradient(90deg,#3DB4F2,#9256F3);border-radius:3px;transition:width 1s linear}' +
       '#kaleidoscope-job .kld-jeta{font-size:11.5px;color:var(--k-muted)}' +
       '#kaleidoscope-job .kld-jnote{margin-top:8px;font-size:12px;color:var(--k-warn)}' +
-      '#kaleidoscope-job .kld-btns{display:flex;gap:6px;margin-top:10px}' +
+      '#kaleidoscope-job .kld-btns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:10px}' +
       '#kaleidoscope-job .kld-btn{padding:7px 12px;border:0;border-radius:8px;background:var(--k-btn);color:var(--k-strong);cursor:pointer;font-size:12.5px}' +
       '#kaleidoscope-job .kld-btn:hover{background:var(--k-btn-hi)}' +
       '#kaleidoscope-job .kld-btn.primary{background:' + ACCENT + ';color:#0B1622;font-weight:650}' +

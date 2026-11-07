@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.2
+// @version      1.5.3
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.2';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.3';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -518,8 +518,9 @@ button:disabled{cursor:not-allowed}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px;border-radius:10px;border:1px solid var(--line);background:var(--field);font-size:12px;font-weight:500;transition:background .15s,opacity .5s,transform .5s;white-space:nowrap}
 .btn:hover{background:var(--field-hi)}
 .btn:disabled{opacity:.45}
-.dbtns{display:grid;grid-template-columns:repeat(3,max-content) 1fr;gap:8px}
-.dbtns .danger{justify-self:end}
+/* rows of buttons split their width evenly (CLAUDE.md) */
+.dbtns{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.even{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .btn.primary{background:var(--fill);color:var(--on);border-color:transparent;box-shadow:0 4px 14px -6px rgba(var(--a-rgb),1)}
 .btn.primary:hover{filter:brightness(1.06)}
 .btn.sm{height:28px;padding:0 10px;font-size:11.5px;border-radius:8px}
@@ -571,7 +572,7 @@ h1 span{color:var(--ink)}
 .stat{padding:11px 8px;border-radius:14px;background:var(--field);border:1px solid var(--line)}
 .stat b{display:block;font-size:17px;font-weight:650;letter-spacing:-.02em}
 .stat small{font-size:11px;color:var(--sub)}
-.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px}
 .btns .btn{height:44px;min-width:150px;padding:0 18px;border-radius:13px;font-size:14px;font-weight:600}
 .foot{margin-top:16px;font-size:12px;color:var(--sub)}
 .ring{position:relative;width:150px;height:150px;margin:10px auto 6px}
@@ -806,7 +807,7 @@ h1 span{color:var(--ink)}
 .nudge .nb{flex:1;min-width:0}
 .nudge h3{margin:1px 0 3px;font-size:15.5px;font-weight:650;letter-spacing:-.015em}
 .nudge p{margin:0;font-size:12.5px;line-height:1.45;color:var(--n-sub)}
-.nudge .nbtns{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.nudge .nbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:center;margin-top:12px}.nudge .nbtns .link{grid-column:1/-1;justify-self:start}
 .nudge .btn{height:32px;font-size:12px;border-color:var(--n-ctl-edge);background:var(--n-ctl);color:var(--n-text)}
 .nudge .btn:hover{background:var(--n-ctl-hi)}
 .nudge .btn.primary{background:var(--n-primary);color:var(--n-primary-ink);border-color:transparent;box-shadow:0 4px 14px -6px rgba(94,92,230,.6)}
@@ -1104,7 +1105,7 @@ h1 span{color:var(--ink)}
 .bar .pdot{width:6px;height:6px;border-radius:50%;background:var(--ink);margin-bottom:4px;flex:none}
 .srow2{display:grid;grid-template-columns:30px minmax(0,1fr) 64px 62px;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
 .srow2.wa{grid-template-columns:30px minmax(0,1fr) 64px 62px 150px}
-.srow2 .acts{display:flex;gap:6px;justify-content:flex-end}
+.srow2 .acts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
 .srow2:not(.wa) .acts{display:none}
 .hmw{grid-template-columns:30px minmax(0,1fr)}
 .hya{display:grid;grid-template-rows:repeat(7,16px);row-gap:2px;font:9.5px/16px var(--mono);color:var(--sub);text-align:right}
@@ -1147,7 +1148,7 @@ h1 span{color:var(--ink)}
 .trk .q{position:absolute;top:3px;bottom:3px;width:1px;background:var(--faint)}
 .wkt{display:grid;grid-template-columns:38px 1fr 54px;gap:10px;padding:2px 8px 0}
 .wkt div{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--sub)}
-.days{display:flex;gap:6px;flex-wrap:wrap}
+.days{display:grid;grid-template-columns:repeat(7,44px);gap:6px}
 .day{position:relative;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--field);font-weight:600;font-size:13px}
 .day:hover{background:var(--field-hi)}
 .day.sel{background:var(--fill);color:var(--on);border-color:transparent;box-shadow:0 4px 14px -6px rgba(var(--a-rgb),1)}
@@ -1244,16 +1245,16 @@ h1 span{color:var(--ink)}
 .m .foot{padding-bottom:4px}
 .m .site{grid-template-columns:30px minmax(0,1fr) 46px 36px}.m .site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
 .m .slr{grid-template-columns:minmax(0,1fr) 66px}.m .slr>div:first-child{grid-column:1/-1}
-.m .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.m .dbtns .btn{justify-self:stretch}.m .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
-.m .srow2,.m .srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.m .srow2 .spk{display:none}.m .srow2 .acts{grid-column:2/-1;justify-content:flex-start}.m .srow2 .acts:empty{display:none}
+.m .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.m .days{grid-template-columns:repeat(7,minmax(0,1fr))}.m .day{width:auto}.m .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+.m .srow2,.m .srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.m .srow2 .spk{display:none}.m .srow2 .acts{grid-column:2/-1}.m .srow2 .acts:empty{display:none}
 /* the accent, never a neutral: browsers that darken pages themselves leave outlines alone */
 .bar.tapped>i,.bar.tapped>.sb,.hm i.tapped,.cal i.tapped{outline:2px solid var(--fill);outline-offset:2px;box-shadow:0 0 12px -2px rgba(var(--a-rgb),.9)}
 .m .bar,.m .hm i{cursor:pointer}
 .readout{margin-top:10px;font:500 11.5px var(--mono);color:var(--sub);min-height:16px}
 .readout.on{color:var(--text)}
 @media (max-width:620px){
-  .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.dbtns .btn{justify-self:stretch}.chips{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .srow2,.srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.srow2 .spk{display:none}.srow2 .acts{grid-column:2/-1;justify-content:flex-start}.srow2 .acts:empty{display:none}
+  .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.days{grid-template-columns:repeat(7,minmax(0,1fr))}.day{width:auto}.chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .srow2,.srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.srow2 .spk{display:none}.srow2 .acts{grid-column:2/-1}.srow2 .acts:empty{display:none}
   .site{grid-template-columns:30px minmax(0,1fr) 40px 30px}.site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
   .slr{grid-template-columns:minmax(0,1fr) 66px}.slr>div:first-child{grid-column:1/-1}
   .listen{display:none}
@@ -1742,7 +1743,7 @@ h1 span{color:var(--ink)}
                     } }, p.n, h('small', { text: p.r })))),
                 h('div', { class: 'row', style: 'margin-top:14px;padding-top:12px;border-top:1px solid var(--line)' },
                     h('span', { class: 'd', text: 'Copy ' + full + "'s hours" }),
-                    h('div', { style: 'display:flex;gap:8px' },
+                    h('div', { class: 'even' },
                         h('button', { class: 'btn', text: 'To weekdays', onclick: () => { [0, 1, 2, 3, 4].forEach(k => this.setDay(k, sd)); this.render(); } }),
                         h('button', { class: 'btn', text: 'To every day', onclick: () => { [0, 1, 2, 3, 4, 5, 6].forEach(k => this.setDay(k, sd)); this.render(); } }))));
 

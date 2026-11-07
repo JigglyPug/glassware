@@ -285,7 +285,10 @@ python3 tools/check.py              # release check: everything below, plus the 
   with a chart bar tapped as well, and does the same for what a script draws
   outside its panel (`SURFACES` in `tools/audit.py`: block screen, nudge, badge menu; add new ones there). It also flags
   a row of buttons (30px and taller) that wraps onto a second line without lining up in columns:
-  lay such rows out as one row, or as a grid of equal columns (two per row on phones). `node tools/shot.js … --forcedark` opens a page
+  lay such rows out as one row, or as a grid of equal columns (two per row on phones). A row that holds only
+  action buttons (two or more) spans the full width of its row and splits it evenly, so nothing sits
+  pushed to one side next to an empty stretch; the audit flags rows that don't. A lone button keeps its
+  own size, and segmented controls (on their own filled bar) and buttons beside a label are left alone. `node tools/shot.js … --forcedark` opens a page
   the way browsers that darken pages themselves show it, to look at by eye. Fix what it finds before shipping; it should print
   "clean" for every script.
 - Panels that live in the page (not a shadow root) inherit the site's CSS: undo text rules like
