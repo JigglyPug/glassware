@@ -42,6 +42,10 @@ It checks, in order:
              axes (when Hourglass changed)
   live       tools/live.py: every control updates the panel on the spot, in the same tab and in a
              second open tab, with nothing waiting for a reopen (changed scripts)
+  performance  tools/perf.py: over a long session nothing a script leaves behind keeps growing
+             (memory, elements, listeners, timers, page watchers) and it stays within its time
+             budgets; the test proves itself on a deliberately bad script first (changed scripts,
+             or when the test itself changed)
   screenshots the committed panel screenshots still match the panels (changed scripts)
 """
 import glob, json, os, re, subprocess, sys
@@ -412,6 +416,23 @@ if '--quick' not in args:
             if l.startswith('== '): cur = l[3:].split(':')[0].split('/')[-1]; seen += 1; (print(f'  ✓ {cur}: updates live') if l.endswith('clean') else None)
             elif l.strip(): ok(False, f'{cur}: {l.strip()}')
         ok(seen == 2 * len(targets), f'the live-update test reported {seen} of {2 * len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+    head('performance')
+    # tools/perf.py: a long session on each changed script's site; nothing it leaves behind keeps
+    # growing and it stays within its time budgets. The test proves itself on a deliberately bad
+    # script first, so it also runs (that part alone) when only the test changed.
+    perf_tools = git('diff', '--quiet', 'origin/main', '--', 'tools/perf.py', 'tools/shot.js').returncode != 0
+    if not targets and not perf_tools: print('  ✓ no script differs from GitHub')
+    else:
+        names = [p.split('/')[1] for p in targets]
+        r = subprocess.run([sys.executable, f'{HERE}/perf.py'] + (names or ['--selftest']), capture_output=True, text=True)
+        seen = 0
+        for l in r.stdout.splitlines():
+            if not l.startswith('== '): continue
+            seen += 1; name, res = l[3:].split(': ', 1)
+            if name == 'selftest': (print('  ✓ the test catches a leaky, slow script') if res.startswith('every budget') else ok(False, f'tools/perf.py self-test: {res}'))
+            elif res == 'clean': print(f'  ✓ {name.split("/")[-1]}: no leaks, within its time budgets')
+            else: ok(False, f'{name.split("/")[-1]}: {res}')
+        ok(seen == 1 + len(targets), f'the performance test reported {seen} of {1 + len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
     head('screenshots')
     # Recapture each panel in a scratch folder and compare with the committed image. Captures repeat
     # exactly (fixed clock, demo data, animations stopped), so any difference means the panel changed

@@ -303,6 +303,35 @@ in more shapes.
 - The demo history in `tools/seeds/hourglass.json` is written by `python3 tools/seeds/hourglass.py`
   (six weeks with a clear change in the last one); edit the generator, not the JSON.
 
+## Performance
+
+Scripts run for hours on busy pages (a YouTube or Reddit feed that never stops loading), so what a
+script leaves running matters more than how fast it starts.
+
+- **Nothing keeps growing.** Every repeating timer, page watcher (MutationObserver) and listener a
+  script starts is started once, or stopped when it's done; elements and data for things that left
+  the page aren't kept. A page change in a site's app (YouTube and Reddit never reload) is not a
+  reason to start another one.
+- **Work in proportion to what changed.** Prefer reacting to the page (an observer, an event) over
+  polling it, keep polling slow (a second or more) and narrow (the elements that matter, not every
+  element), and remember what's been handled (a WeakSet) instead of handling it again.
+- **A background tab costs next to nothing**, except for what has to keep working there (Hourglass's
+  listening time and lockdown, Molten's answers to "still watching?" while music plays).
+- `python3 tools/perf.py` runs a long session on a stand-in page of each script's site (40 rounds of
+  200 new feed items, text changes and app-style page changes, then a quiet stretch and a hidden one)
+  and compares it with the same session without the script. It fails on growth in memory, page
+  elements, listeners, timers or page watchers, and on script time over its budget per round, per
+  quiet second and per hidden second (`BUDGET` in the file, about twice what the scripts cost today, so
+  it catches a new leak or a timer that suddenly costs much more, not small drifts). It also reports
+  page work: how much longer the page's own changes take with the script on, which is the price of
+  what the script draws (Molten's lava) rather than a bug. It proves itself first on a deliberately
+  bad script, which every budget has to catch: a new kind of leak gets a line there. The stand-in pages
+  aren't the real sites, so compare numbers between versions, not with real-world timings, and only
+  from runs one at a time (`tools/perf.py` never runs two browsers at once). `tools/check.py` runs it
+  for changed scripts; it isn't part of GitHub's run, whose shared machines time too unevenly.
+- `node tools/shot.js <script> <url> /dev/null --perf … --cpuprofile <file>` saves a CPU profile of the
+  quiet stretches, to find where a script's time goes before changing anything.
+
 ## After any change: rebuild the pages
 
 ```
@@ -314,6 +343,7 @@ python3 tools/audit.py [script]     # check panels for small visual glitches (ru
 python3 tools/carry.py [script]     # check settings and saved data carry over from the live version
 python3 tools/sheet.py              # every changed screenshot, dark next to light, on one sheet per script
 python3 tools/live.py [script]      # every control updates the panel live, in this tab and in another open tab
+python3 tools/perf.py [script]      # a long session: nothing keeps growing, time within budget (Performance)
 python3 tools/check.py              # release check: everything below, plus the two above for changed scripts
 ```
 

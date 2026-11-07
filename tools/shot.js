@@ -108,13 +108,84 @@ function stubPage() {
       W.unsafeWindow = W;
       const _as = Element.prototype.attachShadow; Element.prototype.attachShadow = function (o) { return _as.call(this, Object.assign({}, o, { mode: 'open' })); };
     })();`;
-  await ctx.addInitScript(shim + '\n;(function(){try{\n' + src + '\n}catch(e){console.error("SCRIPT ERR",e)}})();');
+  // --perf: count the repeating timers and page watchers a script leaves running (tools/perf.py)
+  if (has('--perf')) await ctx.addInitScript(`(() => {
+    const W = window, si = W.setInterval, ci = W.clearInterval, live = new Set();
+    W.setInterval = function (...a) { const id = si.apply(this, a); live.add(id); return id; };
+    W.clearInterval = function (id) { live.delete(id); return ci.call(this, id); };
+    W.__perfIntervals = () => live.size;
+    const MO = W.MutationObserver, watching = new Map();
+    W.MutationObserver = class extends MO {
+      observe(t, o) { (watching.get(this) || watching.set(this, []).get(this)).push(new WeakRef(t)); return super.observe(t, o); }
+      disconnect() { watching.delete(this); return super.disconnect(); }
+    };
+    // a watcher counts while something it watches is still on the page
+    W.__perfObservers = () => [...watching.values()].filter(ts => ts.some(r => { const t = r.deref(); return t && t.isConnected; })).length;
+  })();`);
+  // --noscript: the same page without the script, for a baseline
+  await ctx.addInitScript(shim + '\n;(function(){try{\n' + (has('--noscript') ? '' : src) + '\n}catch(e){console.error("SCRIPT ERR",e)}})();');
   const page = await ctx.newPage();
   page.on('console', m => { if (m.type() === 'error') console.log('[console]', m.text().slice(0, 200)); });
   page.on('pageerror', e => console.log('[pageerror]', String(e).slice(0, 300)));
   // --commit: don't wait for the page's load event (a Kaleidoscope board stops the page and replaces it)
   await page.goto(url, { waitUntil: has('--commit') ? 'commit' : 'load' });
   await page.waitForTimeout(1200);
+  if (has('--perf')) {
+    // A long session on a busy feed: every round adds 200 items of the kind the site uses, changes
+    // some text, drops the oldest past 400, and moves to a new page the way the site's app does.
+    // Prints the script time and what's left running, sampled after garbage collection.
+    const rounds = +opt('--rounds', '40'), tags = JSON.parse(opt('--tags', '["div"]'));
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Performance.enable');
+    const sample = async () => {
+      await cdp.send('HeapProfiler.collectGarbage');
+      const m = Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map(x => [x.name, x.value]));
+      // elements on the page, shadow roots included (Chrome's own node count also holds removed
+      // elements it hasn't freed yet, so it jumps around)
+      const extra = await page.evaluate(() => { let n = 0; const walk = r => { for (const e of r.querySelectorAll('*')) { n++; if (e.shadowRoot) walk(e.shadowRoot); } }; walk(document);
+        return { dom: n, work: (window.__perfWork || 0) / 1000, iv: window.__perfIntervals ? __perfIntervals() : 0, obs: window.__perfObservers ? __perfObservers() : 0 }; });
+      return { heap: m.JSHeapUsedSize, listeners: m.JSEventListeners, script: m.ScriptDuration, layout: m.LayoutDuration + m.RecalcStyleDuration, ...extra };
+    };
+    // --cpuprofile <file>: where the script's time went, by function
+    // (the quiet stretches only: during the rounds most of the time is the test's own page changes)
+    const prof = opt('--cpuprofile', '');
+    const out = [await sample()];
+    for (let r = 0; r < rounds; r++) {
+      await page.evaluate(([r, tags]) => {
+        const t0 = performance.now();
+        const main = document.querySelector('main') || document.body;
+        for (let i = 0; i < 200; i++) {
+          const el = document.createElement(tags[i % tags.length]);
+          el.className = 'item';
+          el.innerHTML = '<a id="video-title" href="/watch?v=' + r + '_' + i + '">Item ' + r + '.' + i + '</a><img alt="" src="data:,"><span class="meta">' + i + ' views</span>' + (i % 25 ? '' : '<video muted></video>');   // feeds share a few players
+          main.append(el);
+        }
+        main.querySelectorAll('.meta').forEach((m, i) => { if (i % 3 === 0) m.textContent = (i + r) + ' views'; });
+        const items = main.querySelectorAll('.item');
+        for (let i = 0; i < items.length - 400; i++) items[i].remove();
+        history.pushState({}, '', '/feed/' + r);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        for (const ev of ['yt-navigate-start', 'yt-navigate-finish', 'yt-page-data-updated']) document.dispatchEvent(new Event(ev));
+        void document.body.offsetHeight;   // the style and layout the change needs, as the page feels it
+        window.__perfWork = (window.__perfWork || 0) + performance.now() - t0;
+      }, [r, tags]);
+      await page.waitForTimeout(150);
+      if (r % 5 === 4) out.push(await sample());
+    }
+    // then a quiet stretch with nothing changing: what the script's timers cost on their own
+    const quiet = +opt('--quiet', '10');
+    if (prof) { await cdp.send('Profiler.enable'); await cdp.send('Profiler.setSamplingInterval', { interval: 200 }); await cdp.send('Profiler.start'); }
+    await page.waitForTimeout(quiet * 1000);
+    out.push({ ...(await sample()), quiet });
+    // and the same stretch with the tab in the background: a hidden tab should cost next to nothing
+    await page.evaluate(() => { Object.defineProperty(document, 'hidden', { get: () => true, configurable: true }); Object.defineProperty(document, 'visibilityState', { get: () => 'hidden', configurable: true }); document.dispatchEvent(new Event('visibilitychange')); });
+    await page.waitForTimeout(quiet * 1000);
+    out.push({ ...(await sample()), quiet, hidden: true });
+    if (prof) require('fs').writeFileSync(prof, JSON.stringify((await cdp.send('Profiler.stop')).profile));
+    console.log('PERF ' + JSON.stringify(out));
+    await browser.close();
+    return;
+  }
   const cmds = await page.evaluate(() => window.__cmds.map(c => c.n));
   console.log('menu commands:', cmds);
   if (cmdName !== 'none') {
