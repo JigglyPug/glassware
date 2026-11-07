@@ -216,8 +216,9 @@ BAD = [(r'greasyfork', 'a Greasy Fork link'), (r'claude\.ai/code|Claude-Session|
        (r'(?i)\bpreston\b|\bbugg\b', 'a real name'), (r'/home/[a-z]|/Users/[A-Za-z]|C:\\\\Users', 'a local path'),
        (r'[A-Za-z0-9._%+-]+@(?!users\.noreply\.github\.com)[A-Za-z0-9-]+\.(com|net|org|io|dev)\b', 'an email address'),
        (r'(?i)claude code|anthropic|co-authored-by', 'a mention of this workflow')]
-files = [p for p in glob.glob(f'{R}/**/*', recursive=True) if os.path.isfile(p) and '/.git/' not in p and '__pycache__' not in p
-         and re.search(r'\.(js|py|md|html|css|svg|txt|json)$', p)]
+# the repo's own files (tracked, or new and not ignored): never installed packages like node_modules
+files = [f'{R}/{p}' for p in git('ls-files', '--cached', '--others', '--exclude-standard').stdout.split('\n')
+         if p and re.search(r'\.(js|py|md|html|css|svg|txt|json|yml)$', p) and os.path.isfile(f'{R}/{p}')]
 for f in files:
     t = open(f, encoding='utf-8', errors='ignore').read(); rel = os.path.relpath(f, R)
     for pat, what in BAD:
