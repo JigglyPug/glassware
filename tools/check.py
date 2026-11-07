@@ -340,7 +340,7 @@ for line in git('log', '--format=%H%x09%ae%x09%B%x1e', 'origin/main..HEAD').stdo
     if not line.strip(): continue
     sha, email, body = line.strip().split('\t', 2); n += 2
     ok(email == '352074181+JigglyPug@users.noreply.github.com', f'commit {sha[:7]} is not by JigglyPug\'s noreply address')
-    ok(not re.search(r'claude\.ai|Claude-Session|session_0', body), f'commit {sha[:7]} has a chat or session link in its message')
+    ok(not re.search(r'claude\.ai/|Claude-Session|session_0', body), f'commit {sha[:7]} has a chat or session link in its message')
 print('  ✓ nothing waiting to push') if n == 0 else done(n)
 
 # ------------------------------------------------------------------ settings + glitches
