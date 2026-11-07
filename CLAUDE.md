@@ -84,7 +84,9 @@ tools/                                builders for all of the above
   under a content policy that lets it reach only AniList's API and images (plus scripts, styles and
   fonts from the common code CDNs), with DNS prefetching off; the page around it stops the frame
   navigating anywhere; WebRTC, which content policies don't cover, is switched off inside it; and its
-  links open through Kaleidoscope, AniList addresses only. A saved board file keeps the same policy.
+  links open through Kaleidoscope, AniList addresses only. A saved board file is the same sandboxed
+  frame in a small page of its own (that page stops navigation and opens AniList links only), never the
+  board running on its own.
 - **Nothing of yours goes into untrusted code.** Never send personal or account-derived data (your
   list, your activity, settings) into a frame that runs untrusted code, not even data that's public
   elsewhere: blocking the network is the second line, not the first. Kaleidoscope's Recent activity
@@ -98,7 +100,8 @@ tools/                                builders for all of the above
   refresh, WebRTC, navigating later) and ones that navigate at once, before their first load event,
   to another site, a `data:` page and `about:blank`, each listening for whatever Kaleidoscope sends
   next. It fails if anything reaches another site or any data reaches the board, and if covers,
-  the API, AniList links or the Recent activity strip stop working. A new way out or in gets a case
+  the API, AniList links or the Recent activity strip stop working. It also saves boards with the
+  Save button and opens the file on its own, with the same checks. A new way out or in gets a case
   there.
 - **Hand-offs between sites go to the tab they were made for.** Kaleidoscope opens Claude with a
   one-time id in the address; only that tab takes the waiting prompt (it remembers the id through

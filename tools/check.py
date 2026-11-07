@@ -4,6 +4,9 @@
                                      # scripts whose code differs from GitHub
     python3 tools/check.py --all     # glitch and settings tests for every script too (slow)
     python3 tools/check.py --quick   # rules only, no browser tests
+    python3 tools/check.py --quick --ci   # what GitHub runs on every push (.github/workflows/checks.yml):
+                                     # the rules plus the security and dashboard tests, nothing that
+                                     # depends on this machine's fonts
 
 Everything fails closed: if GitHub can't be reached, or a test crashes or reports nothing,
 that's a failure, never a pass.
@@ -374,7 +377,7 @@ spec = importlib.util.spec_from_file_location('hgseed', f'{HERE}/seeds/hourglass
 ok(json.load(open(f'{HERE}/seeds/hourglass.json')) == json.loads(json.dumps(hgseed.make('habit'))),
    'tools/seeds/hourglass.json differs from what tools/seeds/hourglass.py writes (run python3 tools/seeds/hourglass.py)')
 if not any(f.startswith('dashboard:') for f in fails): print('  ✓ the demo history matches its generator')
-if '--quick' not in args and ('--all' in args or 'desktop/hourglass' in changed):
+if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/hourglass' in changed)):
     r = subprocess.run([sys.executable, f'{HERE}/dash.py'], capture_output=True, text=True)
     runs = 0
     for l in r.stdout.splitlines():
@@ -386,7 +389,7 @@ if '--quick' not in args and ('--all' in args or 'desktop/hourglass' in changed)
 # ------------------------------------------------------------------ kaleidoscope
 # a board is AI-written code: tools/boardtest.py proves a hostile one can't send anything out, and
 # tools/handofftest.py that a prompt only goes to the claude.ai tab Kaleidoscope opened for it
-if '--quick' not in args and ('--all' in args or 'desktop/kaleidoscope' in changed):
+if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kaleidoscope' in changed)):
     head('kaleidoscope')
     for tool, good in (('boardtest.py', "a hostile board gets nothing out; covers, the API and AniList links still work"),
                        ('handofftest.py', "a prompt goes only to the claude.ai tab opened for it")):

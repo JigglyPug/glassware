@@ -1,0 +1,33 @@
+# Runs the release check's rules and the security tests on every push, so they don't depend on
+# someone remembering to run them (CLAUDE.md, Security). Screenshot and page comparisons stay local:
+# they depend on the fonts of the machine that drew them. Actions are pinned to exact commits.
+name: Checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: Install the pinned tools
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          pip install -r requirements.txt
+      - name: Rules, Kaleidoscope's security tests and the dashboard test
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/check.py --quick --ci

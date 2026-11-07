@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.8
+// @version      2.10.9
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -231,15 +231,37 @@
     const d = new Date(b.ts || Date.now());
     const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     const name = ('Kaleidoscope - ' + (b.label || 'Board') + (b.updated ? ' (updated)' : '') + ' - ' + day + '.html').replace(/[\\/:*?"<>|]/g, '');
-    const doc = new DOMParser().parseFromString(b.html, 'text/html');
-    doc.head.prepend(boardPolicy(doc));   // the saved file keeps the board's limits on what it may load
-    const url = URL.createObjectURL(new Blob(['<!DOCTYPE html>\n' + doc.documentElement.outerHTML], { type: 'text/html' }));
+    const url = URL.createObjectURL(new Blob([boardFile(b)], { type: 'text/html' }));
     const a = document.createElement('a');
     a.href = url;
     a.download = name;
     (document.body || document.documentElement).append(a);
     a.click();
     setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 2000);
+  }
+
+  // A saved board is the same sealed-off frame as on AniList, in a small page of its own: the board
+  // runs sandboxed (scripts only), with its content policy, DNS prefetching off and the link guard; the
+  // page stops it navigating anywhere and opens only AniList links. Run on its own, a board could take
+  // you (and whatever it read) to any address.
+  function boardFile(b) {
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const title = new DOMParser().parseFromString(b.html, 'text/html').title || 'Kaleidoscope';
+    const relay = function () {
+      var f = document.querySelector('iframe');
+      window.addEventListener('message', function (e) {
+        if (e.source !== f.contentWindow || !e.data || typeof e.data.adxOpen !== 'string') return;
+        try {
+          var x = new URL(e.data.adxOpen);
+          if (x.protocol === 'https:' && (x.hostname === 'anilist.co' || /\.anilist\.co$/.test(x.hostname))) window.open(x.href, '_blank', 'noopener');
+        } catch (err) { /* not a link */ }
+      });
+    };
+    return '<!DOCTYPE html>\n<html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="frame-src \'none\'">' +
+      '<title>' + esc(title) + '</title><style>html,body{margin:0;height:100%;background:#0B1622;overflow:hidden}' +
+      'iframe{border:0;width:100%;height:100%;display:block;background:#0B1622}</style></head><body>' +
+      '<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" srcdoc="' + esc(prepareBoard(b.html)) + '"></iframe>' +
+      '<script>(' + relay.toString() + ')();<\/script></body></html>';
   }
 
   // Replace the whole page with the board. Scripts are re-created so they run (DOMParser leaves them inert).
