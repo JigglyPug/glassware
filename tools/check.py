@@ -19,6 +19,9 @@ It checks, in order:
              appearance defaults to auto and follows the device live, the glass recipe numbers, and
              a -light twin for every screenshot, selection and focus rings in the accent
   tokens     CLAUDE.md's tables match tools/tokens.json, and no tool keeps its own copy of a token
+  tools      the development tools' pins agree (package.json, its lockfile, requirements.txt);
+             warns when what's installed differs
+  permissions  every @grant is used; @connect * scripts only request public addresses
   privacy    no personal info, Greasy Fork links, local paths or chat links in scripts, pages
              or tools
   pages      every page and README shows each script's current version; icons are in place;
@@ -29,6 +32,8 @@ It checks, in order:
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
              recipe, nothing faint or hard to see, in both themes (changed scripts)
+  kaleidoscope  tools/boardtest.py: a hostile board can't send anything out; tools/handofftest.py:
+             a prompt goes only to the claude.ai tab opened for it (when Kaleidoscope changed)
   dashboard  the demo history matches its generator; tools/dash.py: every Hourglass card answers
              its question in a sentence that names the change, no figure on two cards, labelled
              axes (when Hourglass changed)
@@ -218,6 +223,73 @@ for f in files:
         if what == 'an email address' and re.search(r'@(example|domain)\.', t): continue
         m = re.search(pat, t); n += 1
         ok(not m, f'{rel} contains {what}: "{m.group(0)}"' if m else '')
+# console logging is off unless someone turns it on, and never names an account (a shared console capture
+# shouldn't): a debug or logging setting that defaults to true, or a log line that prints a saved account name
+for f in sorted(glob.glob(f'{R}/*/*/*.user.js')):
+    t = open(f, encoding='utf-8').read(); rel = os.path.relpath(f, R); n += 2
+    m = re.search(r"""(?:gmGet|GM_getValue|get)\(\s*'[^']*(?:[Dd]ebug|[Ll]og)[^']*'\s*,\s*true\s*\)""", t)
+    ok(not m, f'{rel}: console logging is on by default ({m.group(0)}); default it to off' if m else '')
+    m = re.search(r"\blog\w*\([^)\n]*\b(?:cfg|acct|account)\.(?:name|email|handle)\b", t)
+    ok(not m, f'{rel}: a log line prints an account name ({m.group(0)}); leave names out of logs' if m else '')
+done(n)
+
+# ------------------------------------------------------------------ tools
+# the development tools are pinned (package.json + package-lock.json, requirements.txt); a different
+# installed version can change screenshots, so say so (a warning, not a failure)
+head('tools'); n = 0
+pins = dict(l.strip().split('==') for l in open(f'{R}/requirements.txt') if '==' in l and not l.startswith('#'))
+pkg = json.load(open(f'{R}/package.json')); lock = json.load(open(f'{R}/package-lock.json'))
+npin = pkg['devDependencies']['playwright']
+n += 2
+ok(lock['packages'].get('node_modules/playwright', {}).get('version') == npin, 'package-lock.json is out of step with package.json (run npm install --package-lock-only)')
+ok(pins.get('playwright') == npin, f'requirements.txt pins playwright {pins.get("playwright")}, package.json {npin}: keep them the same')
+try:
+    import importlib.metadata as md
+    have = {k: md.version(k) for k in pins}
+except Exception as e: have = {}
+r = subprocess.run(['node', '-e', "console.log(require('playwright/package.json').version)"], capture_output=True, text=True)
+have['playwright (node)'] = r.stdout.strip() or 'missing'
+for k, v in have.items():
+    want = pins.get(k.split(' ')[0])
+    if v != want: print(f'  ⚠ {k} {v} is installed; the pinned version is {want} (screenshots may differ)')
+# main is protected against force pushes and deletion (a ruleset, set by hand in the repo's settings)
+r = subprocess.run(['gh', 'api', 'repos/JigglyPug/glassware/rules/branches/main'], capture_output=True, text=True)
+try: kinds = {x.get('type') for x in json.loads(r.stdout)}
+except ValueError: kinds = None
+if kinds is None: print("  ⚠ couldn't read main's rules from GitHub")
+elif not {'non_fast_forward', 'deletion'} <= kinds: print('  ⚠ main has no ruleset blocking force pushes and deletion (repo Settings → Rules → Rulesets)')
+done(n)
+
+# ------------------------------------------------------------------ permissions
+# every @grant is used (nothing asked for that isn't needed), and a script that may reach any site
+# (@connect *) sends its requests through gwPublicUrl: public http(s) addresses only, never this
+# computer or a private network unless the page itself is on one. The helper is the same everywhere.
+head('permissions'); n = 0
+helpers = {}
+for f in sorted(glob.glob(f'{R}/*/*/*.user.js')):
+    t = open(f, encoding='utf-8').read(); rel = os.path.relpath(f, R); code = re.sub(r'^// @.*$', '', t, flags=re.M)
+    for g in re.findall(r'^// @grant\s+(\S+)', t, re.M):
+        if g == 'none': continue
+        n += 1; ok(g.split('.')[-1] in code, f'{rel}: @grant {g} is never used; remove it')
+    if re.search(r'^// @connect\s+\*\s*$', t, re.M):
+        n += 1; m = re.search(r'\n    function gwPublicUrl\(u\) \{.*?\n    \}\n', t, re.S)
+        ok(m and t.count('gwPublicUrl(') >= 2, f'{rel}: @connect * without gwPublicUrl() guarding its requests')
+        if m: helpers[rel] = m.group(0)
+n += 1; ok(len(set(helpers.values())) <= 1, 'gwPublicUrl() differs between ' + ', '.join(helpers) + '; keep one copy of it everywhere')
+if helpers:
+    CASES = [('https://example.com/a.png', 'https://pub.example/', True), ('http://192.168.1.1/x', 'https://pub.example/', False),
+             ('http://localhost:8080/m.json', 'https://pub.example/', False), ('http://127.0.0.1/', 'https://pub.example/', False),
+             ('http://[::1]/', 'https://pub.example/', False), ('file:///etc/passwd', 'https://pub.example/', False),
+             ('http://10.0.0.5/i.png', 'http://10.0.0.2/', True), ('http://172.20.1.1/', 'https://pub.example/', False),
+             ('http://169.254.169.254/latest/', 'https://pub.example/', False), ('http://router.local/', 'https://pub.example/', False),
+             ('http://0.0.0.0:8000/', 'https://pub.example/', False)]
+    js = next(iter(helpers.values())) + '\nconst out = []; for (const [u, page] of ' + json.dumps([c[:2] for c in CASES]) + \
+         ') { global.location = new URL(page); out.push(!!gwPublicUrl(u)); } console.log(JSON.stringify(out));'
+    r = subprocess.run(['node', '-e', js], capture_output=True, text=True)
+    try: got = json.loads(r.stdout)
+    except ValueError: got = []; ok(False, 'gwPublicUrl() test could not run: ' + r.stderr[-200:])
+    for (u, page, want), g in zip(CASES, got):
+        n += 1; ok(g == want, f'gwPublicUrl("{u}") on {page} should {"allow" if want else "refuse"} it')
 done(n)
 
 # ------------------------------------------------------------------ pages
@@ -310,6 +382,20 @@ if '--quick' not in args and ('--all' in args or 'desktop/hourglass' in changed)
         elif l.strip(): ok(False, f'hourglass dashboard: {l.strip()}')
     want = 2 * len(hgseed.PLANTED)
     ok(runs == want, f'the dashboard test reported {runs} of {want} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+
+# ------------------------------------------------------------------ kaleidoscope
+# a board is AI-written code: tools/boardtest.py proves a hostile one can't send anything out, and
+# tools/handofftest.py that a prompt only goes to the claude.ai tab Kaleidoscope opened for it
+if '--quick' not in args and ('--all' in args or 'desktop/kaleidoscope' in changed):
+    head('kaleidoscope')
+    for tool, good in (('boardtest.py', "a hostile board gets nothing out; covers, the API and AniList links still work"),
+                       ('handofftest.py', "a prompt goes only to the claude.ai tab opened for it")):
+        r = subprocess.run([sys.executable, f'{HERE}/{tool}'], capture_output=True, text=True)
+        lines = [l for l in r.stdout.splitlines() if l.strip()]
+        ok(any(l.startswith('== ') for l in lines), f'tools/{tool} reported nothing: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
+        for l in lines:
+            if l.startswith('== ') and l.endswith('clean'): print('  ✓ ' + good)
+            elif not l.startswith('== '): ok(False, l[3:].split(':')[0] + ': ' + l.strip() if l.startswith('== ') else 'kaleidoscope: ' + l.strip())
 
 # ------------------------------------------------------------------ screenshots
 if '--quick' not in args:

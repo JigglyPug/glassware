@@ -1,0 +1,4 @@
+# Development tools only (screenshots, audits, link previews). The userscripts need nothing installed.
+# tools/check.py warns when the installed versions differ from these.
+playwright==1.63.0
+pillow==12.3.0

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.6
+// @version      2.10.7
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -30,8 +30,8 @@
      - Recommend tab: five modes. Each builds a prompt from your live AniList list.
      - Sequels tab: finds sequels to shows you finished that aren't on your list (no AI needed).
      - Settings tab: what happens in Claude, standing preferences added to every prompt.
-   The hand-off: on AniList the prompt is saved to Tampermonkey storage and claude.ai/new is opened;
-   this same script (running on claude.ai) pastes it in. In "Board only" mode Claude runs in a
+   The hand-off: on AniList the prompt is saved to Tampermonkey storage and claude.ai/new is opened
+   with a one-time id; this same script (running on claude.ai) pastes it in, in that tab only. In "Board only" mode Claude runs in a
    background tab: once the reply is finished, the board's HTML is read from the chat, the Claude
    tab closes, and the board opens at anilist.co/kaleidoscope/board. The prompt is always copied to your
    clipboard too, so Ctrl+V works if anything goes wrong.
@@ -42,6 +42,9 @@
 
   const HANDOFF_KEY = 'kaleidoscope.handoff';
   const HANDOFF_TTL = 10 * 60 * 1000; // a prompt older than this is ignored on claude.ai (long enough to sign in)
+  const TAB_KEY = 'kaleidoscope.tab'; // (per tab, in sessionStorage) the id of the hand-off this claude.ai tab was opened for
+  const newTabId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+  const tagged = (url, tab) => url + '#kaleidoscope-tab=' + tab;
   const RESULT_KEY = 'kaleidoscope.result';
   const BOARDS_KEY = 'kaleidoscope.boards';
   const TIMES_KEY = 'kaleidoscope.times';
@@ -104,19 +107,30 @@
       '<p>That board isn\'t saved anymore. Kaleidoscope only keeps your latest board, but this one is still in its Claude chat.</p><a href="https://anilist.co/" style="color:#3DB4F2">Back to AniList</a></div></body></html>');
 
     // The board runs in a sealed-off frame: its own scripts (charts, covers) work, but it has no
-    // access to AniList's page, your AniList session or this script.
-    renderPage('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kaleidoscope</title><style>' +
+    // access to AniList's page, your AniList session or this script. It's written by an AI, so it's
+    // treated as untrusted code (CLAUDE.md, Security): it can't open pop-ups or windows, and this page's
+    // policy stops the frame from navigating anywhere (its links go through openFromBoard below).
+    renderPage('<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="frame-src \'none\'">' +
+      '<title>Kaleidoscope</title><style>' +
       'html,body{margin:0;height:100%;background:#0B1622;overflow:hidden}' +
       'iframe{border:0;width:100%;height:100%;display:block;background:#0B1622}</style></head>' +
-      '<body><iframe sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe></body></html>');
+      '<body><iframe sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></body></html>');
     const frame = document.querySelector('iframe');
     document.title = frame.title = new DOMParser().parseFromString(b.html, 'text/html').title || 'Kaleidoscope';
     // The board opens right away; the Recent activity strip is handed to it whenever AniList answers.
     let items = null;
-    let loaded = false;
+    let loads = 0;
     const A = (b.type || 'ANIME') !== 'MANGA';
-    const deliver = () => { if (items && items.length && loaded) frame.contentWindow.postMessage({ adxRecent: items, A }, '*'); };
-    frame.addEventListener('load', () => { loaded = true; deliver(); });
+    // A sandboxed board has no origin to address, hence '*': so the data only ever goes to the board as it
+    // first loaded, never to anything the frame turned into afterwards.
+    const deliver = () => { if (items && items.length && loads === 1) frame.contentWindow.postMessage({ adxRecent: items, A }, '*'); };
+    frame.addEventListener('load', () => { loads++; deliver(); });
+    window.addEventListener('message', e => {
+      if (e.source !== frame.contentWindow || !e.data || typeof e.data.adxOpen !== 'string') return;
+      const u = boardLink(e.data.adxOpen);
+      if (u) GM_openInTab(u, { active: true });
+      else console.log('[Kaleidoscope] a board link outside AniList was not opened');
+    });
     frame.srcdoc = prepareBoard(b.html);
     fetchRecent(b).then(x => { items = x; deliver(); }, e => console.log('[Kaleidoscope] recent strip skipped: ' + (e && e.message)));
     {
@@ -220,7 +234,9 @@
     const d = new Date(b.ts || Date.now());
     const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     const name = ('Kaleidoscope - ' + (b.label || 'Board') + (b.updated ? ' (updated)' : '') + ' - ' + day + '.html').replace(/[\\/:*?"<>|]/g, '');
-    const url = URL.createObjectURL(new Blob([b.html], { type: 'text/html' }));
+    const doc = new DOMParser().parseFromString(b.html, 'text/html');
+    doc.head.prepend(boardPolicy(doc));   // the saved file keeps the board's limits on what it may load
+    const url = URL.createObjectURL(new Blob(['<!DOCTYPE html>\n' + doc.documentElement.outerHTML], { type: 'text/html' }));
     const a = document.createElement('a');
     a.href = url;
     a.download = name;
@@ -301,9 +317,9 @@
   // small receiver for the "Recent activity" strip, which arrives as plain data from Kaleidoscope.
   function prepareBoard(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    const base = doc.createElement('base');
-    base.target = '_blank';
-    doc.head.prepend(base);
+    const guard = doc.createElement('script');
+    guard.textContent = '(' + boardGuard.toString() + ')();';
+    doc.head.prepend(boardPolicy(doc), guard);
     const css = doc.createElement('style');
     css.textContent = recentCss() + '@keyframes adx-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}';
     doc.head.append(css);
@@ -311,6 +327,44 @@
     sc.textContent = '(' + recentReceiver.toString() + ')();';
     doc.body.append(sc);
     return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+  }
+
+  // What a board may load: AniList's API (covers) and images, inline scripts and styles, plus scripts,
+  // styles and fonts from the common code CDNs. Nothing else: no other network calls, images, forms or
+  // frames, so whatever the board's code does, nothing it shows can be sent anywhere.
+  function boardPolicy(doc) {
+    const m = doc.createElement('meta');
+    m.httpEquiv = 'Content-Security-Policy';
+    m.content = "default-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; " +
+      "style-src 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; " +
+      "font-src https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com data:; " +
+      "img-src https://s4.anilist.co https://img.anili.st data: blob:; connect-src https://graphql.anilist.co; " +
+      "media-src 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'; form-action 'none'; base-uri 'none'";
+    return m;
+  }
+  // Only AniList links leave the board (anything else could carry the board's contents off in its address).
+  function boardLink(u) {
+    try {
+      const x = new URL(u, 'https://anilist.co/');
+      return x.protocol === 'https:' && (x.hostname === 'anilist.co' || x.hostname.endsWith('.anilist.co')) ? x.href : null;
+    } catch (e) { return null; }
+  }
+  // Runs first inside the board's frame (copied in as text). Links and window.open() go to Kaleidoscope,
+  // which opens AniList addresses only; WebRTC, which page policies can't restrict, is switched off.
+  function boardGuard() {
+    var send = function (u) { try { window.parent.postMessage({ adxOpen: String(new URL(String(u), document.baseURI)) }, '*'); } catch (e) { /* not a link */ } };
+    try { window.open = function (u) { send(u); return null; }; } catch (e) { /* ignore */ }
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest && e.target.closest('a[href]');
+      if (!a) return;
+      var h = a.getAttribute('href') || '';
+      if (!h || h.charAt(0) === '#') return;
+      e.preventDefault();
+      send(a.href);
+    }, true);
+    ['RTCPeerConnection', 'webkitRTCPeerConnection', 'RTCDataChannel', 'RTCSessionDescription', 'RTCIceCandidate'].forEach(function (k) {
+      try { Object.defineProperty(window, k, { value: undefined, configurable: false, writable: false }); } catch (e) { /* ignore */ }
+    });
   }
 
   // Runs inside the board's frame (copied in as text, so it can't use anything from this script).
@@ -366,8 +420,18 @@
   //  CLAUDE SIDE: paste the waiting prompt; in board mode, capture the result
   // =====================================================================
   function claudeSide() {
+    // The tab Kaleidoscope opens carries a one-time id in its address; the tab remembers it (through
+    // signing in), and only that tab takes the waiting prompt, never another claude.ai tab you open.
+    const tagged = (location.hash.match(/(?:^#|&)kaleidoscope-tab=([\w-]+)/) || [])[1];
+    if (tagged) {
+      try { sessionStorage.setItem(TAB_KEY, tagged); } catch (e) { /* ignore */ }
+      try { history.replaceState(history.state, '', location.pathname + location.search); } catch (e) { /* ignore */ }
+    }
+    let mine = tagged || null;
+    try { mine = mine || sessionStorage.getItem(TAB_KEY); } catch (e) { /* ignore */ }
     let data = GM_getValue(HANDOFF_KEY, null);
     if (!data || !data.text || Date.now() - data.ts > HANDOFF_TTL) return;
+    if (!data.tab || data.tab !== mine) return; // not the tab this prompt was opened for
     const path = location.pathname;
     // Signed out: tell AniList, and keep the prompt waiting so it continues once you sign in.
     const tellSignedOut = () => {
@@ -399,6 +463,7 @@
       if (!onChat) return tellChatGone(); // Claude sent us to a new chat: the old one is gone
     } else if (!path.startsWith('/new')) return; // some other page: leave it waiting
     GM_deleteValue(HANDOFF_KEY); // one use only, so a refresh doesn't paste it again
+    try { sessionStorage.removeItem(TAB_KEY); } catch (e) { /* ignore */ }
     const capture = !!data.capture;
     const t0 = data.started || Date.now();
 
@@ -1704,13 +1769,15 @@
       GM_setClipboard(text, 'text');
       const id = Date.now().toString(36);
       const convId = ((board.conv || '').match(/\/chat\/([0-9a-f-]{36})/) || [])[1] || '';
+      const tab = newTabId();
       GM_setValue(HANDOFF_KEY, {
-        text, ts: Date.now(), started: Date.now(), autoSend: true, capture: true, update: true, convId,
+        tab, text, ts: Date.now(), started: Date.now(), autoSend: true, capture: true, update: true, convId,
         baseHtml: board.html, job: id, mode, label: board.label, user, type, snap: makeSnap(list), timeKey: mode + ':update',
       });
       try {
-        claudeTab = GM_openInTab(convId ? 'https://claude.ai/chat/' + convId : 'https://claude.ai/new', { active: false, insert: true, setParent: true });
+        claudeTab = GM_openInTab(tagged(convId ? 'https://claude.ai/chat/' + convId : 'https://claude.ai/new', tab), { active: false, insert: true, setParent: true });
       } catch (e) { claudeTab = null; }
+      if (!claudeTab) { GM_deleteValue(HANDOFF_KEY); return say('Claude couldn\'t be opened, so nothing was sent. Try again.', 'err'); }
       job = { id, mode, label: board.label, start: Date.now(), est: estimate(mode + ':update'), update: true };
       GM_setValue(JOB_KEY, job);
       updateNote = '';
@@ -1844,12 +1911,13 @@
 
       if (cfg.claudeMode === 'board') {
         if (job) return say('A board is already being built. Wait for it, or dismiss it first.', 'err');
-        const id = Date.now().toString(36);
+        const id = Date.now().toString(36), tab = newTabId();
         GM_setValue(HANDOFF_KEY, {
-          text, ts: Date.now(), started: Date.now(), autoSend: true, capture: true, job: id, mode: mode.id, label: mode.title,
+          tab, text, ts: Date.now(), started: Date.now(), autoSend: true, capture: true, job: id, mode: mode.id, label: mode.title,
           user, type, snap: makeSnap(list), timeKey: mode.id,
         });
-        try { claudeTab = GM_openInTab('https://claude.ai/new', { active: false, insert: true, setParent: true }); } catch (e) { claudeTab = null; }
+        try { claudeTab = GM_openInTab(tagged('https://claude.ai/new', tab), { active: false, insert: true, setParent: true }); } catch (e) { claudeTab = null; }
+        if (!claudeTab) { GM_deleteValue(HANDOFF_KEY); return say('Claude couldn\'t be opened. The prompt is on your clipboard, so paste it into a new chat.', 'err'); }
         job = { id, mode: mode.id, label: mode.title, start: Date.now(), est: estimate(mode.id) };
         GM_setValue(JOB_KEY, job);
         close();
@@ -1857,12 +1925,14 @@
         return;
       }
 
-      GM_setValue(HANDOFF_KEY, { text, ts: Date.now(), autoSend: cfg.claudeMode === 'send', label: mode.title });
+      const tab = newTabId();
+      GM_setValue(HANDOFF_KEY, { tab, text, ts: Date.now(), autoSend: cfg.claudeMode === 'send', label: mode.title });
       let w = null;
-      try { w = window.open('https://claude.ai/new', '_blank'); } catch (e) { /* blocked */ }
+      try { w = window.open(tagged('https://claude.ai/new', tab), '_blank'); } catch (e) { /* blocked */ }
       if (!w) {
-        try { GM_openInTab('https://claude.ai/new', { active: true }); w = true; } catch (e) { /* ignore */ }
+        try { w = !!GM_openInTab(tagged('https://claude.ai/new', tab), { active: true }); } catch (e) { /* ignore */ }
       }
+      if (!w) GM_deleteValue(HANDOFF_KEY); // nothing opened: no other claude.ai tab may take it
       say(w
         ? 'Opened Claude with your ' + mode.title.toLowerCase() + ' prompt. It\'s on your clipboard too.'
         : 'Claude was blocked from opening. The prompt is on your clipboard, so paste it into a new chat.', w ? '' : 'err');

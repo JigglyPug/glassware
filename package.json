@@ -1,0 +1,9 @@
+{
+  "name": "glassware-tools",
+  "private": true,
+  "description": "Development tools for Glassware (screenshots, audits, icons). The userscripts themselves need nothing installed.",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

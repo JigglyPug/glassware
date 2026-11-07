@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.4
+// @version      2.2.5
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.4';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.5';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -175,9 +175,24 @@
 
     /* ───────────────────────── fetching ───────────────────────── */
 
+    // Requests through Tampermonkey can reach any site (@connect *, since every site points to its own
+    // icons), so they only go to public http(s) addresses: never this computer or a private network,
+    // unless the page itself is on one. (Same helper in Prism and Looking-Glass; tools/check.py compares them.)
+    function gwPublicUrl(u) {
+        let x;
+        try { x = new URL(u, location.href); } catch (e) { return null; }
+        if (!/^https?:$/.test(x.protocol)) return null;
+        const local = h => { h = h.replace(/^\[|\]$/g, '').toLowerCase();
+            return h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal') || /^0(\.0){3}$/.test(h) || h === '::' || h === '::1' ||
+                /^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^169\.254\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+                /^(fc|fd)[0-9a-f]{2}:/.test(h) || /^fe[89ab][0-9a-f]:/.test(h) || /^::ffff:(127|10|192\.168|169\.254)\./.test(h); };
+        return local(x.hostname) && !local(location.hostname) ? null : x.href;
+    }
     function gmGet(url, type) {
         return new Promise((res, rej) => {
             if (typeof GM_xmlhttpRequest !== 'function') return rej(new Error('no GM_xmlhttpRequest'));
+            url = gwPublicUrl(url);
+            if (!url) return rej(new Error('not a public address'));
             GM_xmlhttpRequest({
                 method: 'GET', url, anonymous: true, // no cookies: Prism only needs public icons
                 responseType: type === 'text' ? undefined : type, timeout: 10000,

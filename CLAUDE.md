@@ -76,6 +76,32 @@ tools/                                builders for all of the above
   baked into defaults.
 - Nothing about Claude or this workflow goes inside the scripts.
 
+## Security
+
+- **AI-written pages are untrusted code.** Treat HTML, JavaScript and any other output from a model
+  (Kaleidoscope's boards) as code a stranger wrote: run it isolated, never with open network
+  access, and never hand it stored data over an open channel. Kaleidoscope's board runs in a
+  sandboxed frame with scripts only (no pop-ups, no forms), under a content policy that lets it
+  reach only AniList's API and images (plus scripts, styles and fonts from the common code CDNs);
+  the page around it stops the frame navigating anywhere; WebRTC, which content policies don't
+  cover, is switched off inside it; its links open through Kaleidoscope, AniList addresses only;
+  and the recent-activity data goes only to the board as it first loaded. A saved board file
+  keeps the same content policy. `tools/boardtest.py` opens a hostile board that tries every way
+  out and fails if anything reaches another site or if covers, the API or AniList links stop
+  working.
+- **Hand-offs between sites go to the tab they were made for.** Kaleidoscope opens Claude with a
+  one-time id in the address; only that tab takes the waiting prompt (it remembers the id through
+  signing in), never another claude.ai tab, and nothing waits if the tab didn't open.
+  `tools/handofftest.py` checks it.
+- **Ask for as little as possible.** Every `@grant` is used. A script that has to reach any site
+  (`@connect *`: Prism and Looking-Glass fetch whatever icon or manifest a site points to) sends its
+  requests through `gwPublicUrl()`, one shared helper: public `http(s)` addresses only, never this
+  computer or a private network unless the page itself is on one, and without cookies.
+- **Console logging is off by default** and never prints account or channel names, emails or ids,
+  even when it's on: people share console captures.
+- `tools/check.py` enforces the last two (permissions, privacy) on every run and runs the
+  Kaleidoscope tests when Kaleidoscope changes.
+
 ## The panel frame (every script's settings panel)
 
 Every panel shares the same bones and the same glass; each script keeps only its own skin
@@ -266,6 +292,7 @@ in more shapes.
 ## After any change: rebuild the pages
 
 ```
+npm ci && pip install -r requirements.txt   # the pinned tools (Playwright, Pillow); then npx playwright install chromium
 python3 tools/screens.py [script]   # recapture panel screenshots (needs Playwright + Chromium)
 python3 tools/pages.py              # rebuild every README, banner, site page and link preview
 python3 tools/audit.py [script]     # check panels for small visual glitches (run after panel changes)
@@ -354,6 +381,12 @@ python3 tools/check.py              # release check: everything below, plus the 
   failure, never a pass. When a rule here changes, change the check too.
 - Pull before you start and rebase on anything new before pushing; other chats work on
   this repo too.
-- Never force-push or rewrite history.
+- Never force-push or rewrite history. A ruleset on `main` (repo Settings → Rules → Rulesets, set by
+  hand: this workflow can't write repo settings) blocks force pushes and deleting the branch; normal
+  pushes still go through. `tools/check.py` warns while it's missing. Installed copies update straight from
+  `main`, so whoever can push to it can ship code to everyone: keep two-step sign-in on the account.
+- **Rolling back** a bad release: put the last good code back and give it a *higher* `@version` than the
+  bad one (Tampermonkey never installs a lower number, so a plain revert reaches nobody), then run the
+  usual checks and push. Say in the commit which version it restores.
 - Don't create a repo named `userscripts` on this account: GitHub redirects that old name
   here, and installed copies may still rely on the redirect.

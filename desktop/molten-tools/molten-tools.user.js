@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.7.6
+// @version      3.7.7
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -239,7 +239,9 @@
   const ACCT = (() => {
     const STORE = 'acctSwitch.config'; // per site (localStorage is per origin); same key as v2, so your saved defaults carry over
     const MODE = IS_MUSIC ? 'ui' : 'picker'; // YouTube uses /channel_switcher; YT Music is driven through its menu
-    const debugOn = () => gmGet('acctDebug', true);
+    // Off unless you turn it on, and never with account names, channel names or ids in it: a console
+    // capture you share shouldn't name your accounts (Screenshot safe hides them on the page too).
+    const debugOn = () => gmGet('acctDebug', false);
     const log = (...a) => debugOn() && console.log('[acct-switch]', ...a);
 
     const loadCfg = () => lsJSON(STORE);
@@ -269,12 +271,12 @@
         return null;
       });
       if (!el) {
-        log('Could not find account "' + cfg.name + '" on the picker; giving up.');
+        log('Could not find the saved default account on the picker; giving up.');
         ss.del('pending');
         location.href = ss.get('next') || '/';
         return;
       }
-      log('Clicking account:', cfg.name);
+      log('Clicking the saved default account');
       (el.matches('a') ? el : el.querySelector('a, tp-yt-paper-icon-item, #content') || el).click();
     }
 
@@ -331,12 +333,12 @@
 
     function dumpState() {
       const btn = document.querySelector('ytmusic-settings-button');
-      log('ytmusic-settings-button:', btn ? btn.outerHTML.slice(0, 300) : '(not found)');
+      log('ytmusic-settings-button:', btn ? 'found' : '(not found)');
       const hits = allElements().filter(e => {
         const t = norm(e.textContent);
         return t && t.length < 60 && /sign out|switch account|google account|your channel|settings/.test(t);
       });
-      log('Menu-ish elements:', hits.slice(0, 15).map(e => e.tagName.toLowerCase() + ' "' + norm(e.textContent) + '"'));
+      log('Menu-ish elements:', hits.slice(0, 15).map(e => e.tagName.toLowerCase()));
     }
 
     async function openMenu() {
@@ -378,7 +380,7 @@
 
       const target = await waitFor(() => findText(t => t.startsWith(want) && /subscriber/.test(t)), 6000);
       if (!target) return fail('account "' + cfg.name + '" not found in list');
-      log('Clicking account:', cfg.name);
+      log('Clicking the saved default account');
       clickIt(target);
     }
 
@@ -386,7 +388,7 @@
     async function main() {
       await waitFor(() => pageWin.ytcfg?.get && pageWin.ytcfg.get('INNERTUBE_API_KEY'));
       const id = currentId();
-      log('Current DELEGATED_SESSION_ID: "' + id + '"');
+      log('Signed in as ' + (id ? 'a brand or secondary channel' : 'the main channel'));
 
       const last = ss.get('last');
       ss.set('last', id);
@@ -418,7 +420,7 @@
 
       if (id === cfg.id) return;
 
-      log('Switching to', cfg.name);
+      log('Switching to the saved default account');
       ss.set('pending', '1');
       ss.set('next', location.href);
       if (MODE === 'ui') {

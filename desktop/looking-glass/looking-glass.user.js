@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.3
+// @version      1.2.4
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.3';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.4';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -610,11 +610,26 @@
         for (const [d, v] of Object.entries(BRANDS)) if (host === d || host.endsWith('.' + d)) return v;
         return null;
     }
+    // Requests through Tampermonkey can reach any site (@connect *, since every site points to its own
+    // icons), so they only go to public http(s) addresses: never this computer or a private network,
+    // unless the page itself is on one. (Same helper in Prism and Looking-Glass; tools/check.py compares them.)
+    function gwPublicUrl(u) {
+        let x;
+        try { x = new URL(u, location.href); } catch (e) { return null; }
+        if (!/^https?:$/.test(x.protocol)) return null;
+        const local = h => { h = h.replace(/^\[|\]$/g, '').toLowerCase();
+            return h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal') || /^0(\.0){3}$/.test(h) || h === '::' || h === '::1' ||
+                /^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^169\.254\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+                /^(fc|fd)[0-9a-f]{2}:/.test(h) || /^fe[89ab][0-9a-f]:/.test(h) || /^::ffff:(127|10|192\.168|169\.254)\./.test(h); };
+        return local(x.hostname) && !local(location.hostname) ? null : x.href;
+    }
     function blobOf(url) {
         return new Promise((res, rej) => {
-            if (typeof GM_xmlhttpRequest === 'function') {
+            const pub = gwPublicUrl(url);
+            if (typeof GM_xmlhttpRequest === 'function' && pub) {
                 try {
-                    GM_xmlhttpRequest({ method: 'GET', url, responseType: 'blob', timeout: 6000,
+                    // no cookies: an icon is public, and sending them would say who you are to that site
+                    GM_xmlhttpRequest({ method: 'GET', url: pub, anonymous: true, responseType: 'blob', timeout: 6000,
                         onload: r => r.status >= 200 && r.status < 300 && r.response ? res(r.response) : rej(), onerror: rej, ontimeout: rej });
                     return;
                 } catch {}

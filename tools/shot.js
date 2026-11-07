@@ -72,6 +72,8 @@ function stubPage() {
   if (clock) await ctx.clock.setFixedTime(new Date(clock));
   await ctx.route('**/*', route => {
     const u = route.request().url();
+    // --requests: print every request the page (and its frames) makes, so a test can see what got out
+    if (has('--requests')) console.log('REQ ' + route.request().method() + ' ' + u + (route.request().postData() ? ' BODY ' + route.request().postData().slice(0, 200) : ''));
     if (u.startsWith('https://graphql.anilist.co')) return route.fulfill({ status: 200, contentType: 'application/json', body: fs.readFileSync(__dirname + '/seeds/anilist.json', 'utf8') });
     if (route.request().resourceType() === 'document' && u.startsWith(url.split('#')[0].replace(/\/$/, '')))
       return route.fulfill({ status: 200, contentType: 'text/html', body: stubPage() });
@@ -100,7 +102,7 @@ function stubPage() {
       W.GM_addStyle = css => { const s = document.createElement('style'); s.textContent = css; (document.head || document.documentElement).append(s); return s; };
       W.GM_xmlhttpRequest = o => { setTimeout(() => o.onerror && o.onerror({ status: 0 }), 10); return { abort() {} }; };
       W.GM_setClipboard = () => {};
-      W.GM_openInTab = () => ({ close() {} });
+      W.GM_openInTab = u => { (W.__opened = W.__opened || []).push(String(u)); return { close() {} }; };
       W.GM_info = { script: { name: 'x', version: ${JSON.stringify((src.match(/@version\s+(\S+)/) || [])[1] || '0')} }, scriptHandler: 'Tampermonkey', version: '5.3' };
       W.GM = { getValue: async (k, d) => W.GM_getValue(k, d), setValue: async (k, v) => W.GM_setValue(k, v) };
       W.unsafeWindow = W;
@@ -110,7 +112,8 @@ function stubPage() {
   const page = await ctx.newPage();
   page.on('console', m => { if (m.type() === 'error') console.log('[console]', m.text().slice(0, 200)); });
   page.on('pageerror', e => console.log('[pageerror]', String(e).slice(0, 300)));
-  await page.goto(url, { waitUntil: 'load' });
+  // --commit: don't wait for the page's load event (a Kaleidoscope board stops the page and replaces it)
+  await page.goto(url, { waitUntil: has('--commit') ? 'commit' : 'load' });
   await page.waitForTimeout(1200);
   const cmds = await page.evaluate(() => window.__cmds.map(c => c.n));
   console.log('menu commands:', cmds);
