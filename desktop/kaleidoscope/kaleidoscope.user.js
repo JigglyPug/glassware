@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.7
+// @version      2.10.8
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -108,23 +108,20 @@
 
     // The board runs in a sealed-off frame: its own scripts (charts, covers) work, but it has no
     // access to AniList's page, your AniList session or this script. It's written by an AI, so it's
-    // treated as untrusted code (CLAUDE.md, Security): it can't open pop-ups or windows, and this page's
-    // policy stops the frame from navigating anywhere (its links go through openFromBoard below).
+    // treated as untrusted code (CLAUDE.md, Security): it can't open pop-ups or windows, this page's
+    // policy stops the frame from navigating anywhere (its links come through here, AniList only), and
+    // nothing of yours is ever sent into it: your recent activity shows on this page, above the board.
     renderPage('<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="frame-src \'none\'">' +
       '<title>Kaleidoscope</title><style>' +
       'html,body{margin:0;height:100%;background:#0B1622;overflow:hidden}' +
-      'iframe{border:0;width:100%;height:100%;display:block;background:#0B1622}</style></head>' +
-      '<body><iframe sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></body></html>');
+      'body{display:flex;flex-direction:column}' +
+      'iframe{flex:1;min-height:0;border:0;width:100%;display:block;background:#0B1622}' + recentCss() + '</style></head>' +
+      '<body><div class="krecent" hidden></div><iframe sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></body></html>');
     const frame = document.querySelector('iframe');
     document.title = frame.title = new DOMParser().parseFromString(b.html, 'text/html').title || 'Kaleidoscope';
-    // The board opens right away; the Recent activity strip is handed to it whenever AniList answers.
-    let items = null;
-    let loads = 0;
+    // The board opens right away; the Recent activity strip fills in above it whenever AniList answers.
     const A = (b.type || 'ANIME') !== 'MANGA';
-    // A sandboxed board has no origin to address, hence '*': so the data only ever goes to the board as it
-    // first loaded, never to anything the frame turned into afterwards.
-    const deliver = () => { if (items && items.length && loads === 1) frame.contentWindow.postMessage({ adxRecent: items, A }, '*'); };
-    frame.addEventListener('load', () => { loads++; deliver(); });
+    // The board can ask for a link to be opened (it can't open anything itself); only AniList addresses go.
     window.addEventListener('message', e => {
       if (e.source !== frame.contentWindow || !e.data || typeof e.data.adxOpen !== 'string') return;
       const u = boardLink(e.data.adxOpen);
@@ -132,7 +129,7 @@
       else console.log('[Kaleidoscope] a board link outside AniList was not opened');
     });
     frame.srcdoc = prepareBoard(b.html);
-    fetchRecent(b).then(x => { items = x; deliver(); }, e => console.log('[Kaleidoscope] recent strip skipped: ' + (e && e.message)));
+    fetchRecent(b).then(x => showRecent(document.querySelector('.krecent'), x, A), e => console.log('[Kaleidoscope] recent strip skipped: ' + (e && e.message)));
     {
       // Save + follow-up buttons, bottom right
       const pill = 'display:flex;align-items:center;gap:8px;background:#151F2E;color:#EDF1F5;font:600 14px/1 Overpass,system-ui,sans-serif;' +
@@ -292,40 +289,78 @@
     return items;
   }
 
+  // The Recent activity strip, on the page around the board (never inside it: the board is untrusted).
   // (a function, not a const: the board page stops the script before later consts are set up)
   function recentCss() {
     return (
-    '.adx-recent{margin:30px 0 4px;font-family:Overpass,system-ui,-apple-system,"Segoe UI",sans-serif}' +
-    '.adx-rh{display:flex;align-items:center;gap:10px;color:#EDF1F5;font-weight:800;font-size:1.25rem;margin:0 0 14px}' +
-    '.adx-rh::before{content:"";width:4px;height:20px;border-radius:2px;background:#3DB4F2}' +
-    '.adx-flow{display:flex;align-items:flex-end;perspective:1200px;padding:6px 6px 86px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}' +
-    '.adx-c{position:relative;flex:none;display:block;width:150px;aspect-ratio:2/3;border-radius:10px;background:#1A2638;' +
-    'box-shadow:0 14px 30px rgba(0,0,0,.5);transition:transform .35s ease,margin .35s ease;transform-origin:center;text-decoration:none;' +
-    '-webkit-box-reflect:below 8px linear-gradient(transparent 62%,rgba(255,255,255,.22))}' +
-    '.adx-c:first-child{width:180px;margin-right:6px}' +
-    '.adx-c:not(:first-child){transform:rotateY(-48deg);margin-left:-52px}' +
-    '.adx-c:not(:first-child):hover{transform:none;margin-left:-10px;margin-right:42px;z-index:9!important}' +
-    '.adx-c img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px}' +
-    '.adx-ph{position:absolute;inset:0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:rgba(255,255,255,.9)}' +
-    '.adx-t{position:absolute;left:0;right:0;bottom:0;padding:34px 10px 10px;border-radius:0 0 10px 10px;' +
-    'background:linear-gradient(transparent,rgba(11,22,34,.94));color:#fff;font-weight:700;font-size:13px;line-height:1.25}' +
-    '.adx-b{position:absolute;top:8px;left:8px;border-radius:999px;padding:3px 9px;font-size:10.5px;font-weight:800;color:#fff;' +
-    'box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis}');
+    '.krecent{flex:none;padding:12px 22px 14px;background:#0B1622;border-bottom:1px solid rgba(61,180,242,.18);' +
+    'font-family:Overpass,system-ui,-apple-system,"Segoe UI",sans-serif;animation:kr-in .35s ease}' +
+    '.krecent[hidden]{display:none}' +
+    '.kr-h{display:flex;align-items:center;gap:10px;color:#9FADBD;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}' +
+    '.kr-h::before{content:"";width:4px;height:14px;border-radius:2px;background:#3DB4F2}' +
+    '.kr-h button{margin-left:auto;padding:4px 10px;border:1px solid rgba(61,180,242,.35);border-radius:6px;background:#151F2E;color:#EDF1F5;' +
+    'font:600 12px/1 Overpass,system-ui,sans-serif;letter-spacing:0;text-transform:none;cursor:pointer}' +
+    '.kr-flow{display:flex;gap:12px;margin-top:10px;overflow-x:auto;scrollbar-width:thin}' +
+    '.kr-c{flex:none;display:flex;gap:10px;align-items:center;width:230px;padding:6px;border-radius:10px;background:#151F2E;text-decoration:none;color:#EDF1F5}' +
+    '.kr-c:hover{background:#1A2638}' +
+    '.kr-cv{position:relative;flex:none;width:44px;height:64px;border-radius:6px;overflow:hidden;display:grid;place-items:center;' +
+    'color:#fff;font-weight:800;font-size:13px}' +
+    '.kr-cv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}' +
+    '.kr-t{display:block;font-size:13px;font-weight:700;line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}' +
+    '.kr-b{display:inline-block;margin-top:5px;border-radius:999px;padding:2px 8px;font-size:10.5px;font-weight:800;color:#fff}' +
+    '@keyframes kr-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}');
+  }
+  // Builds the strip from AniList's answer, as text only. Hidden or shown is remembered.
+  function showRecent(box, items, A) {
+    if (!box || !items || !items.length) return;
+    const HIDE_KEY = 'kaleidoscope.recentHidden';
+    const mk = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
+    const draw = () => {
+      const hidden = !!GM_getValue(HIDE_KEY, false);
+      box.textContent = '';
+      const head = mk('div', 'kr-h', 'Recent activity');
+      const btn = mk('button', '', hidden ? 'Show' : 'Hide');
+      btn.type = 'button';
+      btn.addEventListener('click', () => { GM_setValue(HIDE_KEY, !hidden); draw(); });
+      head.append(btn);
+      box.append(head);
+      if (!hidden) {
+        const flow = mk('div', 'kr-flow');
+        for (const it of items.slice(0, 5)) {
+          const a = mk('a', 'kr-c');
+          a.href = 'https://anilist.co/' + (A ? 'anime' : 'manga') + '/' + Number(it.id);
+          a.target = '_blank';
+          a.rel = 'noopener';
+          const title = String(it.title || '');
+          const cv = mk('span', 'kr-cv', title.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join(''));
+          cv.style.background = 'linear-gradient(145deg,' + String(it.color) + ',#1A2638)';
+          if (it.cover) { const img = mk('img'); img.alt = ''; img.onerror = () => img.remove(); img.src = String(it.cover); cv.append(img); }
+          const txt = mk('span');
+          txt.append(mk('span', 'kr-t', title));
+          const badge = mk('span', 'kr-b', String(it.label || ''));
+          badge.style.background = String(it.color);
+          txt.append(badge);
+          a.append(cv, txt);
+          flow.append(a);
+        }
+        box.append(flow);
+      }
+      box.hidden = false;
+    };
+    draw();
   }
 
-  // Get the board ready for its sealed-off frame: links open in new tabs, plus the styles and a
-  // small receiver for the "Recent activity" strip, which arrives as plain data from Kaleidoscope.
+  // Get the board ready for its sealed-off frame: its content policy, DNS prefetching off, and the guard
+  // that sends its links here. Nothing else goes in: no data of yours, no messages afterwards.
   function prepareBoard(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const guard = doc.createElement('script');
     guard.textContent = '(' + boardGuard.toString() + ')();';
-    doc.head.prepend(boardPolicy(doc), guard);
-    const css = doc.createElement('style');
-    css.textContent = recentCss() + '@keyframes adx-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}';
-    doc.head.append(css);
-    const sc = doc.createElement('script');
-    sc.textContent = '(' + recentReceiver.toString() + ')();';
-    doc.body.append(sc);
+    // no-dns-prefetch: a link to a made-up address would otherwise be looked up, which content policies don't cover
+    const dns = doc.createElement('meta');
+    dns.httpEquiv = 'x-dns-prefetch-control';
+    dns.content = 'off';
+    doc.head.prepend(boardPolicy(doc), dns, guard);
     return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
   }
 
@@ -364,55 +399,6 @@
     }, true);
     ['RTCPeerConnection', 'webkitRTCPeerConnection', 'RTCDataChannel', 'RTCSessionDescription', 'RTCIceCandidate'].forEach(function (k) {
       try { Object.defineProperty(window, k, { value: undefined, configurable: false, writable: false }); } catch (e) { /* ignore */ }
-    });
-  }
-
-  // Runs inside the board's frame (copied in as text, so it can't use anything from this script).
-  // Builds the strip from the data it's sent, using text only, and puts it above "Taste profile".
-  function recentReceiver() {
-    window.addEventListener('message', function (e) {
-      if (e.source !== window.parent || !e.data || !Array.isArray(e.data.adxRecent)) return;
-      if (document.querySelector('.adx-recent')) return;
-      var items = e.data.adxRecent;
-      var A = e.data.A !== false;
-      var mk = function (tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text) n.textContent = text; return n; };
-      var sec = mk('section', 'adx-recent');
-      sec.style.animation = 'adx-in .4s ease';
-      var flow = mk('div', 'adx-flow');
-      items.slice(0, 5).forEach(function (it, i) {
-        var a = mk('a', 'adx-c');
-        a.href = 'https://anilist.co/' + (A ? 'anime' : 'manga') + '/' + Number(it.id);
-        a.rel = 'noopener';
-        a.target = '_blank';
-        a.style.zIndex = String(5 - i);
-        var title = String(it.title || '');
-        var ph = mk('div', 'adx-ph', title.split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0].toUpperCase(); }).join(''));
-        ph.style.background = 'linear-gradient(145deg,' + String(it.color) + ',#1A2638)';
-        a.appendChild(ph);
-        if (it.cover) {
-          var img = mk('img');
-          img.alt = '';
-          img.onerror = function () { img.remove(); };
-          img.src = String(it.cover);
-          a.appendChild(img);
-        }
-        var badge = mk('span', 'adx-b', String(it.label || ''));
-        badge.style.background = String(it.color);
-        a.appendChild(badge);
-        a.appendChild(mk('span', 'adx-t', title));
-        flow.appendChild(a);
-      });
-      sec.appendChild(mk('div', 'adx-rh', 'Recent activity'));
-      sec.appendChild(flow);
-      var anchor = Array.prototype.find.call(document.querySelectorAll('h1,h2,h3,h4,div,span,p'), function (n) {
-        return n.childElementCount === 0 && /^taste profile$/i.test(n.textContent.trim());
-      });
-      if (anchor) anchor.parentNode.insertBefore(sec, anchor);
-      else {
-        var head = document.querySelector('header');
-        if (head) head.parentNode.insertBefore(sec, head.nextSibling);
-        else document.body.insertBefore(sec, document.body.firstChild);
-      }
     });
   }
 

@@ -79,16 +79,27 @@ tools/                                builders for all of the above
 ## Security
 
 - **AI-written pages are untrusted code.** Treat HTML, JavaScript and any other output from a model
-  (Kaleidoscope's boards) as code a stranger wrote: run it isolated, never with open network
-  access, and never hand it stored data over an open channel. Kaleidoscope's board runs in a
-  sandboxed frame with scripts only (no pop-ups, no forms), under a content policy that lets it
-  reach only AniList's API and images (plus scripts, styles and fonts from the common code CDNs);
-  the page around it stops the frame navigating anywhere; WebRTC, which content policies don't
-  cover, is switched off inside it; its links open through Kaleidoscope, AniList addresses only;
-  and the recent-activity data goes only to the board as it first loaded. A saved board file
-  keeps the same content policy. `tools/boardtest.py` opens a hostile board that tries every way
-  out and fails if anything reaches another site or if covers, the API or AniList links stop
-  working.
+  (Kaleidoscope's boards) as code a stranger wrote: run it isolated and never with open network
+  access. Kaleidoscope's board runs in a sandboxed frame with scripts only (no pop-ups, no forms),
+  under a content policy that lets it reach only AniList's API and images (plus scripts, styles and
+  fonts from the common code CDNs), with DNS prefetching off; the page around it stops the frame
+  navigating anywhere; WebRTC, which content policies don't cover, is switched off inside it; and its
+  links open through Kaleidoscope, AniList addresses only. A saved board file keeps the same policy.
+- **Nothing of yours goes into untrusted code.** Never send personal or account-derived data (your
+  list, your activity, settings) into a frame that runs untrusted code, not even data that's public
+  elsewhere: blocking the network is the second line, not the first. Kaleidoscope's Recent activity
+  strip is drawn by Kaleidoscope on the page around the board, never inside it.
+- **A sandbox doesn't stop a frame navigating itself, and a load event doesn't prove which document
+  loaded.** Treat every navigation, reload and document replacement inside a frame as a new,
+  unknown document: don't count loads, don't `postMessage(..., '*')` anything sensitive (nothing
+  sensitive goes in at all, above), and stop the navigation where possible (the page's `frame-src`).
+- **Hostile tests cover order, not just outcomes.** `tools/boardtest.py` opens hostile boards that try
+  every way out (fetch, beacons, WebSocket, outside styles and images, forms, pop-ups, links, a meta
+  refresh, WebRTC, navigating later) and ones that navigate at once, before their first load event,
+  to another site, a `data:` page and `about:blank`, each listening for whatever Kaleidoscope sends
+  next. It fails if anything reaches another site or any data reaches the board, and if covers,
+  the API, AniList links or the Recent activity strip stop working. A new way out or in gets a case
+  there.
 - **Hand-offs between sites go to the tab they were made for.** Kaleidoscope opens Claude with a
   one-time id in the address; only that tab takes the waiting prompt (it remembers the id through
   signing in), never another claude.ai tab, and nothing waits if the tab didn't open.
@@ -293,6 +304,7 @@ in more shapes.
 
 ```
 npm ci && pip install -r requirements.txt   # the pinned tools (Playwright, Pillow); then npx playwright install chromium
+npm audit && pip-audit -r requirements.txt  # whenever a pin changes: no known vulnerabilities in the tools
 python3 tools/screens.py [script]   # recapture panel screenshots (needs Playwright + Chromium)
 python3 tools/pages.py              # rebuild every README, banner, site page and link preview
 python3 tools/audit.py [script]     # check panels for small visual glitches (run after panel changes)
