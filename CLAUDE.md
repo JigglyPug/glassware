@@ -394,6 +394,11 @@ python3 tools/check.py              # release check: everything below, plus the 
   scratch copy and fails if the committed pages differ, so never hand-edit generated files. It
   fails closed: if GitHub can't be reached, or a test crashes or reports nothing, that's a
   failure, never a pass. When a rule here changes, change the check too.
+- GitHub runs the rules, Kaleidoscope's security tests and the dashboard test on every push
+  (`.github/workflows/checks.yml`, `check.py --quick --ci`; actions pinned to exact commits). It doesn't
+  replace the local check (screenshots and pages are compared only locally, since they depend on the
+  machine's fonts). A failed run gets fixed before anything else; `gh run list --workflow checks.yml`
+  shows the latest.
 - Pull before you start and rebase on anything new before pushing; other chats work on
   this repo too.
 - Never force-push or rewrite history. A ruleset on `main` (repo Settings → Rules → Rulesets, set by
