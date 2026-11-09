@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.3
+// @version      1.5.4
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.3';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.4';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -949,7 +949,7 @@ h1 span{color:var(--ink)}
         let streak = 0; for (let i = all.length - 1; i >= 0; i--) { if (totalOf(all[i].o) > goal) break; streak++; }
         let best = 0, run = 0; for (const x of all) { if (totalOf(x.o) <= goal) { run++; best = Math.max(best, run); } else run = 0; }
 
-        return { now, t, o, R, full, win, base, period, inP, enough, need, usual, todayTot, todayHours: Array.from({ length: 24 }, (_, i) => (o.h || [])[i] || [0, 0, 0, 0, 0]), H, frac, catNow, catWas,
+        return { now, t, o, today, R, full, win, base, period, inP, enough, need, usual, todayTot, todayHours: Array.from({ length: 24 }, (_, i) => (o.h || [])[i] || [0, 0, 0, 0, 0]), H, frac, catNow, catWas,
             moved, sugs, order, grid, hTot, peak, peakShare, cNow, cWas, lateNights, att, lockOn, triesNow, triesWas, mostTried, passesUsed,
             goal, under, streak, best, hasHistory: past.length > 0, visits, sitesToday, attToday, avgNow, avgWas, topSites, cal };
     }
@@ -1072,6 +1072,8 @@ h1 span{color:var(--ink)}
 .bar>i{display:block;width:100%;max-width:24px;min-height:2px;border-radius:4px 4px 2px 2px;background:var(--fill)}
 .bar.over>i{background:var(--danger)}
 .bar.off>i{background:var(--ctl-hi)}
+.bar.now>i,.bar.now>.sb{opacity:.55;outline:1.5px dashed rgba(var(--a-rgb),.9);outline-offset:2px}
+.xa span.now{color:var(--ink);font-weight:700}
 .sb{display:flex;flex-direction:column-reverse;width:100%;max-width:24px;min-height:2px;border-radius:4px 4px 2px 2px;overflow:hidden;gap:1px}
 .sb i{display:block;flex-basis:0;min-height:0}
 .bar .us{position:absolute;left:12%;right:12%;height:2px;margin-bottom:-1px;border-radius:1px;background:var(--sub);z-index:1}
@@ -1474,7 +1476,7 @@ h1 span{color:var(--ink)}
             const catName = i => (CAT[HCOL[i]] || OTHER).n;
             const stack = (cats, tot) => h('div', { class: 'sb', style: `height:${tot}%` }, cats.map((v, k) => v > 0 ? h('i', { style: `flex-grow:${v};background:${colorOf(HCOL[k])}` }) : null));
             const xDays = days => h('div', { class: 'xa', 'data-axis': 'x', style: `grid-template-columns:repeat(${days.length},minmax(0,1fr))` },
-                days.length <= 7 ? days.map(x => h('span', { text: x.dt.toLocaleDateString(undefined, { weekday: 'narrow' }) }))
+                days.length <= 8 ? days.map(x => h('span', { class: x === D.today ? 'now' : null, text: x.dt.toLocaleDateString(undefined, { weekday: 'narrow' }) }))
                     : days.map((x, i) => i % 7 ? null : h('span', { style: 'grid-column:span 7;text-align:left', text: x.dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })));
             const xHours = () => h('div', { class: 'xa', 'data-axis': 'x', style: 'grid-template-columns:repeat(4,minmax(0,1fr))' }, ['12 AM', '6 AM', '12 PM', '6 PM'].map(x => h('span', { style: 'text-align:left', text: x })));
             // a bar per column: heights against max, gridlines, a dashed line (an average or the goal) if given, labelled axes
@@ -1553,10 +1555,14 @@ h1 span{color:var(--ink)}
                 const d = D.avgNow - D.avgWas;
                 muchAns = `You averaged ${fmtDur(D.avgNow)} a day ${D.inP}. ` + (Math.abs(d) < 300 ? "That's about the same as before." : `That's ${fmtDur(Math.abs(d))} ${d > 0 ? 'more' : 'less'} than before.`);
             }
-            const dtop = Math.ceil(Math.max(3600, ...D.win.map(x => totalOf(x.o))) / 3600) * 3600;
+            // until the range has a full run of finished days, today joins the day charts as a lighter "so far" bar
+            // (averages and sentences still use finished days only)
+            const span = !D.full && D.win.length ? [...D.win, D.today] : D.win;
+            const dayLabel = x => x === D.today ? 'Today so far' : dayTip(x);
+            const dtop = Math.ceil(Math.max(3600, ...span.map(x => totalOf(x.o))) / 3600) * 3600;
             const weekCard = card('How much are you online?', muchAns, D.full,
-                D.win.length ? barChart({ name: 'days', aria: 'Time online per day by category, with your average', n: D.win.length, max: dtop, ticks: [{ v: dtop, text: fmtDur(dtop) }], line: { v: D.avgNow, text: 'avg' }, x: xDays(D.win),
-                    bars: D.win.map(x => { const v = totalOf(x.o), tip = dayTip(x) + ' · ' + fmtDur(v); return h('div', { class: 'bar', title: tip, 'data-tip': tip }, v ? stack(catSums(x.o), v / dtop * 100) : null); }) }) : null);
+                D.win.length ? barChart({ name: 'days', aria: 'Time online per day by category, with your average', n: span.length, max: dtop, ticks: [{ v: dtop, text: fmtDur(dtop) }], line: { v: D.avgNow, text: 'avg' }, x: xDays(span),
+                    bars: span.map(x => { const v = totalOf(x.o), tip = dayLabel(x) + ' · ' + fmtDur(v); return h('div', { class: 'bar' + (x === D.today ? ' now' : ''), title: tip, 'data-tip': tip }, v ? stack(catSums(x.o), v / dtop * 100) : null); }) }) : null);
             // Where does your time go? (categories, with the change from before)
             const cAll = sum(D.catNow), cTop = D.catNow.reduce((bi, v, i, a) => v > a[bi] ? i : bi, 0);
             let catAns;
@@ -1656,12 +1662,12 @@ h1 span{color:var(--ink)}
                     : r > 1.25 ? `Blocked tries rose ${D.inP}. You tried ${now_} times a lockdown day, up from ${was}.`
                         : `Blocked tries held steady ${D.inP}. You tried about ${now_} times a lockdown day.`;
             }
-            const tmax = Math.max(4, ...D.win.map(D.att));
+            const tmax = Math.max(4, ...span.map(D.att));
             g2.append(card('Is lockdown working?', lkAns, D.full,
-                D.win.length ? barChart({ name: 'tries', aria: 'Blocked tries per day; dots are passes used', n: D.win.length, max: tmax, ticks: [{ v: tmax, text: tmax + ' tries' }], x: xDays(D.win),
-                    bars: D.win.map(x => {
-                        const n = D.att(x), p = (x.o?.pass || []).length, tip = dayTip(x) + ' · ' + n + (n === 1 ? ' try' : ' tries') + (p ? ', ' + p + (p === 1 ? ' pass' : ' passes') : '');
-                        return h('div', { class: 'bar' + (D.lockOn(x) ? '' : ' off'), title: tip, 'data-tip': tip }, p ? h('b', { class: 'pdot' }) : null, h('i', { style: `height:${n / tmax * 100}%` }));
+                D.win.length ? barChart({ name: 'tries', aria: 'Blocked tries per day; dots are passes used', n: span.length, max: tmax, ticks: [{ v: tmax, text: tmax + ' tries' }], x: xDays(span),
+                    bars: span.map(x => {
+                        const n = D.att(x), p = (x.o?.pass || []).length, tip = dayLabel(x) + ' · ' + n + (n === 1 ? ' try' : ' tries') + (p ? ', ' + p + (p === 1 ? ' pass' : ' passes') : '');
+                        return h('div', { class: 'bar' + (D.lockOn(x) ? '' : ' off') + (x === D.today ? ' now' : ''), title: tip, 'data-tip': tip }, p ? h('b', { class: 'pdot' }) : null, h('i', { style: `height:${n / tmax * 100}%` }));
                     }) }) : null,
                 D.win.length ? h('div', { class: 'd', style: 'margin-top:8px' }, D.mostTried ? ['Most tried: ', h('b', { text: D.mostTried[0] }), ' · '] : null, (D.passesUsed ? D.passesUsed + (D.passesUsed === 1 ? ' pass' : ' passes') + ' used' : 'No passes used') + ' · dots mark days with a pass') : null));
 
