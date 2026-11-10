@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.9
+// @version      2.10.10
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -812,17 +812,33 @@
     ];
 
     // ---------------- Data ----------------
+    // AniList answers in a second or two: past 20 s something is wrong, and a button that spins forever helps nobody.
+    // Every way it can fail ends in a sentence a person can act on.
     async function gql(query, variables) {
-      const res = await fetch('https://graphql.anilist.co', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ query, variables }),
-      });
-      if (res.status === 429) throw new Error('AniList rate limit hit. Wait a minute and try again.');
-      const json = await res.json().catch(() => null);
-      if (!json) throw new Error('AniList returned an unreadable response.');
-      if (json.errors && json.errors.length) throw new Error('AniList: ' + json.errors.map(e => e.message).join('; '));
-      return json.data;
+      const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      const timer = ctl && setTimeout(() => ctl.abort(), 20000);
+      const slow = 'AniList took too long to answer. Try again in a moment.';
+      try {
+        let res;
+        try {
+          res = await fetch('https://graphql.anilist.co', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ query, variables }),
+            signal: ctl ? ctl.signal : undefined,
+          });
+        } catch (e) {
+          throw new Error(ctl && ctl.signal.aborted ? slow : 'Couldn\'t reach AniList. Check your connection and try again.');
+        }
+        if (res.status === 429) throw new Error('AniList rate limit hit. Wait a minute and try again.');
+        const json = await res.json().catch(() => null);
+        if (ctl && ctl.signal.aborted) throw new Error(slow);
+        if (!json) throw new Error(res.ok ? 'AniList returned an unreadable response.' : 'AniList is having trouble right now (error ' + res.status + '). Try again in a few minutes.');
+        if (json.errors && json.errors.length) throw new Error('AniList: ' + json.errors.map(e => e.message).join('; '));
+        return json.data;
+      } finally {
+        clearTimeout(timer);
+      }
     }
 
     const titleOf = m => ((m.title && (m.title.english || m.title.romaji)) || 'Untitled').replace(/\|/g, '/');

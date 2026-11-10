@@ -118,8 +118,16 @@ tools/                                builders for all of the above
   on YouTube Music with the account missing or the menu not opening, YouTube's account picker with
   and without the account, Screenshot safe learning names), and fails if a console line names either
   made-up account. A new path that touches account names gets a case there.
+- **Every request can fail, and the script says so.** A request has a time limit (Tampermonkey's `timeout`,
+  or an `AbortController` on `fetch`: 20 s for AniList, 8 s for a page's own manifest), and a timeout, a
+  server error, a broken body and a dropped connection each end in a fallback (Prism and Looking-Glass
+  colour from the page instead) or a sentence a person can act on ("AniList took too long to answer. Try
+  again in a moment."), never a spinner forever or a raw "Failed to fetch". `tools/nettest.py` opens every
+  script that makes requests with the network failing each of those ways (`shot.js --net`) and fails on
+  an uncaught error, a broken panel, or a missing fallback. A new script that makes requests gets a case there.
 - `tools/check.py` enforces the last two (permissions, privacy) on every run, runs the Kaleidoscope
-  tests when Kaleidoscope changes and the logging test when Molten Tools changes (GitHub runs both every time).
+  tests when Kaleidoscope changes, the logging test when Molten Tools changes and the network test when a
+  script that makes requests changes (GitHub runs all three every time).
 
 ## The panel frame (every script's settings panel)
 

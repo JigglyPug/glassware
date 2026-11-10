@@ -29,6 +29,10 @@ const crop = has('--crop');
 const src = fs.readFileSync(scriptPath, 'utf8');
 const host = new URL(url).hostname;
 
+// --net ok|hang|status|malformed|abort: how AniList, the page's manifest and icons, and Tampermonkey's requests answer
+// (tools/nettest.py): normally, never, with a server error, with a broken body, or by dropping the connection
+const NET = opt('--net', '');
+const MANIFEST = JSON.stringify({ name: 'Test app', theme_color: '#e05a8a', icons: [{ src: 'https://icons.example.net/app.png', sizes: '192x192', type: 'image/png' }] });
 function stubPage() {
   const dark = theme === 'dark';
   const bg = dark ? '#0f0f0f' : '#f4f5f7', fg = dark ? '#eee' : '#222';
@@ -38,7 +42,7 @@ function stubPage() {
       <div class="t1"></div><div class="t2"></div></div>`;
   }).join('');
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="${opt('--themecolor', '#3b6fd6')}"><title>${host}</title>
+  <meta name="theme-color" content="${opt('--themecolor', '#3b6fd6')}"><title>${host}</title>${NET ? '<link rel="manifest" href="/app.webmanifest"><link rel="icon" href="https://icons.example.net/app.png">' : ''}
   <style>body{margin:0;background:${bg};color:${fg};font:14px system-ui,sans-serif}
   header{height:56px;display:flex;align-items:center;gap:16px;padding:0 20px;position:sticky;top:0;background:${bg};z-index:5}
   .logo{width:110px;height:22px;border-radius:6px;background:${dark ? '#333' : '#ccd'}}
@@ -74,6 +78,14 @@ function stubPage() {
     const u = route.request().url();
     // --requests: print every request the page (and its frames) makes, so a test can see what got out
     if (has('--requests')) console.log('REQ ' + route.request().method() + ' ' + u + (route.request().postData() ? ' BODY ' + route.request().postData().slice(0, 200) : ''));
+    if (NET && (u.startsWith('https://graphql.anilist.co') || u.endsWith('/app.webmanifest') || u.startsWith('https://icons.example.net/'))) {
+      if (NET === 'hang') return;                                                  // never answers
+      if (NET === 'abort') return route.abort('connectionreset');
+      if (NET === 'status') return route.fulfill({ status: 503, contentType: 'text/html', body: '<h1>Service Unavailable</h1>' });
+      if (NET === 'malformed') return route.fulfill({ status: 200, contentType: u.endsWith('.png') ? 'image/png' : 'application/json', body: '{"oops": <html>' });
+      if (u.endsWith('/app.webmanifest')) return route.fulfill({ status: 200, contentType: 'application/manifest+json', body: MANIFEST });
+      if (u.startsWith('https://icons.example.net/')) return route.fulfill({ status: 200, contentType: 'image/png', body: fs.readFileSync(__dirname + '/../assets/icons/prism.png') });
+    }
     if (u.startsWith('https://graphql.anilist.co')) return route.fulfill({ status: 200, contentType: 'application/json', body: fs.readFileSync(__dirname + '/seeds/anilist.json', 'utf8') });
     if (route.request().resourceType() === 'document' && u.startsWith(url.split('#')[0].replace(/\/$/, '')))
       return route.fulfill({ status: 200, contentType: 'text/html', body: stubPage() });
@@ -100,7 +112,18 @@ function stubPage() {
       W.GM_registerMenuCommand = (n, f) => { W.__cmds.push({ n, f }); return W.__cmds.length; };
       W.GM_unregisterMenuCommand = () => {};
       W.GM_addStyle = css => { const s = document.createElement('style'); s.textContent = css; (document.head || document.documentElement).append(s); return s; };
-      W.GM_xmlhttpRequest = o => { setTimeout(() => o.onerror && o.onerror({ status: 0 }), 10); return { abort() {} }; };
+      const NET = ${JSON.stringify(NET)};
+      W.__errs = []; addEventListener('error', e => W.__errs.push(String(e.message))); addEventListener('unhandledrejection', e => W.__errs.push('unhandled: ' + String(e.reason && e.reason.message || e.reason)));
+      W.GM_xmlhttpRequest = o => {
+        const later = (fn, arg) => setTimeout(() => o[fn] && o[fn](arg), 30);
+        if (!NET || NET === 'abort') later('onerror', { status: 0 });
+        else if (NET === 'hang') later('ontimeout', {});                          // Tampermonkey gives up at o.timeout
+        else if (NET === 'status') later('onload', { status: 503, responseText: '<h1>Service Unavailable</h1>', response: null });
+        else if (NET === 'malformed') later('onload', { status: 200, responseText: '{"oops": <html>', response: new Blob(['not an image'], { type: 'image/png' }) });
+        else if (/\.webmanifest$/.test(o.url)) later('onload', { status: 200, responseText: ${JSON.stringify(MANIFEST)}, response: ${JSON.stringify(MANIFEST)} });
+        else { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); g.fillStyle = '#e05a8a'; g.fillRect(0, 0, 32, 32); c.toBlob(b => o.onload && o.onload({ status: 200, response: b }), 'image/png'); }
+        return { abort() {} };
+      };
       W.GM_setClipboard = () => {};
       W.GM_openInTab = u => { (W.__opened = W.__opened || []).push(String(u)); return { close() {} }; };
       W.GM_info = { script: { name: 'x', version: ${JSON.stringify((src.match(/@version\s+(\S+)/) || [])[1] || '0')} }, scriptHandler: 'Tampermonkey', version: '5.3' };

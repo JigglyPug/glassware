@@ -35,6 +35,8 @@ It checks, in order:
   settings   tools/carry.py: settings and saved data survive the update (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
              recipe, nothing faint or hard to see, in both themes (changed scripts)
+  network    tools/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope with requests that hang, fail,
+             return junk or drop (when one of them or the test changed)
   logging    tools/logtest.py: with logging on, Molten Tools never prints an account's name, handle,
              email or id (when Molten Tools changed)
   kaleidoscope  tools/boardtest.py: a hostile board can't send anything out; tools/handofftest.py:
@@ -409,6 +411,21 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kal
         for l in lines:
             if l.startswith('== ') and l.endswith('clean'): print('  ✓ ' + good)
             elif not l.startswith('== '): ok(False, l[3:].split(':')[0] + ': ' + l.strip() if l.startswith('== ') else 'kaleidoscope: ' + l.strip())
+
+# ------------------------------------------------------------------ network
+# tools/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope when requests hang, fail, return junk or drop
+NETS = ['desktop/prism', 'desktop/looking-glass', 'desktop/kaleidoscope', 'mobile/kaleidoscope-mobile']
+net_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/nettest.py').returncode != 0
+if '--ci' in args or ('--quick' not in args and ('--all' in args or net_tool or any(p in changed for p in NETS))):
+    head('network')
+    r = subprocess.run([sys.executable, f'{HERE}/nettest.py'], capture_output=True, text=True)
+    seen = 0
+    for l in r.stdout.splitlines():
+        if not l.startswith('== '): continue
+        seen += 1
+        if not l.endswith('clean'): ok(False, 'network: ' + l[3:])
+    ok(seen == 20, f'the network test reported {seen} of 20 cases: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+    if seen == 20 and r.returncode == 0: print('  ✓ 4 scripts × 5 ways the network fails: no errors, every one falls back')
 
 # ------------------------------------------------------------------ logging
 # tools/logtest.py: with every logging switch on, Molten Tools' account paths never print an account's

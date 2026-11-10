@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.5
+// @version      2.2.6
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.5';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.6';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -202,13 +202,17 @@
         });
     }
     async function getText(url, creds) {
+        const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+        const timer = ctl && setTimeout(() => ctl.abort(), 8000);   // a manifest that never arrives mustn't stop Prism trying the rest
         try {
-            const r = await fetch(url, { credentials: creds ? 'include' : 'same-origin' });
+            const r = await fetch(url, { credentials: creds ? 'include' : 'same-origin', signal: ctl ? ctl.signal : undefined });
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return await r.text();
         } catch (e) {
             log('page fetch failed, retrying through Tampermonkey:', url, e.message);
             return gmGet(url, 'text');
+        } finally {
+            clearTimeout(timer);
         }
     }
     function loadImg(url, cors) {
