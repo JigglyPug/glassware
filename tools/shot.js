@@ -78,6 +78,9 @@ function stubPage() {
     const u = route.request().url();
     // --requests: print every request the page (and its frames) makes, so a test can see what got out
     if (has('--requests')) console.log('REQ ' + route.request().method() + ' ' + u + (route.request().postData() ? ' BODY ' + route.request().postData().slice(0, 200) : ''));
+    // --net redirect|redirect-public: the page can't fetch the manifest or icons itself, and Tampermonkey's
+    // answers come back after a redirect to a private address (or, for comparison, a public one)
+    if (/^redirect/.test(NET) && (u.endsWith('/app.webmanifest') || u.startsWith('https://icons.example.net/'))) return route.fulfill({ status: 404, body: '' });
     if (NET && (u.startsWith('https://graphql.anilist.co') || u.endsWith('/app.webmanifest') || u.startsWith('https://icons.example.net/'))) {
       if (NET === 'hang') return;                                                  // never answers
       if (NET === 'abort') return route.abort('connectionreset');
@@ -120,8 +123,13 @@ function stubPage() {
         else if (NET === 'hang') later('ontimeout', {});                          // Tampermonkey gives up at o.timeout
         else if (NET === 'status') later('onload', { status: 503, responseText: '<h1>Service Unavailable</h1>', response: null });
         else if (NET === 'malformed') later('onload', { status: 200, responseText: '{"oops": <html>', response: new Blob(['not an image'], { type: 'image/png' }) });
-        else if (/\.webmanifest$/.test(o.url)) later('onload', { status: 200, responseText: ${JSON.stringify(MANIFEST)}, response: ${JSON.stringify(MANIFEST)} });
-        else { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); g.fillStyle = '#e05a8a'; g.fillRect(0, 0, 32, 32); c.toBlob(b => o.onload && o.onload({ status: 200, response: b }), 'image/png'); }
+        else {
+        // where the answer finally came from, as Tampermonkey reports it (after any redirect)
+        const rest = (() => { try { const x = new URL(o.url, location.href); return x.pathname + x.search; } catch (e) { return '/'; } })();
+        const finalUrl = NET === 'redirect' ? 'http://192.168.1.1' + rest : NET === 'redirect-public' ? 'https://cdn.example.net' + rest : o.url;
+        if (/\.webmanifest$/.test(o.url)) later('onload', { status: 200, finalUrl, responseText: ${JSON.stringify(MANIFEST)}, response: ${JSON.stringify(MANIFEST)} });
+        else { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); g.fillStyle = '#e05a8a'; g.fillRect(0, 0, 32, 32); c.toBlob(b => o.onload && o.onload({ status: 200, finalUrl, response: b }), 'image/png'); }
+        }
         return { abort() {} };
       };
       W.GM_setClipboard = () => {};

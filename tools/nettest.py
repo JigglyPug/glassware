@@ -7,6 +7,10 @@ Every script that makes requests is opened with the network failing each way it 
 - status: a server error (503)
 - malformed: a 200 whose body is broken (bad JSON, an "image" that isn't one)
 - abort: the connection drops
+- redirect: for Prism and Looking-Glass, the page can't fetch the manifest or icons itself and what
+  Tampermonkey brings back came from a redirect to a private address: it must not be used (Prism takes
+  the page's theme-color, Looking-Glass says "From the page color"); redirect-public, the same through a
+  public address, still is
 and once working normally (ok). In each case it fails if the page shows an uncaught error or an unhandled
 rejection, if the panel doesn't open or shows "undefined"/"NaN"/"[object", or if the script doesn't fall back:
 - Prism still colours the title bar (from the page's theme-color when the manifest and icon fail), within
@@ -21,6 +25,8 @@ sys.path.insert(0, HERE)
 from screens import JOBS
 
 MODES = ['ok', 'hang', 'status', 'malformed', 'abort']
+REDIRECTS = ['redirect', 'redirect-public']     # Prism and Looking-Glass only (the scripts that reach any site)
+PAGE_COLOR, ICON_COLOR = '#3b6fd6', '#e05a8a'   # shot.js: the stand-in page's theme-color, and the colour of what Tampermonkey brings back
 # what each failure must say on Kaleidoscope's status line
 KAL_SAYS = {'hang': 'took too long', 'status': 'having trouble', 'malformed': 'unreadable', 'abort': "Couldn't reach AniList"}
 
@@ -58,6 +64,12 @@ def run(name, mode):
     if any(w in text for w in ('undefined', 'NaN', '[object')): probs.append('the page shows undefined/NaN/[object')
     if name == 'prism' and not v.get('color'): probs.append('the title bar was left without a colour')
     if name == 'looking-glass' and 'Looking-Glass' not in text: probs.append("the panel didn't open")
+    if mode == 'redirect':
+        if name == 'prism' and v.get('color') != PAGE_COLOR: probs.append(f'used what came back from a private address (title bar {v.get("color")}, not the page colour {PAGE_COLOR})')
+        if name == 'looking-glass' and 'From the page color' not in text: probs.append('used what came back from a private address (not "From the page color")')
+    if mode == 'redirect-public':
+        if name == 'prism' and v.get('color') != ICON_COLOR: probs.append(f'refused a public redirect (title bar {v.get("color")}, not {ICON_COLOR})')
+        if name == 'looking-glass' and 'From the site icon' not in text: probs.append('refused a public redirect (not "From the site icon")')
     if name.startswith('kaleidoscope'):
         if not v.get('button'): probs.append("the panel didn't open")
         st = v.get('status', '')
@@ -70,7 +82,7 @@ if __name__ == '__main__':
     names = [a for a in sys.argv[1:] if not a.startswith('-')] or list(CHECKS)
     bad = False
     for n in names:
-        for m in MODES:
+        for m in MODES + (REDIRECTS if n in ('prism', 'looking-glass') else []):
             probs = run(n, m); bad |= bool(probs)
             print(f'== {n} / {m}: ' + ('clean' if not probs else '; '.join(probs)))
     sys.exit(1 if bad else 0)

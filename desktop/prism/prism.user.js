@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.6
+// @version      2.2.7
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.6';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.7';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -196,7 +196,11 @@
             GM_xmlhttpRequest({
                 method: 'GET', url, anonymous: true, // no cookies: Prism only needs public icons
                 responseType: type === 'text' ? undefined : type, timeout: 10000,
-                onload: r => (r.status >= 200 && r.status < 300) ? res(type === 'text' ? r.responseText : r.response) : rej(new Error('HTTP ' + r.status)),
+                onload: r => {
+                    // a public address can redirect to a private one: whatever comes back from there isn't used
+                    if (r.finalUrl && !gwPublicUrl(r.finalUrl)) return rej(new Error('redirected to a private address'));
+                    (r.status >= 200 && r.status < 300) ? res(type === 'text' ? r.responseText : r.response) : rej(new Error('HTTP ' + r.status));
+                },
                 onerror: () => rej(new Error('blocked')), ontimeout: () => rej(new Error('timed out')),
             });
         });

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.4
+// @version      1.2.5
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.4';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.5';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -630,7 +630,9 @@
                 try {
                     // no cookies: an icon is public, and sending them would say who you are to that site
                     GM_xmlhttpRequest({ method: 'GET', url: pub, anonymous: true, responseType: 'blob', timeout: 6000,
-                        onload: r => r.status >= 200 && r.status < 300 && r.response ? res(r.response) : rej(), onerror: rej, ontimeout: rej });
+                        // a public address can redirect to a private one: whatever comes back from there isn't used
+                        onload: r => r.finalUrl && !gwPublicUrl(r.finalUrl) ? rej(new Error('redirected to a private address'))
+                            : r.status >= 200 && r.status < 300 && r.response ? res(r.response) : rej(), onerror: rej, ontimeout: rej });
                     return;
                 } catch {}
             }

@@ -116,7 +116,11 @@ tools/                                builders for all of the above
 - **Ask for as little as possible.** Every `@grant` is used. A script that has to reach any site
   (`@connect *`: Prism and Looking-Glass fetch whatever icon or manifest a site points to) sends its
   requests through `gwPublicUrl()`, one shared helper: public `http(s)` addresses only, never this
-  computer or a private network unless the page itself is on one, and without cookies.
+  computer or a private network unless the page itself is on one, and without cookies. Its answer is
+  checked the same way: if a redirect took the request to a private address (`finalUrl`), nothing
+  that came back is used. (Tampermonkey follows redirects itself and can't show where they lead
+  first, so the request may still have been made; it just gets no further.) `tools/nettest.py`
+  checks it (`--net redirect`).
 - **Console logging is off by default** and never prints account or channel names, emails or ids,
   even when it's on: people share console captures. That includes messages built for failures ("could
   not find …"): say what was missing, never whose. `tools/logtest.py` turns every logging switch in

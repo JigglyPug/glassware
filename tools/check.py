@@ -437,8 +437,10 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or net_tool or 
         if not l.startswith('== '): continue
         seen += 1
         if not l.endswith('clean'): ok(False, 'network: ' + l[3:])
-    ok(seen == 20, f'the network test reported {seen} of 20 cases: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
-    if seen == 20 and r.returncode == 0: print('  ✓ 4 scripts × 5 ways the network fails: no errors, every one falls back')
+    ok(seen == 24, f'the network test reported {seen} of 24 cases: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+    if seen == 24 and r.returncode == 0:
+        print('  ✓ 4 scripts × 5 ways the network fails: no errors, every one falls back')
+        print('  ✓ Prism and Looking-Glass: nothing used that came back from a private address after a redirect')
 
 # ------------------------------------------------------------------ logging
 # tools/logtest.py: with every logging switch on, Molten Tools' account paths never print an account's
