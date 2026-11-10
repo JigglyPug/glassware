@@ -125,7 +125,19 @@ function stubPage() {
         return { abort() {} };
       };
       W.GM_setClipboard = () => {};
-      W.GM_openInTab = u => { (W.__opened = W.__opened || []).push(String(u)); return { close() {} }; };
+      // --opentab fail|throw|watch: the browser blocks the new tab (GM_openInTab and window.open give nothing back, or
+      // throw), or it opens and the test can close it: window.__tabs holds each tab, __closeTab(i) closes one (tools/handofftest.py)
+      const OPENTAB = ${JSON.stringify(opt('--opentab', ''))};
+      W.__tabs = [];
+      W.GM_openInTab = u => {
+        (W.__opened = W.__opened || []).push(String(u));
+        if (OPENTAB === 'throw') throw new Error('blocked');
+        if (OPENTAB === 'fail') return null;
+        const t = { url: String(u), closed: false, onclose: null, close() { if (!t.closed) { t.closed = true; t.onclose && t.onclose(); } } };
+        W.__tabs.push(t); return t;
+      };
+      W.__closeTab = i => W.__tabs[i] && W.__tabs[i].close();
+      if (OPENTAB === 'fail' || OPENTAB === 'throw') W.open = u => { (W.__opened = W.__opened || []).push(String(u)); if (OPENTAB === 'throw') throw new Error('blocked'); return null; };
       W.GM_info = { script: { name: 'x', version: ${JSON.stringify((src.match(/@version\s+(\S+)/) || [])[1] || '0')} }, scriptHandler: 'Tampermonkey', version: '5.3' };
       W.GM = { getValue: async (k, d) => W.GM_getValue(k, d), setValue: async (k, v) => W.GM_setValue(k, v) };
       W.unsafeWindow = W;

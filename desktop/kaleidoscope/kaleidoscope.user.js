@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.10
+// @version      2.10.11
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -1804,6 +1804,7 @@
       if (!claudeTab) { GM_deleteValue(HANDOFF_KEY); return say('Claude couldn\'t be opened, so nothing was sent. Try again.', 'err'); }
       job = { id, mode, label: board.label, start: Date.now(), est: estimate(mode + ':update'), update: true };
       GM_setValue(JOB_KEY, job);
+      watchTab(claudeTab, id);
       updateNote = '';
       close();
       showJob();
@@ -1944,6 +1945,7 @@
         if (!claudeTab) { GM_deleteValue(HANDOFF_KEY); return say('Claude couldn\'t be opened. The prompt is on your clipboard, so paste it into a new chat.', 'err'); }
         job = { id, mode: mode.id, label: mode.title, start: Date.now(), est: estimate(mode.id) };
         GM_setValue(JOB_KEY, job);
+        watchTab(claudeTab, id);
         close();
         showJob();
         return;
@@ -1968,6 +1970,20 @@
     if (job && Date.now() - job.start > 20 * 60 * 1000) { job = null; GM_deleteValue(JOB_KEY); }
     let claudeTab = null;
     let jobEl = null;
+    // The Claude tab was closed before the board came back (Tampermonkey tells us): end the job now
+    // with a plain message, rather than a progress bar that runs until it gives up.
+    const watchTab = (t, id) => {
+      if (!t) return;
+      try {
+        t.onclose = () => setTimeout(() => {
+          if (!job || job.id !== id || claudeTab !== t) return; // the board came back (or another job started)
+          const h = GM_getValue(HANDOFF_KEY, null);
+          if (h && h.job === id) GM_deleteValue(HANDOFF_KEY);
+          claudeTab = null;
+          finishJob({ ok: false, error: 'The Claude tab was closed before the board came back. If Claude had already started, the chat is in your recent chats.', conv: 'https://claude.ai/recents' });
+        }, 1500); // a result sent just before the tab closed itself arrives first
+      } catch (e) { /* this Tampermonkey can't tell us */ }
+    };
     let jobTimer = null;
 
     // Learns from your own runs: average of the last few boards for this mode (or any mode), else ~3 min.

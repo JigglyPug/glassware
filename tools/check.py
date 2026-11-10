@@ -413,13 +413,15 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/hou
 # tools/handofftest.py that a prompt only goes to the claude.ai tab Kaleidoscope opened for it
 if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kaleidoscope' in changed)):
     head('kaleidoscope')
-    for tool, good in (('boardtest.py', "a hostile board gets nothing out; covers, the API and AniList links still work"),
-                       ('handofftest.py', "a prompt goes only to the claude.ai tab opened for it")):
+    for tool, goods in (('boardtest.py', ["a hostile board gets nothing out; covers, the API and AniList links still work"]),
+                        ('handofftest.py', ["a prompt goes only to the claude.ai tab opened for it",
+                                            "a blocked or closed Claude tab ends cleanly, with a message"])):
         r = subprocess.run([sys.executable, f'{HERE}/{tool}'], capture_output=True, text=True)
         lines = [l for l in r.stdout.splitlines() if l.strip()]
-        ok(any(l.startswith('== ') for l in lines), f'tools/{tool} reported nothing: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
+        runs = [l for l in lines if l.startswith('== ')]
+        ok(len(runs) >= len(goods), f'tools/{tool} reported {len(runs)} of {len(goods)} parts: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
         for l in lines:
-            if l.startswith('== ') and l.endswith('clean'): print('  ✓ ' + good)
+            if l.startswith('== ') and l.endswith('clean'): print('  ✓ ' + (goods[runs.index(l)] if runs.index(l) < len(goods) else l[3:]))
             elif not l.startswith('== '): ok(False, l[3:].split(':')[0] + ': ' + l.strip() if l.startswith('== ') else 'kaleidoscope: ' + l.strip())
 
 # ------------------------------------------------------------------ network

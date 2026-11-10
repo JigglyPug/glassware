@@ -106,8 +106,9 @@ tools/                                builders for all of the above
   there.
 - **Hand-offs between sites go to the tab they were made for.** Kaleidoscope opens Claude with a
   one-time id in the address; only that tab takes the waiting prompt (it remembers the id through
-  signing in), never another claude.ai tab, and nothing waits if the tab didn't open.
-  `tools/handofftest.py` checks it.
+  signing in), never another claude.ai tab, and nothing waits if the tab didn't open. If the tab
+  is blocked, or closed before the board comes back, the job ends at once with a sentence saying
+  so, never a progress bar left running. `tools/handofftest.py` checks it (shot.js `--opentab`).
 - **Ask for as little as possible.** Every `@grant` is used. A script that has to reach any site
   (`@connect *`: Prism and Looking-Glass fetch whatever icon or manifest a site points to) sends its
   requests through `gwPublicUrl()`, one shared helper: public `http(s)` addresses only, never this
