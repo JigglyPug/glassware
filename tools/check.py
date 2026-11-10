@@ -250,7 +250,17 @@ done(n)
 # the development tools are pinned (package.json + package-lock.json, requirements.txt); a different
 # installed version can change screenshots, so say so (a warning, not a failure)
 head('tools'); n = 0
-pins = dict(l.strip().split('==') for l in open(f'{R}/requirements.txt') if '==' in l and not l.startswith('#'))
+# requirements.in holds the chosen pins; requirements.txt is the full lock made from it, every package hashed
+import re as _re
+pin_re = _re.compile(r'^([A-Za-z0-9_.-]+)==([^\s\\;]+)')
+lock_txt = open(f'{R}/requirements.txt').read()
+pins = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, lock_txt.splitlines()) if m}
+chosen = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, open(f'{R}/requirements.in').read().splitlines()) if m}
+blocks = _re.split(r'\n(?=[A-Za-z0-9_.-]+==)', lock_txt)
+unhashed = [b.split('==')[0].split('\n')[-1] for b in blocks if '==' in b and '--hash=sha256:' not in b]
+n += 2
+ok(all(pins.get(k) == v for k, v in chosen.items()), f'requirements.txt is out of step with requirements.in ({chosen}): run uv pip compile (see requirements.in)')
+ok(not unhashed, f'requirements.txt has packages without hashes: {unhashed}')
 pkg = json.load(open(f'{R}/package.json')); lock = json.load(open(f'{R}/package-lock.json'))
 npin = pkg['devDependencies']['playwright']
 n += 2

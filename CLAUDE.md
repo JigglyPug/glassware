@@ -349,7 +349,7 @@ script leaves running matters more than how fast it starts.
 ## After any change: rebuild the pages
 
 ```
-npm ci && pip install -r requirements.txt   # the pinned tools (Playwright, Pillow); then npx playwright install chromium
+npm ci && pip install --require-hashes -r requirements.txt   # the locked tools (Playwright, Pillow); then npx playwright install chromium
 npm audit && pip-audit -r requirements.txt  # whenever a pin changes: no known vulnerabilities in the tools
 python3 tools/screens.py [script]   # recapture panel screenshots (needs Playwright + Chromium)
 python3 tools/pages.py              # rebuild every README, banner, site page and link preview
@@ -361,6 +361,10 @@ python3 tools/perf.py [script]      # a long session: nothing keeps growing, tim
 python3 tools/check.py              # release check: everything below, plus the two above for changed scripts
 ```
 
+- The tools are locked: Node in `package-lock.json`, Python in `requirements.txt`, which is made from the pins
+  in `requirements.in` (change a pin there, then run the `uv pip compile` line at its top) and holds every
+  package, dependencies included, with hashes. `tools/check.py` fails if the two disagree or a package has
+  no hash.
 - `tools/audit.py` opens every panel, tab and fold-out picker at laptop, desktop and phone sizes
   (phones in Roboto), once on a plain page and once with common site-wide CSS, and lists text
   spilling out of buttons, things cut off or off screen, sideways scrolling and overlaps. It also
