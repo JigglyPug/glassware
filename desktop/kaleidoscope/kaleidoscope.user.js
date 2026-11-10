@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.11
+// @version      2.10.12
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -53,6 +53,47 @@
   const GONE_TITLE = 'It looks like that board was deleted';
   const GONE_TEXT = 'Its Claude chat is gone, so it can\'t be updated or followed up. You can still open and save this board, or make a new one.';
 
+  // What Kaleidoscope keeps in storage for the hand-off (the waiting prompt, the result, the job, the
+  // saved board, past times) is read back defensively: a value from an older version, or one that got
+  // damaged, is dropped or cleared rather than breaking a page or showing "undefined".
+  const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const asStr = v => (typeof v === 'string' ? v : '');
+  const asNum = v => (typeof v === 'number' && isFinite(v) ? v : 0);
+  const UUID_RE = /^[0-9a-f-]{36}$/;
+  const CHAT_RE = /^https:\/\/claude\.ai\/chat\/[0-9a-f-]{36}$/;
+  function cleanBoard(b) {
+    if (!isObj(b) || !/^[\w-]{1,40}$/.test(asStr(b.id)) || !asStr(b.html)) return null;
+    let snap = null;
+    if (isObj(b.snap) && isObj(b.snap.e)) {
+      const e = {};
+      for (const k in b.snap.e) {
+        const r = b.snap.e[k];
+        if (Array.isArray(r) && typeof r[0] === 'string') e[k] = [r[0], asNum(r[1]), asNum(r[2]), asStr(r[3])];
+      }
+      snap = { at: asNum(b.snap.at), e };
+    }
+    return Object.assign({}, b, {
+      label: asStr(b.label) || 'Your board', mode: asStr(b.mode) || 'recent', ts: asNum(b.ts), user: asStr(b.user),
+      type: b.type === 'MANGA' ? 'MANGA' : 'ANIME', conv: CHAT_RE.test(asStr(b.conv)) ? b.conv : '',
+      org: UUID_RE.test(asStr(b.org)) ? b.org : null, snap, updated: b.updated === true, chatGone: b.chatGone === true,
+    });
+  }
+  const readBoards = () => { const v = GM_getValue(BOARDS_KEY, []); return Array.isArray(v) ? v.map(cleanBoard).filter(Boolean) : []; };
+  const readTimes = () => {
+    const v = GM_getValue(TIMES_KEY, {}), o = {};
+    if (isObj(v)) for (const k in v) if (Array.isArray(v[k])) o[k] = v[k].filter(n => typeof n === 'number' && isFinite(n) && n > 0);
+    return o;
+  };
+  // the waiting prompt: usable, or (when its shape is broken) cleared
+  function handoffOk(d) {
+    if (!isObj(d) || !asStr(d.text) || !asNum(d.ts) || d.ts > Date.now() + 60000) return false;
+    if (d.tab !== undefined && !/^[\w-]{1,40}$/.test(asStr(d.tab))) return false;
+    if (d.capture && !/^[\w-]{1,40}$/.test(asStr(d.job))) return false;
+    if (d.update && d.convId && !UUID_RE.test(asStr(d.convId))) return false;
+    if (d.update && typeof d.baseHtml !== 'string') return false;
+    return true;
+  }
+
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const waitFor = async (fn, timeout = 10000, step = 200) => {
     const end = Date.now() + timeout;
@@ -79,7 +120,7 @@
     const m = location.hash.match(/^#kaleidoscope-board=([\w-]+)/);
     // also opens links from 2.3.0-2.3.2, which landed on /404#id
     const old = /^\/(404|kaleidoscope\/board)\/?$/.test(location.pathname) && /^#[a-z0-9]+$/.test(location.hash) &&
-      GM_getValue(BOARDS_KEY, []).some(b => '#' + b.id === location.hash);
+      readBoards().some(b => '#' + b.id === location.hash);
     if (m || old) return showBoard(m ? m[1] : location.hash.slice(1));
   }
   if (location.hostname === 'claude.ai') onReady(claudeSide);
@@ -97,7 +138,7 @@
       return;
     }
     try { window.stop(); } catch (e) { /* ignore */ }
-    const boards = GM_getValue(BOARDS_KEY, []);
+    const boards = readBoards();
     console.log('[Kaleidoscope] showing board ' + id);
     const b = boards.find(x => x.id === id) || (!id && boards[boards.length - 1]);
     if (!b) return renderPage(
@@ -201,7 +242,7 @@
     return 'unknown'; // offline, signed out, a challenge page… treat as "might exist"
   }
   function markBoardGone(id) {
-    const boards = GM_getValue(BOARDS_KEY, []);
+    const boards = readBoards();
     let changed = false;
     for (const x of boards) if (x.id === id && !x.chatGone) { x.chatGone = true; changed = true; }
     if (changed) GM_setValue(BOARDS_KEY, boards);
@@ -438,7 +479,23 @@
     let mine = tagged || null;
     try { mine = mine || sessionStorage.getItem(TAB_KEY); } catch (e) { /* ignore */ }
     let data = GM_getValue(HANDOFF_KEY, null);
-    if (!data || !data.text || Date.now() - data.ts > HANDOFF_TTL) return;
+    if (data === null || data === undefined) return;
+    if (!handoffOk(data)) {
+      GM_deleteValue(HANDOFF_KEY);
+      try { sessionStorage.removeItem(TAB_KEY); } catch (e) { /* ignore */ }
+      console.log('[Kaleidoscope] the waiting prompt couldn\'t be read, so it was cleared.');
+      if (mine) onReady(() => {
+        const t = document.createElement('div');
+        t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483647;background:#151F2E;color:#EDF1F5;' +
+          'border:1px solid rgba(232,93,117,.5);border-radius:12px;padding:10px 16px;font:13px/1.45 system-ui,sans-serif;max-width:calc(100vw - 40px)';
+        t.textContent = 'Kaleidoscope couldn\'t read the prompt it saved for this tab, so nothing was pasted. Go back to AniList and try again.';
+        document.body.append(t);
+        setTimeout(() => t.remove(), 12000);
+      });
+      return;
+    }
+    if (Date.now() - data.ts > HANDOFF_TTL) return;
+    data = Object.assign({}, data, { label: asStr(data.label) || 'Recommendations' });
     if (!data.tab || data.tab !== mine) return; // not the tab this prompt was opened for
     const path = location.pathname;
     // Signed out: tell AniList, and keep the prompt waiting so it continues once you sign in.
@@ -473,7 +530,7 @@
     GM_deleteValue(HANDOFF_KEY); // one use only, so a refresh doesn't paste it again
     try { sessionStorage.removeItem(TAB_KEY); } catch (e) { /* ignore */ }
     const capture = !!data.capture;
-    const t0 = data.started || Date.now();
+    const t0 = asNum(data.started) || Date.now();
 
     rawStyle(
       '#kaleidoscope-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483647;' +
@@ -686,8 +743,8 @@
         id, label: data.label, mode: data.mode, html, conv: convUrl, ts: Date.now(),
         user: data.user, type: data.type, snap: data.snap || null, updated: !!data.update, org: org || null,
       }]); // only the latest board is kept
-      const times = GM_getValue(TIMES_KEY, {});
-      const key = data.timeKey || data.mode;
+      const times = readTimes();
+      const key = asStr(data.timeKey) || asStr(data.mode) || 'recent';
       times[key] = (times[key] || []).concat(Date.now() - t0).slice(-5);
       GM_setValue(TIMES_KEY, times);
       // Only close if you're still on this chat; if you've moved to another one in this tab, leave it be.
@@ -1545,7 +1602,7 @@
 
     let chatCheck = null; // { id, p, state }
     function checkLastBoardChat() {
-      const b = GM_getValue(BOARDS_KEY, []).slice(-1)[0];
+      const b = readBoards().slice(-1)[0];
       if (!b) { chatCheck = null; return null; }
       const c = { id: b.id, state: null };
       c.p = chatState(b).then(st => { c.state = st; console.log('[Kaleidoscope] last board\'s chat: ' + st); return st; });
@@ -1844,7 +1901,7 @@
         () => cfg.dest, v => { cfg.dest = v; save(); render(); });
       statusLine(body);
 
-      const boards = GM_getValue(BOARDS_KEY, []);
+      const boards = readBoards();
       const lastB = boards[boards.length - 1];
       if (lastB) {
         section(body, 'Last board');
@@ -1875,7 +1932,7 @@
 
       // Already have a board of this type whose chat still exists? Offer to update it instead.
       if (!confirmed && cfg.dest === 'claude') {
-        const last = GM_getValue(BOARDS_KEY, []).slice(-1)[0];
+        const last = readBoards().slice(-1)[0];
         if (last && !last.chatGone && (last.type || 'ANIME') === type) {
           let c = chatCheck && chatCheck.id === last.id ? chatCheck : checkLastBoardChat();
           let st = c.state;
@@ -1966,8 +2023,11 @@
 
     // ---------------- Background board jobs ----------------
     const JOB_KEY = 'kaleidoscope.job';
-    let job = GM_getValue(JOB_KEY, null);
-    if (job && Date.now() - job.start > 20 * 60 * 1000) { job = null; GM_deleteValue(JOB_KEY); }
+    const cleanJob = j => (isObj(j) && /^[\w-]{1,40}$/.test(asStr(j.id)) && asNum(j.start) ? Object.assign({}, j, {
+      label: asStr(j.label) || 'Your board', mode: asStr(j.mode) || 'recent', est: asNum(j.est) > 0 ? j.est : 180000,
+      update: j.update === true, signin: j.signin === true }) : null);
+    let job = cleanJob(GM_getValue(JOB_KEY, null));
+    if (!job || Date.now() - job.start > 20 * 60 * 1000) { job = null; GM_deleteValue(JOB_KEY); }
     let claudeTab = null;
     let jobEl = null;
     // The Claude tab was closed before the board came back (Tampermonkey tells us): end the job now
@@ -1989,7 +2049,7 @@
     // Learns from your own runs: average of the last few boards for this mode (or any mode), else ~3 min.
     // Updates are timed separately from new boards (key "mode:update").
     function estimate(key) {
-      const t = GM_getValue(TIMES_KEY, {});
+      const t = readTimes();
       const isUpd = /:update$/.test(key);
       const own = t[key] || [];
       const pool = own.length ? own : [].concat(...Object.keys(t).filter(k => /:update$/.test(k) === isUpd).map(k => t[k]));
@@ -2071,7 +2131,7 @@
       if (res.chatGone) {
         if (claudeTab) { try { claudeTab.close(); } catch (e) { /* already closed */ } }
         claudeTab = null;
-        const gb = GM_getValue(BOARDS_KEY, []).slice(-1)[0];
+        const gb = readBoards().slice(-1)[0];
         if (gb) markBoardGone(gb.id);
         const box = jobShell();
         box.textContent = '';
@@ -2110,9 +2170,12 @@
 
     if (typeof GM_addValueChangeListener === 'function') {
       GM_addValueChangeListener(RESULT_KEY, (name, oldV, v) => {
-        if (!v || !job || v.job !== job.id) return;
-        if (v.signin) { job.signin = true; GM_setValue(JOB_KEY, job); return showJob(); }
-        finishJob(v);
+        if (!isObj(v) || !job || v.job !== job.id) return;
+        if (v.signin === true) { job.signin = true; GM_setValue(JOB_KEY, job); return showJob(); }
+        // only what a result is made of, each the kind it should be; the chat link only if it's on claude.ai
+        finishJob({ ok: v.ok === true, error: asStr(v.error).slice(0, 400), conv: /^https:\/\/claude\.ai\//.test(asStr(v.conv)) ? v.conv : '',
+          ms: asNum(v.ms), closeTab: v.closeTab !== false, updated: v.updated === true, fellBack: v.fellBack === true,
+          limit: v.limit === true, chatGone: v.chatGone === true });
       });
     }
 

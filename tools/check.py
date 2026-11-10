@@ -415,7 +415,8 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kal
     head('kaleidoscope')
     for tool, goods in (('boardtest.py', ["a hostile board gets nothing out; covers, the API and AniList links still work"]),
                         ('handofftest.py', ["a prompt goes only to the claude.ai tab opened for it",
-                                            "a blocked or closed Claude tab ends cleanly, with a message"])):
+                                            "a blocked or closed Claude tab ends cleanly, with a message",
+                                            "damaged hand-off storage is cleared or skipped, never breaks a page"])):
         r = subprocess.run([sys.executable, f'{HERE}/{tool}'], capture_output=True, text=True)
         lines = [l for l in r.stdout.splitlines() if l.strip()]
         runs = [l for l in lines if l.startswith('== ')]

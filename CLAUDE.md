@@ -108,7 +108,11 @@ tools/                                builders for all of the above
   one-time id in the address; only that tab takes the waiting prompt (it remembers the id through
   signing in), never another claude.ai tab, and nothing waits if the tab didn't open. If the tab
   is blocked, or closed before the board comes back, the job ends at once with a sentence saying
-  so, never a progress bar left running. `tools/handofftest.py` checks it (shot.js `--opentab`).
+  so, never a progress bar left running. Everything a hand-off keeps in storage (the waiting
+  prompt, the result, the job, the saved board, past times) is read back through a checker
+  (`handoffOk`, `cleanBoard`, `readBoards`, `readTimes`, `cleanJob`): a value of the wrong shape is
+  cleared or skipped, and a link in it is used only if it points where it should. Read new stored
+  values the same way. `tools/handofftest.py` checks all of it (shot.js `--opentab`).
 - **Ask for as little as possible.** Every `@grant` is used. A script that has to reach any site
   (`@connect *`: Prism and Looking-Glass fetch whatever icon or manifest a site points to) sends its
   requests through `gwPublicUrl()`, one shared helper: public `http(s)` addresses only, never this
