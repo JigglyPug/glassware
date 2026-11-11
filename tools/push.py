@@ -10,7 +10,7 @@ Run tools/check.py first; this doesn't replace it.
 """
 import json, os, subprocess, sys, time
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPO, HOLD, CHECK, WAIT = 'JigglyPug/glassware', 'ready', 'checks', 40 * 60
+REPO, HOLD, CHECK, WAIT = 'JigglyPug/glassware', 'ready', 'checks', 80 * 60
 
 def sh(*a, ok=True):
     r = subprocess.run(list(a), cwd=R, capture_output=True, text=True)

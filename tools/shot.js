@@ -68,7 +68,10 @@ function stubPage() {
 }
 
 (async () => {
-  const browser = await chromium.launch(has('--forcedark') ? { args: ['--blink-settings=forceDarkModeEnabled=true', '--enable-features=WebContentsForceDark'] } : {});   // --forcedark: a browser that darkens light pages itself
+  // the same two fonts on every machine (tools/fonts.conf), so screenshots match on GitHub's too;
+  // a caller that sets its own FONTCONFIG_FILE (tools/audit.py's phone sizes, in Roboto) keeps it
+  const env = { ...process.env, FONTCONFIG_FILE: process.env.FONTCONFIG_FILE || require('path').join(__dirname, 'fonts.conf') };
+  const browser = await chromium.launch({ env, ...(has('--forcedark') ? { args: ['--blink-settings=forceDarkModeEnabled=true', '--enable-features=WebContentsForceDark'] } : {}) });   // --forcedark: a browser that darkens light pages itself
   const ctxOpts = mobile ? { ...devices['Pixel 7'], ...(opt('--vh', '') ? { viewport: { width: +opt('--vw', '412'), height: +opt('--vh', '839') } } : {}) } : { viewport: { width: +opt('--vw', '1280'), height: +opt('--vh', '820') }, deviceScaleFactor: 2 };
   ctxOpts.colorScheme = theme;
   ctxOpts.timezoneId = 'America/Detroit';

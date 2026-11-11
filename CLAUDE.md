@@ -454,9 +454,9 @@ python3 tools/check.py              # release check: everything below, plus the 
   in `tools/seeds/` so the screenshots show it; otherwise the pages never show the new feature.
 - A capture shows the whole panel: `tools/screens.py` fails if anything in a cropped capture still
   scrolls (part of the panel would be missing), so give long panels a taller `--vh`.
-- Captures repeat exactly (fixed clock, demo data, animations stopped), so `tools/check.py`
-  recaptures every changed script's panels in a scratch folder and fails if a committed
-  screenshot no longer matches its panel.
+- Captures repeat exactly (fixed clock, demo data, animations stopped, the fonts in `tools/fonts.conf`),
+  so `tools/check.py` recaptures every changed script's panels in a scratch folder and fails if a
+  committed screenshot no longer matches its panel, here and on GitHub.
 
 ## Committing
 
@@ -471,11 +471,14 @@ python3 tools/check.py              # release check: everything below, plus the 
   scratch copy and fails if the committed pages differ, so never hand-edit generated files. It
   fails closed: if GitHub can't be reached, or a test crashes or reports nothing, that's a
   failure, never a pass. When a rule here changes, change the check too.
-- GitHub runs the rules, Kaleidoscope's security tests and the dashboard test on every push
-  (`.github/workflows/checks.yml`, `check.py --quick --ci`; actions pinned to exact commits). It doesn't
-  replace the local check (screenshots and pages are compared only locally, since they depend on the
-  machine's fonts). A failed run gets fixed before anything else; `gh run list --workflow checks.yml`
-  shows the latest.
+- GitHub runs the release check on every push (`.github/workflows/checks.yml`, `check.py --quick --ci`;
+  actions pinned to exact commits): the rules, every security test, settings carry-over, live updates,
+  the screenshots and the generated pages for whatever changed. Only the glitch check (phone sizes in
+  Roboto) and the performance test (shared machines time unevenly) stay local, so it doesn't replace
+  the local check. Screenshots match there because every test browser draws with the same fonts
+  (`tools/fonts.conf`: Ubuntu 24.04's `fonts-inter`, `fonts-dejavu-core` and `fonts-noto-color-emoji`,
+  no hinting); the job runs on `ubuntu-24.04` (not `ubuntu-latest`) and installs those three packages. A failed run gets fixed
+  before anything else; `gh run list --workflow checks.yml` shows the latest.
 - Pull before you start and rebase on anything new before pushing; other chats work on
   this repo too.
 - **Ship with `python3 tools/push.py`**, never `git push` to `main`. A ruleset on `main` (repo Settings →

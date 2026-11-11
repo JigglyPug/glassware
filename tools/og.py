@@ -58,7 +58,8 @@ def lead(p):
 
 if __name__ == '__main__':
     with sync_playwright() as pw:
-        b = pw.chromium.launch(); page = b.new_page(viewport={'width': 1280, 'height': 640})
+        b = pw.chromium.launch(env=dict(os.environ, FONTCONFIG_FILE=os.environ.get('FONTCONFIG_FILE') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts.conf')))   # the same fonts everywhere (tools/fonts.conf)
+        page = b.new_page(viewport={'width': 1280, 'height': 640})
         def render(h, out):
             page.set_content(h); page.wait_for_timeout(150); page.screenshot(path=out)
         # landing: three panels fanned out

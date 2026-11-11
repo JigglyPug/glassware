@@ -5,8 +5,8 @@
     python3 tools/check.py --all     # glitch and settings tests for every script too (slow)
     python3 tools/check.py --quick   # rules only, no browser tests
     python3 tools/check.py --quick --ci   # what GitHub runs on every push (.github/workflows/checks.yml):
-                                     # the rules plus the security and dashboard tests, nothing that
-                                     # depends on this machine's fonts
+                                     # everything but the glitch check and the performance test
+                                     # (the browsers draw with tools/fonts.conf, the same everywhere)
 
 Everything fails closed: if GitHub can't be reached, or a test crashes or reports nothing,
 that's a failure, never a pass.
@@ -56,6 +56,9 @@ It checks, in order:
              budgets; the test proves itself on a deliberately bad script first (changed scripts,
              or when the test itself changed)
   screenshots the committed panel screenshots still match the panels (changed scripts)
+
+GitHub skips only the glitch check (phone sizes draw in Roboto) and the performance test (shared
+machines time unevenly).
 """
 import glob, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
@@ -421,8 +424,11 @@ for line in git('log', '--format=%H%x09%ae%x09%B%x1e', 'origin/main..HEAD').stdo
 print('  ✓ nothing waiting to push') if n == 0 else done(n)
 
 # ------------------------------------------------------------------ settings + glitches
-if '--quick' not in args:
-    targets = [p for p in (list(RUNS) if '--all' in args else changed)]
+# GitHub (--ci) runs these too: settings carry-over, live updates, screenshots and the generated pages.
+# The glitch check and the performance test stay here (Roboto for phones; shared machines time unevenly).
+FULL = '--quick' not in args or '--ci' in args
+targets = [p for p in (list(RUNS) if '--all' in args else changed)]
+if FULL:
     head('settings')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
@@ -440,6 +446,7 @@ if '--quick' not in args:
             except Exception as e: probs, v = [f'test could not run: {e}'], '?'
             for x in probs: ok(False, f'{p.split("/")[1]} from {v}: {x}')
             if not probs: print(f'  ✓ {p.split("/")[1]}: {k} settings carry over from {v} too')
+if '--quick' not in args:
     head('glitches')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
@@ -534,7 +541,7 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/mol
     ok(seen >= 5, f'the logging test reported {seen} of 5 paths: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
 
 # ------------------------------------------------------------------ screenshots
-if '--quick' not in args:
+if FULL:
     head('live')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
@@ -544,6 +551,7 @@ if '--quick' not in args:
             if l.startswith('== '): cur = l[3:].split(':')[0].split('/')[-1]; seen += 1; (print(f'  ✓ {cur}: updates live') if l.endswith('clean') else None)
             elif l.strip(): ok(False, f'{cur}: {l.strip()}')
         ok(seen == 2 * len(targets), f'the live-update test reported {seen} of {2 * len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+if '--quick' not in args:
     head('performance')
     # tools/perf.py: a long session on each changed script's site; nothing it leaves behind keeps
     # growing and it stays within its time budgets. The test proves itself on a deliberately bad
@@ -561,11 +569,14 @@ if '--quick' not in args:
             elif res == 'clean': print(f'  ✓ {name.split("/")[-1]}: no leaks, within its time budgets')
             else: ok(False, f'{name.split("/")[-1]}: {res}')
         ok(seen == 1 + len(targets), f'the performance test reported {seen} of {1 + len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+if FULL:
     head('screenshots')
     # Recapture each panel in a scratch folder and compare with the committed image. Captures repeat
     # exactly (fixed clock, demo data, animations stopped), so any difference means the panel changed
-    # and its screenshots weren't recaptured (python3 tools/screens.py <script>).
-    targets = [p for p in (list(RUNS) if '--all' in args else changed)]
+    # and its screenshots weren't recaptured (python3 tools/screens.py <script>). When what draws them
+    # changes (the fonts, the capture tools), every script's screenshots are compared.
+    shot_tools = git('diff', '--quiet', 'origin/main', '--', 'tools/fonts.conf', 'tools/shot.js', 'tools/screens.py').returncode != 0
+    targets = [p for p in (list(RUNS) if '--all' in args or shot_tools else changed)]
     if not targets: print('  ✓ no script differs from GitHub')
     else:
         import tempfile, screens
@@ -591,7 +602,7 @@ if '--quick' not in args:
             if got and not stale: print(f'  ✓ {p.split("/")[1]}: {len(got)} screenshots match')
 
 # ------------------------------------------------------------------ generated
-if '--quick' not in args:
+if FULL:
     head('generated')
     import shutil, tempfile, filecmp
     tmp = tempfile.mkdtemp(); copy = f'{tmp}/repo'
