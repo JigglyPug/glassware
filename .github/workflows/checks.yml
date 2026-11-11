@@ -1,7 +1,7 @@
 # Runs the release check on every push, so it doesn't depend on someone remembering to run it
 # (CLAUDE.md, Committing): the rules, the security tests, settings carry-over, live updates and the
-# generated pages, for whatever changed. The glitch check, the performance test and (for now, issue #3)
-# the screenshot comparison stay local. Actions are pinned to exact commits.
+# generated pages and the screenshots, for whatever changed. The glitch check and the performance test
+# stay local. Actions are pinned to exact commits.
 name: Checks
 on:
   push:
@@ -35,7 +35,7 @@ jobs:
           npx playwright install --with-deps chromium
           sudo apt-get install -y --no-install-recommends fonts-inter fonts-dejavu-core fonts-dejavu-mono fonts-noto-color-emoji
           pip install --require-hashes -r requirements.txt
-      - name: The release check (all but the glitch check, the performance test and the screenshots)
+      - name: The release check (all but the glitch check and the performance test)
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/check.py --quick --ci

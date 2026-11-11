@@ -489,9 +489,10 @@ python3 tools/check.py              # release check: everything below, plus the 
 - GitHub runs the release check on every push (`.github/workflows/checks.yml`, `check.py --quick --ci`;
   actions pinned to exact commits): the rules, every security test, settings carry-over, live updates
   and the generated pages for whatever changed. The glitch check (phone sizes in Roboto), the
-  performance test (shared machines time unevenly) and the screenshot comparison stay local, so it
-  doesn't replace the local check. Screenshots match there for every script but Kaleidoscope, whose ✦
-  still draws differently (issue #3), because every test browser draws with the same fonts
+  performance test (shared machines time unevenly) stay local, so it doesn't replace the local check.
+  Screenshots are compared there too and a mismatch fails, except Kaleidoscope's two panels, which are
+  report-only on GitHub (issue #3: the same font files put its footer line one pixel further right there).
+  They match because every test browser draws with the same fonts
   (`tools/fonts.conf`: Ubuntu 24.04's `fonts-inter`, `fonts-dejavu-core`, `fonts-dejavu-mono` and `fonts-noto-color-emoji`,
   no hinting); the job runs on `ubuntu-24.04` (not `ubuntu-latest`) and installs those four packages. A failed run gets fixed
   before anything else; `gh run list --workflow checks.yml` shows the latest.

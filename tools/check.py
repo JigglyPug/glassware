@@ -58,7 +58,7 @@ It checks, in order:
   screenshots the committed panel screenshots still match the panels (changed scripts)
 
 GitHub skips the glitch check (phone sizes draw in Roboto), the performance test (shared machines time
-unevenly); it compares screenshots but only reports a mismatch for now (issue #3).
+unevenly). It compares screenshots too; only Kaleidoscope's two panels are report-only there (issue #3).
 """
 import glob, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
@@ -577,9 +577,11 @@ if '--quick' not in args:
             elif res == 'clean': print(f'  ✓ {name.split("/")[-1]}: no leaks, within its time budgets')
             else: ok(False, f'{name.split("/")[-1]}: {res}')
         ok(seen == 1 + len(targets), f'the performance test reported {seen} of {1 + len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
-# On GitHub (--ci) a mismatch is only reported for now, with the differing strip printed so it can be looked
-# at from the log (issue #3: Kaleidoscope's ✦ drew differently there); locally it fails, as always.
-SHOT_WARN = '--ci' in args and bool(os.environ.get('GITHUB_ACTIONS'))
+# On GitHub a mismatch fails too, except for the two Kaleidoscope panels (issue #3): there the same font
+# files draw the footer line one pixel further right after its ✦ than here, so for those a mismatch is
+# only reported, with the differing strip and the fonts used printed to the log. Locally every one fails.
+ON_GITHUB = '--ci' in args and bool(os.environ.get('GITHUB_ACTIONS'))
+SHOT_REPORT_ONLY = {'desktop/kaleidoscope', 'mobile/kaleidoscope-mobile'}
 if FULL:
     head('screenshots')
     # Recapture each panel in a scratch folder and compare with the committed image. Captures repeat
@@ -617,7 +619,7 @@ if FULL:
             stale = [f for f in got if not os.path.exists(f'{R}/{p}/images/{f}') or not same(f'{tmp}/{f}', f'{R}/{p}/images/{f}')]
             for f in stale:
                 msg = f'{p.split("/")[1]}: {f} doesn\'t match the panel any more ({why.get(f"{tmp}/{f}", "not committed")}; run python3 tools/screens.py {p.split("/")[1]})'
-                if not SHOT_WARN: ok(False, msg); continue
+                if not (ON_GITHUB and p in SHOT_REPORT_ONLY): ok(False, msg); continue
                 print('  ⚠ ' + msg)
                 try:   # the strip that differs, as drawn here and as committed, small enough to read back out of the log
                     import base64, io
@@ -627,10 +629,13 @@ if FULL:
                     both = Image.new('RGB', (box[2] - box[0], 2 * (box[3] - box[1]) + 4), 'white'); both.paste(A.crop(box), (0, 0)); both.paste(B.crop(box), (0, box[3] - box[1] + 4))
                     buf = io.BytesIO(); both.save(buf, 'PNG', optimize=True); print(f'    CROP {p.split("/")[1]}/{f} ' + base64.b64encode(buf.getvalue()).decode())
                 except Exception as e: print(f'    (no crop: {e})')
-            if SHOT_WARN and stale:   # and which fonts drew this panel there (tools/fontsused.js), to compare with here
+            if ON_GITHUB and p in SHOT_REPORT_ONLY and stale:   # and which fonts drew this panel there (tools/fontsused.js), to compare with here
                 url, cmd, extra, _ = screens.JOBS[p]
                 r = subprocess.run(['node', f'{HERE}/shot.js', f'{R}/{p}/{p.split("/")[1]}.user.js', url, '/dev/null', '--cmd', cmd, *extra, '--drive', f'{HERE}/fontsused.js'], capture_output=True, text=True)
                 print('    FONTS ' + next((l[5:] for l in r.stdout.splitlines() if l.startswith('EVAL ')), 'could not run'))
+                import hashlib   # and the files themselves, to tell a different file from a different machine
+                for ff in ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/opentype/inter/Inter-Regular.otf'):
+                    print(f'    FILE {os.path.basename(ff)} ' + (hashlib.md5(open(ff, 'rb').read()).hexdigest() if os.path.exists(ff) else 'missing'))
                 continue
             if got and not stale: print(f'  ✓ {p.split("/")[1]}: {len(got)} screenshots match')
 
