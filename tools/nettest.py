@@ -81,8 +81,9 @@ def run(name, mode):
 if __name__ == '__main__':
     names = [a for a in sys.argv[1:] if not a.startswith('-')] or list(CHECKS)
     bad = False
-    for n in names:
-        for m in MODES + (REDIRECTS if n in ('prism', 'looking-glass') else []):
-            probs = run(n, m); bad |= bool(probs)
-            print(f'== {n} / {m}: ' + ('clean' if not probs else '; '.join(probs)))
+    from par import pmap
+    cases = [(n, m) for n in names for m in MODES + (REDIRECTS if n in ('prism', 'looking-glass') else [])]
+    for (n, m), probs in zip(cases, pmap(lambda c: run(*c), cases)):
+        bad |= bool(probs)
+        print(f'== {n} / {m}: ' + ('clean' if not probs else '; '.join(probs)))
     sys.exit(1 if bad else 0)

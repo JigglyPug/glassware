@@ -97,8 +97,10 @@ def run_case(url, wait, case):
 
 def run():
     out = {}
+    from par import pmap
+    ran = dict(zip(CASES, pmap(lambda c: run_case(c[0], c[1], c[3]), CASES.values())))
     for name, (url, wait, sign, case) in CASES.items():
-        lines, r = run_case(url, wait, case)
+        lines, r = ran[name]
         leak = [l for l in lines if any(re.search(re.escape(s), l, re.I) for s in SECRETS)]
         out[name] = [f'a log line names an account: {l[:160]}' for l in leak]
         # the path really ran, with logging on: its own line is there (a test that logs nothing proves nothing)

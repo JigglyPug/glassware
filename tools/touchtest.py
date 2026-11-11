@@ -49,7 +49,8 @@ if __name__ == '__main__':
         i = a.index('--file'); f, name = a[i + 1], a[i + 2]; targets = [(p, f) for p in PHONE if p.split('/')[1] == name]
     else: targets = [(p, None) for p in PHONE if not a or p.split('/')[1] in a]
     bad = False
-    for p, f in targets:
-        probs = run(p, f); bad |= bool(probs)
+    from par import pmap
+    for (p, f), probs in zip(targets, pmap(lambda t: run(*t), targets)):
+        bad |= bool(probs)
         print(f'== {p.split("/")[1]} on a phone: ' + ('clean' if not probs else '; '.join(probs)))
     sys.exit(1 if bad else 0)

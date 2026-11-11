@@ -126,15 +126,16 @@ def cases():
     yield 'an export of its own settings', {'text': 'export'}, round_trip
 
 def run(script=JS):
-    out = []
-    for name, content, check in cases():
+    from par import pmap
+    def one(case):
+        name, content, check = case
         try: v = drive(content, script)
-        except RuntimeError as e: out.append((name, [f'could not run: {e}'])); continue
+        except RuntimeError as e: return (name, [f'could not run: {e}'])
         p = check(v) + [f'uncaught: {e[:120]}' for e in v['errs']]
         m = re.search(r'undefined|NaN|\[object', v['text'])
         if m: p.append(f'the panel shows {m.group(0)!r}')
-        out.append((name, p))
-    return out
+        return (name, p)
+    return pmap(one, cases())
 
 if __name__ == '__main__':
     bad = False

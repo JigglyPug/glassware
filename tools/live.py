@@ -16,11 +16,16 @@ sys.path.insert(0, HERE)
 from screens import JOBS, CLOCK
 from carry import FIRST
 
-def live(p, two=False):
-    url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]
-    tabs = ['main'] + list(JOBS[p][3])
+def tabs_of(p): return ['main'] + list(JOBS[p][3])
+
+SLICES = 3   # a tab's controls are shared out over this many browsers
+
+def live(p, two=False, tabs=None, part=None):
+    """One browser run: the tabs given (all of them by default), changed and checked one after another."""
+    url, cmd, extra, _ = JOBS[p]; slug = p.split('/')[1]
+    tabs = tabs or tabs_of(p)
     args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--live', '--clock', CLOCK, '--vh', '1400',
-            '--tabs', ','.join(tabs)] + extra + (['--twotab'] if two else [])
+            '--tabs', ','.join(tabs)] + extra + (['--twotab'] if two else []) + (['--slice', f'{part}/{SLICES}'] if part is not None else [])
     r = subprocess.run(args, capture_output=True, text=True, timeout=1500)
     line = next((l for l in r.stdout.splitlines() if l.startswith('LIVE ')), None)
     if line is None: return [f'could not run: {(r.stderr or r.stdout)[-300:]}']
@@ -28,13 +33,16 @@ def live(p, two=False):
 
 if __name__ == '__main__':
     only = sys.argv[1:]; bad = 0
-    from concurrent.futures import ThreadPoolExecutor
+    from par import pmap
     ps = [p for p in JOBS if not only or p.split('/')[1] in only]
     runs = [(p, two) for p in ps for two in (False, True)]
-    with ThreadPoolExecutor(4) as ex:
-        for (p, two), res in zip(runs, ex.map(lambda a: live(*a), runs)):
-            p = p + (' (second tab)' if two else '')
-            print(f'== {p}: ' + ('clean' if not res else f'{len(res)} issue(s)'))
-            for x in res: print('   ' + x)
-            bad += bool(res)
+    # every tab of a panel starts from a fresh page anyway, so each gets a browser of its own, several at once
+    jobs = [(p, two, [t], k) for p, two in runs for t in tabs_of(p) for k in range(SLICES)]
+    got = dict(zip([(p, two, t[0], k) for p, two, t, k in jobs], pmap(lambda a: live(*a), jobs)))
+    for p, two in runs:
+        res = list(dict.fromkeys(x for t in tabs_of(p) for k in range(SLICES) for x in got[(p, two, t, k)]))
+        p = p + (' (second tab)' if two else '')
+        print(f'== {p}: ' + ('clean' if not res else f'{len(res)} issue(s)'))
+        for x in res: print('   ' + x)
+        bad += bool(res)
     sys.exit(1 if bad else 0)

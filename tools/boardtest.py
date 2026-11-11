@@ -103,9 +103,12 @@ def open_board(script, html, js=None):
 
 def run(script=f'{R}/desktop/kaleidoscope/kaleidoscope.user.js'):
     bad = []
+    from par import ptry
+    res = ptry([lambda h=h: open_board(script, h) for h in BOARDS.values()] + [lambda n=n: open_board(script, BOARDS[n], SAVE) for n in ('everything', 'instant-away')])
     for name, html in BOARDS.items():
-        try: reqs, got = open_board(script, html)
-        except RuntimeError as e: bad.append(f'[{name}] could not run: {e}'); continue
+        r = res.pop(0)
+        if isinstance(r, RuntimeError): bad.append(f'[{name}] could not run: {r}'); continue
+        reqs, got = r
         opened = got.get('opened', [])
         bad += [f'[{name}] got out: {q}' for q in reqs if EVIL in q]
         bad += [f'[{name}] the board received data from Kaleidoscope: {q}' for q in reqs if 'GOT-MESSAGE' in q]
@@ -121,8 +124,9 @@ def run(script=f'{R}/desktop/kaleidoscope/kaleidoscope.user.js'):
             bad.append(f'[{name}] the board\'s request to open an AniList link was lost')
     # the same boards, saved and opened as a file of their own
     for name in ('everything', 'instant-away'):
-        try: reqs, got = open_board(script, BOARDS[name], SAVE)
-        except RuntimeError as e: bad.append(f'[saved {name}] could not run: {e}'); continue
+        r = res.pop(0)
+        if isinstance(r, RuntimeError): bad.append(f'[saved {name}] could not run: {r}'); continue
+        reqs, got = r
         if got.get('error'): bad.append(f'[saved {name}] {got["error"]}'); continue
         bad += [f'[saved {name}] got out: {q}' for q in reqs if EVIL in q]
         if got.get('sandboxed') is not True: bad.append(f'[saved {name}] the saved file runs the board on its own, not in a sandboxed frame ({got.get("sandboxed")}, now at {got.get("at")})')

@@ -18,7 +18,10 @@ const has = k => args.includes(k);
 const mobile = has('--mobile');
 const theme = opt('--theme', 'dark');
 const cmdName = opt('--cmd', 'Open');
-const waitMs = +opt('--wait', '1800');
+// a run that only wants what --eval or --drive finds (no picture) keeps the pauses short: its test waits
+// for what it needs itself. Screenshots keep the long pauses, and settle before each capture.
+const QUICK = args[2] === '/dev/null' && (args.includes('--eval') || args.includes('--drive')) && !args.includes('--audit');
+const waitMs = +opt('--wait', QUICK ? '500' : '1800');
 const evalJs = opt('--eval', '');
 const seedFile = opt('--seed', '');
 const seed = seedFile ? fs.readFileSync(seedFile, 'utf8') : '';
@@ -179,7 +182,7 @@ function stubPage() {
   page.on('pageerror', e => console.log('[pageerror]', String(e).slice(0, 300)));
   // --commit: don't wait for the page's load event (a Kaleidoscope board stops the page and replaces it)
   await page.goto(url, { waitUntil: has('--commit') ? 'commit' : 'load' });
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(QUICK ? 400 : 1200);
   if (has('--perf')) {
     // A long session on a busy feed: every round adds 200 items of the kind the site uses, changes
     // some text, drops the oldest past 400, and moves to a new page the way the site's app does.
@@ -464,7 +467,7 @@ function stubPage() {
   // --drive <file.js>: a Node module (async (page, ctx) => result) that works the page from outside, the way a
   // person does: real taps and swipes on a touchscreen (tools/touchtest.py). Its result prints as EVAL, like --eval.
   if (opt('--drive', '')) { const v = await require(require('path').resolve(opt('--drive', '')))(page, ctx); console.log('EVAL ' + JSON.stringify(v)); await browser.close(); return; }
-  if (evalJs) { const v = await page.evaluate(evalJs); if (has('--print')) console.log('EVAL ' + JSON.stringify(v)); await page.waitForTimeout(900); }   // --print: show what --eval returned
+  if (evalJs) { const v = await page.evaluate(evalJs); if (has('--print')) console.log('EVAL ' + JSON.stringify(v)); if (!QUICK) await page.waitForTimeout(900); }   // --print: show what --eval returned
   // nothing to capture: a test that only wanted what --eval found (and the requests and console lines on the way)
   if (evalJs && out === '/dev/null' && !has('--audit')) { await browser.close(); return; }
   // Wait until the panel's text stops changing (data still loading, a list still filling in), so a slower
@@ -587,8 +590,11 @@ function stubPage() {
       if (two) { await openOther(); if (t !== 'main') { await other.evaluate(t => __clickTab(t), t); await other.waitForTimeout(450); } }
       const n = await page.evaluate(() => __ctl().length);
       if (has('--verbose')) console.log('CTL ' + t + ' ' + JSON.stringify(await page.evaluate(() => __ctl().map(c => c.kind + ':' + c.label + '=' + c.value))));
+      // --slice k/n: only every n-th control, starting at the k-th (tools/live.py splits a tab over several browsers)
+      const [sk, sn] = opt('--slice', '0/1').split('/').map(Number);
       for (let j = 0; j < 2 * n; j++) {   // each control twice: there and back, so both directions are seen
         const i = j >> 1;
+        if (i % sn !== sk) continue;
         const what = await page.evaluate(i => { const c = __ctl()[i]; if (!c) return null;
           if (c.kind === 'toggle') { if (/Everything is (on|off)/.test(c.label)) return null; c.el.click(); return c.label; }
           if (c.kind === 'choice') { const b = c.buttons.filter(b => !(b.classList.contains('on') || b.getAttribute('aria-pressed') === 'true' || b.getAttribute('aria-checked') === 'true')).pop(); if (!b) return null; b.click(); return c.label + ' → ' + b.textContent.trim(); }

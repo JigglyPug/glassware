@@ -142,6 +142,13 @@ tools/                                builders for all of the above
   again in a moment."), never a spinner forever or a raw "Failed to fetch". `tools/nettest.py` opens every
   script that makes requests with the network failing each of those ways (`shot.js --net`) and fails on
   an uncaught error, a broken panel, or a missing fallback. A new script that makes requests gets a case there.
+- **The checks run side by side.** Every test case is its own browser run and mostly waits (page loads,
+  timeouts), so `tools/par.py` runs several at once (`pmap`, `ptry`; `GLASSWARE_JOBS=1` for one at a
+  time), and a run that only wants what `--eval` or `--drive` finds skips the screenshot pauses. The
+  live-update test gives each tab, and each third of a tab's controls, a browser of its own. Only the
+  performance test runs alone, because it measures time. A new test loops over its cases with `pmap`,
+  and waits for what it needs (poll for it) rather than sleeping a fixed time. `check.py` ends with how
+  long each slow section took.
 - `tools/check.py` enforces the last two (permissions, privacy) on every run, runs the Kaleidoscope
   tests when Kaleidoscope changes, the logging test when Molten Tools changes and the network test when a
   script that makes requests changes (GitHub runs all three every time).

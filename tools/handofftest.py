@@ -83,11 +83,14 @@ def run_send(script=JS):
     bad = []
     blocked = [('a new board', 'mode', {}, None), ('an update of the last board', 'update', {}, [BOARD]),
                ('Paste + send', 'mode', {'claudeMode': 'send'}, None), ('Paste only', 'mode', {'claudeMode': 'paste'}, None)]
+    from par import ptry
+    got = ptry([lambda how=how, a=a, s=s, b=b: send(how, a, settings=s, boards=b, script=script) for how in ('fail', 'throw') for _, a, s, b in blocked]
+               + [lambda a=a, b=b, c=c: send('watch', a, close=c, boards=b, script=script) for a, b in (('mode', None), ('update', [BOARD])) for c in (False, True)])
     for how in ('fail', 'throw'):
         for name, action, settings, boards in blocked:
             label = f'{name}, the tab blocked ({"nothing back" if how == "fail" else "it throws"})'
-            try: v = send(how, action, settings=settings, boards=boards, script=script)
-            except RuntimeError as e: bad.append(f'{label}: could not run: {e}'); continue
+            v = got.pop(0)
+            if isinstance(v, RuntimeError): bad.append(f'{label}: could not run: {v}'); continue
             if not v['opened']: bad.append(f'{label}: nothing tried to open Claude (the test didn\'t reach the send)'); continue
             if v['handoff']: bad.append(f'{label}: the prompt was left waiting in storage')
             if v['job']: bad.append(f'{label}: a board job was left running')
@@ -95,10 +98,9 @@ def run_send(script=JS):
                 bad.append(f'{label}: the status line says {v["status"]!r}, not that Claude couldn\'t be opened')
             bad += [f'{label}: uncaught: {e[:120]}' for e in v['errs']]
     for name, action, boards in (('a new board', 'mode', None), ('an update of the last board', 'update', [BOARD])):
-        try:
-            open_ = send('watch', action, boards=boards, script=script)
-            shut = send('watch', action, close=True, boards=boards, script=script)
-        except RuntimeError as e: bad.append(f'{name}, the tab closed: could not run: {e}'); continue
+        open_, shut = got.pop(0), got.pop(0)
+        e = next((x for x in (open_, shut) if isinstance(x, RuntimeError)), None)
+        if e: bad.append(f'{name}, the tab closed: could not run: {e}'); continue
         if not open_['job'] or not open_['handoff']: bad.append(f'{name}, the tab still open: the job or the waiting prompt went away ({open_})')
         if not shut['before']['job']: bad.append(f'{name}, the tab closed: no job had started (the test didn\'t reach the send)'); continue
         if shut['job']: bad.append(f'{name}, the tab closed: the job kept running')
@@ -127,7 +129,7 @@ PANEL = """(async () => {
   return { panel: !!p, text, job, buttons: window.__buttons || [], jobKey: 'kaleidoscope.job' in window.__gm,
            follow: !!p && [...p.querySelectorAll('button')].some(b => b.textContent.trim() === 'Follow-up'), errs: window.__errs };
 })()"""
-CLAUDE = "(async () => { await new Promise(r => setTimeout(r, 1500)); return { left: 'kaleidoscope.handoff' in window.__gm, text: document.body.innerText, errs: window.__errs }; })()"
+CLAUDE = "(async () => { for (let i = 0; i < 30; i++) { await new Promise(r => setTimeout(r, 250)); if (i >= 5 && (!('kaleidoscope.handoff' in window.__gm)) && (i >= 20 || /couldn't read/.test(document.body.innerText))) break; } return { left: 'kaleidoscope.handoff' in window.__gm, text: document.body.innerText, errs: window.__errs }; })()"
 PAGE = "(async () => { await new Promise(r => setTimeout(r, 2500)); return { frame: !!document.querySelector('iframe'), text: document.body ? document.body.innerText : '', errs: window.__errs }; })()"
 
 def shot(url, gm, js, extra=(), script=JS):
@@ -153,19 +155,6 @@ def run_malformed(script=JS):
               ('no time', {k: v for k, v in h().items() if k != 'ts'}), ('a time that isn\'t a number', h(ts=str(NOW))),
               ('a tab id that isn\'t one', h(tab={'id': 'abc123'})), ('a board job without its id', h(capture=True)),
               ('an update without its page', h(capture=True, job='j1', update=True, convId=''))]
-    for name, v in broken:
-        label = f'waiting prompt, {name}'
-        try: got = shot(tabbed, {'kaleidoscope.handoff': v}, CLAUDE, script=script)
-        except RuntimeError as e: bad.append(f'{label}: could not run: {e}'); continue
-        if got['left']: bad.append(f'{label}: it was left in storage')
-        if "couldn't read" not in got['text']: bad.append(f'{label}: the tab doesn\'t say the prompt couldn\'t be read')
-        look(label, got, got['text'])
-    try:
-        got = shot(tabbed, {'kaleidoscope.handoff': {k: v for k, v in h().items() if k != 'label'}}, CLAUDE, script=script)
-        if got['left']: bad.append('waiting prompt without a label: it wasn\'t taken')
-        look('waiting prompt without a label', got, got['text'])
-    except RuntimeError as e: bad.append(f'waiting prompt without a label: could not run: {e}')
-
     open_ = ['--cmd', 'Open Kaleidoscope', '--opentab', 'watch']
     panel = lambda gm, action='none', result=None: shot(ANILIST, dict({'kaleidoscope.settings': {'claudeMode': 'board'}}, **gm),
         PANEL.replace('ACTION', json.dumps(action)).replace('RESULT', json.dumps(result or {})), open_, script)
@@ -180,9 +169,28 @@ def run_malformed(script=JS):
         ('a result with fields of the wrong kind', {}, 'result', {'ok': 'yes', 'error': {'msg': 1}, 'conv': 'javascript:alert(1)', 'ms': 'fast'}),
         ('a good result with a bad time', {}, 'result', {'ok': True, 'ms': 'fast', 'conv': 'https://claude.ai/chat/0b7f3c2e-1d4a-4c55-9e1f-6a2b8c9d0e11'}),
     ]
+    pages = (('board page, junk around the board', JUNK_BOARDS, True), ('board page, boards that aren\'t a list', 'junk', False))
+    from par import ptry
+    res = ptry([lambda v=v: shot(tabbed, {'kaleidoscope.handoff': v}, CLAUDE, script=script) for _, v in broken]
+               + [lambda: shot(tabbed, {'kaleidoscope.handoff': {k: v for k, v in h().items() if k != 'label'}}, CLAUDE, script=script)]
+               + [lambda gm=gm, a=a, r=r: panel(gm, a, r) for _, gm, a, r in cases]
+               + [lambda b=b: shot('https://anilist.co/home#kaleidoscope-board=b2', {'kaleidoscope.boards': b}, PAGE, ['--commit'], script) for _, b, _w in pages])
+    for name, v in broken:
+        label = f'waiting prompt, {name}'
+        got = res.pop(0)
+        if isinstance(got, RuntimeError): bad.append(f'{label}: could not run: {got}'); continue
+        if got['left']: bad.append(f'{label}: it was left in storage')
+        if "couldn't read" not in got['text']: bad.append(f'{label}: the tab doesn\'t say the prompt couldn\'t be read')
+        look(label, got, got['text'])
+    got = res.pop(0)
+    if isinstance(got, RuntimeError): bad.append(f'waiting prompt without a label: could not run: {got}')
+    else:
+        if got['left']: bad.append('waiting prompt without a label: it wasn\'t taken')
+        look('waiting prompt without a label', got, got['text'])
+
     for name, gm, action, result in cases:
-        try: v = panel(gm, action, result)
-        except RuntimeError as e: bad.append(f'{name}: could not run: {e}'); continue
+        v = res.pop(0)
+        if isinstance(v, RuntimeError): bad.append(f'{name}: could not run: {v}'); continue
         if not v['panel']: bad.append(f'{name}: the panel didn\'t open'); continue
         look(name, v, v['text'], v['job'])
         if name.startswith('saved boards with junk') or name.startswith('saved boards, a bad'):
@@ -193,9 +201,9 @@ def run_malformed(script=JS):
         if name.startswith('a result with fields'):
             if "didn't come back" not in v['job']: bad.append(f'{name}: the job box says {v["job"]!r}')
             if [b for b in v['buttons'] if b.strip() != '×']: bad.append(f'{name}: a chat link that isn\'t on claude.ai got a button ({v["buttons"]})')
-    for name, boards, want in (('board page, junk around the board', JUNK_BOARDS, True), ('board page, boards that aren\'t a list', 'junk', False)):
-        try: v = shot('https://anilist.co/home#kaleidoscope-board=b2', {'kaleidoscope.boards': boards}, PAGE, ['--commit'], script)
-        except RuntimeError as e: bad.append(f'{name}: could not run: {e}'); continue
+    for name, boards, want in pages:
+        v = res.pop(0)
+        if isinstance(v, RuntimeError): bad.append(f'{name}: could not run: {v}'); continue
         look(name, v, v['text'])
         if v['frame'] != want: bad.append(f'{name}: the board was {"not " if want else ""}shown')
         if not want and "isn't saved" not in v['text']: bad.append(f'{name}: the page doesn\'t say the board isn\'t saved')
@@ -211,9 +219,12 @@ def run(script=JS):
         ('an expired prompt', 'https://claude.ai/new#kaleidoscope-tab=abc123', h(tab='abc123', ts=NOW - 11 * 60 * 1000), False),
     ]
     bad = []
+    from par import ptry
+    res = ptry([lambda u=u, hh=hh: taken(u, hh, script) for _, u, hh, _w in cases])
     for name, url, handoff, want in cases:
-        try: got, after = taken(url, handoff, script)
-        except RuntimeError as e: bad.append(f'{name}: could not run: {e}'); continue
+        r = res.pop(0)
+        if isinstance(r, RuntimeError): bad.append(f'{name}: could not run: {r}'); continue
+        got, after = r
         if got != want: bad.append(f'{name}: the prompt was {"taken" if got else "left waiting"}, it should be {"taken" if want else "left alone"}')
         if want and 'kaleidoscope-tab' in after: bad.append(f'{name}: the one-time id stayed in the address ({after})')
     return bad

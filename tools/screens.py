@@ -11,6 +11,9 @@ Run tools/pages.py afterwards to copy the images into the site.
 """
 import os, subprocess, sys, tempfile
 
+from par import pmap
+QUIET = False   # tools/check.py sets this: it captures several scripts at once and prints its own lines
+
 def cap(args):
     """Run one capture; fail if its picture is cut off (shot.js prints CLIPPED when the panel still scrolls)."""
     r = subprocess.run(args, check=True, capture_output=True, text=True)
@@ -53,7 +56,8 @@ NUDGE = ("(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));__clickTab('Se
 def hourglass_phone(imgs=None):
     js = f'{R}/desktop/hourglass/hourglass.user.js'; imgs = imgs or f'{R}/desktop/hourglass/images'
     seed = ['--seed', f'{HERE}/seeds/hourglass.json']
-    for theme, sfx in THEMES:
+    def one(ts):
+        theme, sfx = ts
         tmp = tempfile.mkdtemp()
         cap(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop', '--theme', theme,
                         '--vh', '4800', '--clipsel', '.frame.m .panel', '--clock', CLOCK, '--tabs', 'Schedule'] + seed)
@@ -65,14 +69,16 @@ def hourglass_phone(imgs=None):
         cap(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/nudge.png', '--cmd', 'Open', '--mobile', '--theme', theme,
                         '--clock', '2026-11-03T23:40:00-05:00', '--eval', NUDGE] + seed)
         webp(f'{tmp}/block.png', f'{imgs}/phone-block{sfx}.webp'); webp(f'{tmp}/nudge.png', f'{imgs}/phone-nudge{sfx}.webp')
-    print('captured desktop/hourglass phone shots')
+    pmap(one, THEMES)
+    if not QUIET: print('captured desktop/hourglass phone shots')
 
 def run(p, imgs=None):
     """Capture one script's panels into its images folder (or into imgs, to compare without touching it)."""
     url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]; mobile = '--mobile' in extra
     imgs = imgs or f'{R}/{p}/images'; os.makedirs(imgs, exist_ok=True)
     lead = FIRST.get(p, 'main')
-    for theme, sfx in THEMES:
+    def one(ts):
+        theme, sfx = ts
         tmp = tempfile.mkdtemp(); out = f'{tmp}/{slug}.png'
         args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, out, '--cmd', cmd, '--crop', '--clock', CLOCK, '--theme', theme,
                 '--vh', '2600' if mobile else '3000'] + extra + (['--tabs', ','.join(tabs)] if tabs else [])
@@ -82,7 +88,8 @@ def run(p, imgs=None):
             webp(f'{tmp}/{slug}-{t.lower()}.png', f'{imgs}/{t.lower()}{sfx}.webp')
         im = Image.open(f'{imgs}/{lead}{sfx}.webp').convert('RGB'); w, h = im.size; ch = min(h, int(w * 0.8))
         im.crop((0, 0, w, ch)).resize((800, round(ch * 800 / w)), Image.LANCZOS).save(f'{imgs}/card{sfx}.webp', 'WEBP', quality=90, method=6)
-    print('captured', p, [lead] + [t.lower() for t in tabs], 'in dark and light')
+    pmap(one, THEMES)
+    if not QUIET: print('captured', p, [lead] + [t.lower() for t in tabs], 'in dark and light')
 
 if __name__ == '__main__':
     want = sys.argv[1:]

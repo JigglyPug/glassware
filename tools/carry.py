@@ -117,8 +117,8 @@ def check(p, back=0):
     used = run(old_path, p, 'exercise')               # 1. change everything on the live version
     gm, ls = f'{tmp}/gm.json', f'{tmp}/ls.json'
     json.dump(used['gm'], open(gm, 'w')); json.dump(used['ls'], open(ls, 'w'))
-    before = run(old_path, p, 'state', gm, ls)       # 2. live version, reopened with that data
-    after = run(new_path, p, 'state', gm, ls)        # 3. new version, same data
+    from par import pmap                              # 2. live version, reopened with that data; 3. new version, same data
+    before, after = pmap(lambda path: run(path, p, 'state', gm, ls), [old_path, new_path])
     a = {x['key']: x['value'] for x in before['state']}; b = {x['key']: x['value'] for x in after['state']}
     bpos = {x['pos']: x for x in after['state']}
     for x in before['state']:

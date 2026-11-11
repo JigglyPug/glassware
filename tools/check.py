@@ -58,7 +58,7 @@ It checks, in order:
   screenshots the committed panel screenshots still match the panels (changed scripts)
 
 GitHub skips the glitch check (phone sizes draw in Roboto), the performance test (shared machines time
-unevenly) and, for now, the screenshot comparison (issue #3).
+unevenly); it compares screenshots but only reports a mismatch for now (issue #3).
 """
 import glob, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
@@ -69,7 +69,9 @@ HISTORY = re.compile(r'(?i)\b(before|from|since|until|earlier|older|used to|rena
 STATIC = {'molten-tools', 'molten-for-reddit', 'molten-for-reddit-mobile', 'kaleidoscope', 'kaleidoscope-mobile'}
 LIVE = {'prism', 'hourglass', 'looking-glass'}
 fails = []; section = ''
-def head(name): global section; section = name; print(f'\n{name}')
+import time as _time
+TIMES = []   # (section, when it started): the slow ones are listed at the end
+def head(name): global section; section = name; TIMES.append((name, _time.time())); print(f'\n{name}')
 def ok(cond, what):
     if not cond: fails.append(f'{section}: {what}'); print(f'  ✗ {what}')
     return cond
@@ -432,20 +434,24 @@ if FULL:
     head('settings')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
-        for p in targets:
-            try: probs, k = carry.check(p)
-            except Exception as e: probs, k = [f'test could not run: {e}'], 0
-            for x in probs: ok(False, f'{p.split("/")[1]}: {x}')
-            if not probs: print(f'  ✓ {p.split("/")[1]}: ' + ('new script, nothing to carry over yet' if k is None else f'{k} settings carry over'))
-            # and from CARRY_BACK releases before the live one: people who skipped updates (browser closed for
-            # weeks, Tampermonkey's updates off) jump several versions at once
+        # from the live version, and from CARRY_BACK releases before it: people who skipped updates (browser
+        # closed for weeks, Tampermonkey's updates off) jump several versions at once. All side by side.
+        from par import pmap
+        def carried(job):
+            p, back = job
             try:
-                src, v = carry.old_source(p, carry.CARRY_BACK)
-                if src is None: continue                      # too new to have that many releases
-                probs, k = carry.check(p, carry.CARRY_BACK)
-            except Exception as e: probs, v = [f'test could not run: {e}'], '?'
-            for x in probs: ok(False, f'{p.split("/")[1]} from {v}: {x}')
-            if not probs: print(f'  ✓ {p.split("/")[1]}: {k} settings carry over from {v} too')
+                v = carry.old_source(p, back)[1] if back else None
+                if back and v is None: return None                 # too new to have that many releases
+                return carry.check(p, back) + (v,)
+            except Exception as e: return [f'test could not run: {e}'], 0, '?' if back else None
+        jobs = [(p, back) for p in targets for back in (0, carry.CARRY_BACK)]
+        for (p, back), res in zip(jobs, pmap(carried, jobs, 3)):
+            if res is None: continue
+            probs, k, v = res
+            for x in probs: ok(False, f'{p.split("/")[1]}{f" from {v}" if back else ""}: {x}')
+            if probs: continue
+            if back: print(f'  ✓ {p.split("/")[1]}: {k} settings carry over from {v} too')
+            else: print(f'  ✓ {p.split("/")[1]}: ' + ('new script, nothing to carry over yet' if k is None else f'{k} settings carry over'))
 if '--quick' not in args:
     head('glitches')
     if not targets: print('  ✓ no script differs from GitHub')
@@ -569,7 +575,10 @@ if '--quick' not in args:
             elif res == 'clean': print(f'  ✓ {name.split("/")[-1]}: no leaks, within its time budgets')
             else: ok(False, f'{name.split("/")[-1]}: {res}')
         ok(seen == 1 + len(targets), f'the performance test reported {seen} of {1 + len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
-if '--quick' not in args:      # local only for now: on GitHub, Kaleidoscope's ✦ still draws differently (issue #3)
+# On GitHub (--ci) a mismatch is only reported for now, with the differing strip printed so it can be looked
+# at from the log (issue #3: Kaleidoscope's ✦ drew differently there); locally it fails, as always.
+SHOT_WARN = '--ci' in args and bool(os.environ.get('GITHUB_ACTIONS'))
+if FULL:
     head('screenshots')
     # Recapture each panel in a scratch folder and compare with the committed image. Captures repeat
     # exactly (fixed clock, demo data, animations stopped), so any difference means the panel changed
@@ -589,19 +598,34 @@ if '--quick' not in args:      # local only for now: on GitHub, Kaleidoscope's �
             n = sum(1 for v in d.get_flattened_data() if v)
             why[a] = f'{n / (A.size[0] * A.size[1]):.2%} of pixels differ, in the box {d.getbbox()} of {A.size}'
             return n <= A.size[0] * A.size[1] * 0.0005
-        for p in targets:
+        from par import pmap
+        screens.QUIET = True
+        def capture(p):
             tmp = tempfile.mkdtemp()
             try:
-                import contextlib, io
-                with contextlib.redirect_stdout(io.StringIO()):
-                    screens.run(p, tmp)
-                    if p == 'desktop/hourglass': screens.hourglass_phone(tmp)
-            except Exception as e:
-                ok(False, f'{p.split("/")[1]}: screenshots could not be captured: {e}'); continue
+                screens.run(p, tmp)
+                if p == 'desktop/hourglass': screens.hourglass_phone(tmp)
+            except Exception as e: return e
+            return tmp
+        for p, tmp in zip(targets, pmap(capture, targets, 3)):
+            if isinstance(tmp, Exception):
+                ok(False, f'{p.split("/")[1]}: screenshots could not be captured: {tmp}'); continue
             got = sorted(f for f in os.listdir(tmp) if f.endswith('.webp'))
             ok(got, f'{p.split("/")[1]}: the capture produced no screenshots')
             stale = [f for f in got if not os.path.exists(f'{R}/{p}/images/{f}') or not same(f'{tmp}/{f}', f'{R}/{p}/images/{f}')]
-            for f in stale: ok(False, f'{p.split("/")[1]}: {f} doesn\'t match the panel any more ({why.get(f"{tmp}/{f}", "not committed")}; run python3 tools/screens.py {p.split("/")[1]})')
+            for f in stale:
+                msg = f'{p.split("/")[1]}: {f} doesn\'t match the panel any more ({why.get(f"{tmp}/{f}", "not committed")}; run python3 tools/screens.py {p.split("/")[1]})'
+                if not SHOT_WARN: ok(False, msg); continue
+                print('  ⚠ ' + msg)
+                try:   # the strip that differs, as drawn here and as committed, small enough to read back out of the log
+                    import base64, io
+                    A, B = Image.open(f'{tmp}/{f}').convert('RGB'), Image.open(f'{R}/{p}/images/{f}').convert('RGB')
+                    x0, y0, x1, y1 = ImageChops.difference(A, B).convert('L').point(lambda x: 255 if x > 40 else 0).getbbox()
+                    y1 = min(y1, y0 + 60); box = (max(0, x0 - 20), max(0, y0 - 10), min(A.size[0], x1 + 20), y1 + 10)
+                    both = Image.new('RGB', (box[2] - box[0], 2 * (box[3] - box[1]) + 4), 'white'); both.paste(A.crop(box), (0, 0)); both.paste(B.crop(box), (0, box[3] - box[1] + 4))
+                    buf = io.BytesIO(); both.save(buf, 'PNG', optimize=True); print(f'    CROP {p.split("/")[1]}/{f} ' + base64.b64encode(buf.getvalue()).decode())
+                except Exception as e: print(f'    (no crop: {e})')
+            if SHOT_WARN and stale: continue
             if got and not stale: print(f'  ✓ {p.split("/")[1]}: {len(got)} screenshots match')
 
 # ------------------------------------------------------------------ generated
@@ -620,5 +644,8 @@ if FULL:
         if not stale: print(f'  ✓ {len(gen)} generated files match')
     shutil.rmtree(tmp, ignore_errors=True)
 
+TIMES.append(('', _time.time()))
+slow = [(b[1] - a[1], a[0]) for a, b in zip(TIMES, TIMES[1:]) if b[1] - a[1] >= 20]
+if slow: print(f'\ntook {(TIMES[-1][1] - TIMES[0][1]) / 60:.0f} min: ' + ', '.join(f'{n} {t / 60:.1f}' for t, n in sorted(slow, reverse=True)))
 print('\n' + ('All checks passed.' if not fails else f'{len(fails)} problem(s) to fix before pushing.'))
 sys.exit(1 if fails else 0)
