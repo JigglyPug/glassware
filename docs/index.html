@@ -11,7 +11,7 @@
 <main class="wrap">
 <header class="hero"><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>
-<p class="need">Needs <a href="https://www.tampermonkey.net/">Tampermonkey</a> 5 or later. On Chrome and Edge, turn on <b>Allow user scripts</b> on Tampermonkey's details page. <a href="https://github.com/JigglyPug/glassware#what-you-need">Install not working?</a></p>
+<p class="need"><a href="#help">Trouble installing?</a></p>
 <div class="chips"><span class="chip">8 scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
 <div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></header>
 <section id="both"><div class="label">Desktop and phone<span class="r">The same script, on your computer and your phone</span></div><div class="grid"><article class="card glass" style="--acc:#5b5bd6">
@@ -49,7 +49,11 @@
 <div class="body"><h3><img class="appicon" src="img/molten-for-reddit-mobile/icon.png" alt="" width="40" height="40"><a href="mobile/molten-for-reddit-mobile/">Molten for Reddit Mobile</a></h3><p>Molten glass for Reddit, pocket size.</p>
 <div class="meta"><span class="chip">reddit.com</span><span class="chip">Phone</span><span class="chip">v1.4.7</span><a class="chip" href="desktop/molten-for-reddit/">Desktop version ↗</a></div>
 <div class="acts"><a class="btn pri" href="https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js">Install</a><a class="btn sec" href="mobile/molten-for-reddit-mobile/">Details</a></div></div></article></div></section>
-</main>
+
+<section class="help" id="help"><div class="label">Help</div><div class="note glass">
+<p><b>What you need.</b> <a href="https://www.tampermonkey.net/">Tampermonkey</a> 5 or later. On Chrome and Edge, also turn on <b>Allow user scripts</b> on Tampermonkey's details page (the browser's Extensions page, then Tampermonkey, then Details), or no script runs.</p>
+<p><b>Install shows the script's code?</b> Update Tampermonkey: recent versions of Chrome no longer hand <code>.user.js</code> links to extensions, and newer Tampermonkey builds install them another way. Until then, copy the Install link and paste it into the URL box on the Utilities tab of Tampermonkey's dashboard.</p>
+</div></section></main>
 <script>
 (function(){var b=document.body,bs=[].slice.call(document.querySelectorAll('.seg button'));
 function set(v,push){b.dataset.for=v;bs.forEach(function(x){x.setAttribute('aria-pressed',x.dataset.v===v)});

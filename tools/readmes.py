@@ -226,16 +226,20 @@ root = f"""<div align="center">
 
 [![Visit the site]({badge("Visit the site", "jigglypug.github.io", "ff8a3d")})]({SITE})
 
-Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates itself from this repo.
+Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates itself from this repo. [Trouble installing?](#help)
 
 </div>
 
 ## Where each script runs
 
 {table}
-## What you need
+""" + ''.join(f"""
+## {title}
 
-- **Tampermonkey 5 or later**, in any browser it runs in. The scripts are made for it: they keep their
+{grid(g)}""" for g, title in GROUPS) + """
+## Help
+
+- **What you need: Tampermonkey 5 or later**, in any browser it runs in. The scripts are made for it: they keep their
   settings in Tampermonkey's storage, hear each other's changes so every open tab updates at once,
   add their commands to its menu, and (Kaleidoscope, Prism, Looking-Glass and the Molten scripts) make
   their requests through it. Other script managers may run them, but they aren't tested there.
@@ -245,10 +249,7 @@ Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates it
   recent versions of Chrome no longer hand `.user.js` links to extensions, and newer Tampermonkey
   builds install them another way. Until then, copy the Install link and paste it into the URL box on
   the Utilities tab of Tampermonkey's dashboard.
-""" + ''.join(f"""
-## {title}
-
-{grid(g)}""" for g, title in GROUPS)
+"""
 if not ONLY: open(f'{R}/README.md', 'w', encoding='utf-8').write(root)
 ROOT_CARD = card
 print('ok')
