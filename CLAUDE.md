@@ -510,7 +510,11 @@ python3 tools/check.py              # release check: everything below, plus the 
   from `main`, so whoever can push to it can ship code to everyone: keep two-step sign-in on the account.
 - **Rolling back** a bad release: put the last good code back and give it a *higher* `@version` than the
   bad one (Tampermonkey never installs a lower number, so a plain revert reaches nobody), then run the
-  usual checks and ship it (`tools/push.py`). Say in the commit which version it restores. A rollback
-  hasn't been tried end to end yet (issue #1).
+  usual checks and ship it (`tools/push.py`). Say in the commit which version it restores. Tried end to end
+  in a real Tampermonkey (issue #1): the rollback arrives through the normal update check, settings and
+  saved data survive both the bad release and the rollback, and the old code under its old, lower number
+  is ignored. GitHub serves the raw files with a 5-minute cache, so for up to 5 minutes after a push (or
+  after someone's last download) an update check can still find nothing: wait 5 minutes before deciding
+  a release didn't go out.
 - Don't create a repo named `userscripts` on this account: GitHub redirects that old name
   here, and installed copies may still rely on the redirect.
