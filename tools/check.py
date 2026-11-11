@@ -581,11 +581,14 @@ if FULL:
     else:
         import tempfile, screens
         from PIL import Image, ImageChops
+        why = {}
         def same(a, b):
             A, B = Image.open(a).convert('RGB'), Image.open(b).convert('RGB')
-            if A.size != B.size: return False
+            if A.size != B.size: why[a] = f'size {A.size} vs {B.size}'; return False
             d = ImageChops.difference(A, B).convert('L').point(lambda x: 255 if x > 40 else 0)
-            return sum(1 for v in d.get_flattened_data() if v) <= A.size[0] * A.size[1] * 0.0005
+            n = sum(1 for v in d.get_flattened_data() if v)
+            why[a] = f'{n / (A.size[0] * A.size[1]):.2%} of pixels differ, in the box {d.getbbox()} of {A.size}'
+            return n <= A.size[0] * A.size[1] * 0.0005
         for p in targets:
             tmp = tempfile.mkdtemp()
             try:
@@ -598,7 +601,7 @@ if FULL:
             got = sorted(f for f in os.listdir(tmp) if f.endswith('.webp'))
             ok(got, f'{p.split("/")[1]}: the capture produced no screenshots')
             stale = [f for f in got if not os.path.exists(f'{R}/{p}/images/{f}') or not same(f'{tmp}/{f}', f'{R}/{p}/images/{f}')]
-            for f in stale: ok(False, f'{p.split("/")[1]}: {f} doesn\'t match the panel any more (run python3 tools/screens.py {p.split("/")[1]})')
+            for f in stale: ok(False, f'{p.split("/")[1]}: {f} doesn\'t match the panel any more ({why.get(f"{tmp}/{f}", "not committed")}; run python3 tools/screens.py {p.split("/")[1]})')
             if got and not stale: print(f'  ✓ {p.split("/")[1]}: {len(got)} screenshots match')
 
 # ------------------------------------------------------------------ generated
@@ -608,7 +611,7 @@ if FULL:
     tmp = tempfile.mkdtemp(); copy = f'{tmp}/repo'
     shutil.copytree(R, copy, ignore=shutil.ignore_patterns('.git', '__pycache__'))
     r = subprocess.run([sys.executable, f'{copy}/tools/pages.py'], capture_output=True, text=True)
-    if ok(r.returncode == 0, 'tools/pages.py failed: ' + (r.stderr.strip().splitlines() or ['no output'])[-1]):
+    if ok(r.returncode == 0, 'tools/pages.py failed: ' + ' / '.join((r.stderr.strip().splitlines() or ['no output'])[-4:])):
         # text outputs only: the link-preview PNGs aren't byte-for-byte repeatable
         gen = [f for f in glob.glob(f'{copy}/**/*', recursive=True) if re.search(r'(README\.md|\.html|\.css|banner\.svg|-cut\.webp)$', f)]
         stale = [os.path.relpath(f, copy) for f in gen

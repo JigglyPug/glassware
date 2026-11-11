@@ -476,8 +476,8 @@ python3 tools/check.py              # release check: everything below, plus the 
   the screenshots and the generated pages for whatever changed. Only the glitch check (phone sizes in
   Roboto) and the performance test (shared machines time unevenly) stay local, so it doesn't replace
   the local check. Screenshots match there because every test browser draws with the same fonts
-  (`tools/fonts.conf`: Ubuntu 24.04's `fonts-inter`, `fonts-dejavu-core` and `fonts-noto-color-emoji`,
-  no hinting); the job runs on `ubuntu-24.04` (not `ubuntu-latest`) and installs those three packages. A failed run gets fixed
+  (`tools/fonts.conf`: Ubuntu 24.04's `fonts-inter`, `fonts-dejavu-core`, `fonts-dejavu-mono` and `fonts-noto-color-emoji`,
+  no hinting); the job runs on `ubuntu-24.04` (not `ubuntu-latest`) and installs those four packages. A failed run gets fixed
   before anything else; `gh run list --workflow checks.yml` shows the latest.
 - Pull before you start and rebase on anything new before pushing; other chats work on
   this repo too.

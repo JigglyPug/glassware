@@ -467,7 +467,18 @@ function stubPage() {
   if (evalJs) { const v = await page.evaluate(evalJs); if (has('--print')) console.log('EVAL ' + JSON.stringify(v)); await page.waitForTimeout(900); }   // --print: show what --eval returned
   // nothing to capture: a test that only wanted what --eval found (and the requests and console lines on the way)
   if (evalJs && out === '/dev/null' && !has('--audit')) { await browser.close(); return; }
+  // Wait until the panel's text stops changing (data still loading, a list still filling in), so a slower
+  // machine (GitHub's) captures the same moment as a fast one. Gives up after 10 seconds.
+  async function settle() {
+    let last = null, same = 0;
+    for (let i = 0; i < 50 && same < 3; i++) {
+      const t = await page.evaluate(() => __all().map(e => e.shadowRoot ? '' : (e.children.length ? '' : e.textContent)).join('|'));
+      same = t === last ? same + 1 : 0; last = t;
+      await page.waitForTimeout(200);
+    }
+  }
   async function snap(file) {
+    await settle();
     await page.evaluate(() => __hideErr());
     // Screenshots never show the version: they only need recapturing when a panel changes.
     await page.evaluate(() => { for (const e of __all()) for (const n of e.childNodes) if (n.nodeType === 3 && /v\d+\.\d+/.test(n.nodeValue))
