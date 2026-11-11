@@ -625,7 +625,11 @@ if FULL:
                     both = Image.new('RGB', (box[2] - box[0], 2 * (box[3] - box[1]) + 4), 'white'); both.paste(A.crop(box), (0, 0)); both.paste(B.crop(box), (0, box[3] - box[1] + 4))
                     buf = io.BytesIO(); both.save(buf, 'PNG', optimize=True); print(f'    CROP {p.split("/")[1]}/{f} ' + base64.b64encode(buf.getvalue()).decode())
                 except Exception as e: print(f'    (no crop: {e})')
-            if SHOT_WARN and stale: continue
+            if SHOT_WARN and stale:   # and which fonts drew this panel there (tools/fontsused.js), to compare with here
+                url, cmd, extra, _ = screens.JOBS[p]
+                r = subprocess.run(['node', f'{HERE}/shot.js', f'{R}/{p}/{p.split("/")[1]}.user.js', url, '/dev/null', '--cmd', cmd, *extra, '--drive', f'{HERE}/fontsused.js'], capture_output=True, text=True)
+                print('    FONTS ' + next((l[5:] for l in r.stdout.splitlines() if l.startswith('EVAL ')), 'could not run'))
+                continue
             if got and not stale: print(f'  ✓ {p.split("/")[1]}: {len(got)} screenshots match')
 
 # ------------------------------------------------------------------ generated
