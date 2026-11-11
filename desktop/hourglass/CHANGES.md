@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.5.8 · 2026-11-11
+
+- Resetting stats now also clears the session in progress, in every open tab, so "longest session" starts from zero.
+
 ## 1.5.7 · 2026-11-11
 
 - The late-night reminder's settings fold away while the reminder is off.

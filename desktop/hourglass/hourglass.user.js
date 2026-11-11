@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.7
+// @version      1.5.8
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.7';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.8';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -2036,11 +2036,15 @@ h1 span{color:var(--ink)}
         });
         (document.body || document.documentElement).append(inp); inp.click();
     }
+    // What this tab is still holding from before a reset must go too: time not yet saved (pend), and the
+    // running session, or the next "longest session" would count minutes from before the reset.
+    function dropUnsaved() { pend = null; session = null; }
     function resetStats() {
-        pend = null;
+        dropUnsaved();
         for (const k of get('days', [])) del(DKEY(k));
         set('days', []);
         del('nights');   // bedtime totals (the late-night nudge) are stats too
+        set('statsReset', Date.now());   // tells every other open tab to drop what it's holding as well
     }
 
     /* ───────────────────────── wiring ───────────────────────── */
@@ -2053,6 +2057,7 @@ h1 span{color:var(--ink)}
 
     const KEYS = ['settings', 'schedule', 'schedPending', 'sites', 'sitesPending', 'ignored', 'music', 'passes', 'appearance', 'layout'];
     try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { blocker.retheme(); if (ui.host) ui.render(); }); } catch {}
+    try { GM_addValueChangeListener('statsReset', (name, oldV, newV, remote) => { if (remote) { dropUnsaved(); if (ui.host) ui.render(); } }); } catch {}
     try {
         for (const k of KEYS) GM_addValueChangeListener(k, (name, oldV, newV, remote) => {
             if (!remote) return;
