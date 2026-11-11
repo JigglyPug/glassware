@@ -28,3 +28,11 @@ This is the phone version of Kaleidoscope, built for Edge on Android. It uses th
 <table>
 <tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/sequels-light.webp"><img src="images/sequels.webp" width="200"></picture><br><sub><b>Sequels</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/settings-light.webp"><img src="images/settings.webp" width="200"></picture><br><sub><b>Settings</b></sub></td></tr>
 </table>
+
+## What's new
+
+- **1.3.7** (2026-11-10): When AniList is slow, down or unreachable, the panel says so plainly.
+- **1.3.6** (2026-11-06): Rows of buttons share the width evenly.
+- **1.3.5** (2026-11-06): The panel's size and corners match every other Glassware panel.
+
+[Every change](CHANGES.md)

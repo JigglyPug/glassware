@@ -6,6 +6,7 @@ R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); D = f'{R}/docs'
 src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readmes.py'), encoding='utf-8').read()
 ns = {'__file__': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readmes.py')}; exec(src[:src.index('\nACCENT = {')], ns)   # S, ver, RAW, OWNER
 S, ver, RAW, OWNER = ns['S'], ns['ver'], ns['RAW'], ns['OWNER']
+changes = ns['changes']
 RUNS, PAIR, GROUPS, runs_on = ns['RUNS'], ns['PAIR'], ns['GROUPS'], ns['runs_on']
 REPO_URL = f'https://github.com/{OWNER}/glassware'
 
@@ -94,6 +95,7 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
 .hero p.need{font-size:13px;margin:-16px auto 22px}.hero p.need a{color:var(--sub)}
+.news{font-size:15px;line-height:1.55}.news p{margin:0}.news p+p{margin-top:8px}.news b{color:var(--fg)}.news .when{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;margin:0 6px}.news a{color:var(--fg)}
 .help{max-width:720px;margin:56px auto 0;text-align:center}.help summary{display:inline-block;cursor:pointer;font-size:13px;color:var(--sub);list-style:none;padding:4px 10px;border-radius:8px}.help summary::-webkit-details-marker{display:none}.help summary::after{content:' ▾'}.help[open] summary::after{content:' ▴'}.help summary:hover{color:var(--fg)}.help .note{margin-top:10px;text-align:left;font-size:14px;line-height:1.6}.help .note p{margin:0}.help .note p+p{margin-top:10px}.help b{color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .chip{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:8px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--edge);color:var(--sub)}
@@ -304,6 +306,7 @@ for p, s in S.items():
     more = ''.join(f'<a class="glass" href="../../{q}/" style="--acc:{THEME[q][1]}"><img class="appicon" src="../../img/{q.split("/")[1]}/icon.png" alt="" width="36" height="36"><b>{html.escape(S[q]["name"])}</b><small>{md_inline(S[q]["tag"])}</small></a>' for q in sib)
     note = f'<div class="note glass"><b>Requires</b> {md_inline(s["note"])}</div>' if s.get('note') else ''
     start = f'<section><div class="label">Getting started</div><div class="note glass">{md_inline(s["getting_started"])}</div></section>' if s.get('getting_started') else ''
+    news = ''.join(f'<p><b>{html.escape(v)}</b> <span class="when">{d}</span> {md_inline(" ".join(items))}</p>' for v, d, items in changes(p, 3))
     phone_sec = ''
     if s.get('phone'):
         ptxt, pshots = s['phone']
@@ -322,6 +325,7 @@ for p, s in S.items():
 {f'<section><div class="label">A closer look</div><div class="gal{" phone" if phone else ""}">{gal}</div></section>' if gal else ''}
 {phone_sec}
 {f'<section>{note}</section>' if note else ''}
+<section><div class="label">What's new</div><div class="note glass news">{news}<p><a href="{REPO_URL}/blob/main/{p}/CHANGES.md">Every change</a></p></div></section>
 <section><div class="label">{more_label}</div><div class="more">{more}</div></section>
 </main>"""
     os.makedirs(f'{D}/{p}', exist_ok=True)

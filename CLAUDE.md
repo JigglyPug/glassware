@@ -9,6 +9,7 @@ is built from `docs/`. Keep every change consistent with the rules below.
 ```
 desktop/<script>/<script>.user.js    the script (what users install)
 desktop/<script>/README.md            GitHub product page (generated)
+desktop/<script>/CHANGES.md           what changed in each release (written by hand)
 desktop/<script>/images/              panel screenshots, card, banner (generated)
 mobile/...                            same for the phone-only scripts (folders never change; see below)
 assets/icons/<script>.png             @icon for each script
@@ -50,6 +51,10 @@ tools/                                builders for all of the above
 
 - Raise `@version` in the header on every change that users should receive. Tampermonkey
   only updates when the number goes up. Never ship a lower number than what's live.
+- Every release gets an entry at the top of the script's `CHANGES.md` (`## <version> · <date>`, then
+  `- ` lines): what changed for the person using it, in plain words, not how it was built. The
+  product page and README show the latest three. `tools/check.py` fails if the newest entry isn't
+  the `@version`.
 - Keep these header lines exactly in this form (only the folder/name changes per script):
   - `@author JigglyPug`, `@license MIT`
   - `@icon https://raw.githubusercontent.com/JigglyPug/glassware/main/assets/icons/<script>.png?v=N`

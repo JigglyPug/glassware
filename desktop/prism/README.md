@@ -23,3 +23,11 @@ Prism colors the title bar of installed web apps (PWAs) to match the site you ar
 - **Always a fallback**: A color of your choice for pages where nothing else works.
 - **Live everywhere**: One master switch, and every open tab updates the moment you change something.
 - **A menu that matches**: A frosted panel tinted by the current title bar color. Open it with Alt + Shift + P.
+
+## What's new
+
+- **2.2.7** (2026-11-10): An icon address that redirects to your own network is ignored.
+- **2.2.6** (2026-11-10): When a site's icon or manifest won't load, the title bar still takes its color from the page.
+- **2.2.5** (2026-11-07): Security fixes.
+
+[Every change](CHANGES.md)

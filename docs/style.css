@@ -55,6 +55,7 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
 .hero p.need{font-size:13px;margin:-16px auto 22px}.hero p.need a{color:var(--sub)}
+.news{font-size:15px;line-height:1.55}.news p{margin:0}.news p+p{margin-top:8px}.news b{color:var(--fg)}.news .when{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;margin:0 6px}.news a{color:var(--fg)}
 .help{max-width:720px;margin:56px auto 0;text-align:center}.help summary{display:inline-block;cursor:pointer;font-size:13px;color:var(--sub);list-style:none;padding:4px 10px;border-radius:8px}.help summary::-webkit-details-marker{display:none}.help summary::after{content:' ▾'}.help[open] summary::after{content:' ▴'}.help summary:hover{color:var(--fg)}.help .note{margin-top:10px;text-align:left;font-size:14px;line-height:1.6}.help .note p{margin:0}.help .note p+p{margin-top:10px}.help b{color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .chip{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:8px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--edge);color:var(--sub)}

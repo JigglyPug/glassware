@@ -1,0 +1,103 @@
+# Hourglass: what changed
+
+Newest first.
+
+## 1.5.5 · 2026-11-10
+
+- Import settings checks the file: every setting stays in range, what can't be read is skipped, and the panel says what happened.
+
+## 1.5.4 · 2026-11-09
+
+- Day charts include today so far.
+
+## 1.5.3 · 2026-11-06
+
+- Rows of buttons share the width evenly.
+
+## 1.5.2 · 2026-11-06
+
+- Button groups line up in even columns.
+
+## 1.5.1 · 2026-11-06
+
+- The panel's size and corners match every other Glassware panel.
+
+## 1.5.0 · 2026-11-06
+
+- A new dashboard: each card answers a question about your habits.
+
+## 1.4.4 · 2026-11-06
+
+- Changes show up at once in every open tab, and button text stays centered on Reddit.
+
+## 1.4.3 · 2026-11-06
+
+- Header, switches and close button look the same in every Glassware panel.
+
+## 1.4.2 · 2026-11-06
+
+- Switches and buttons match the other Glassware panels and stay readable on busy sites.
+
+## 1.4.1 · 2026-11-06
+
+- Faint text and marks are easier to see in both themes.
+
+## 1.4.0 · 2026-11-05
+
+- Light and dark themes: follows your device, or pick one with the sun/moon switch.
+
+## 1.3.0 · 2026-11-04
+
+- Small fixes; the panel always shows the current version.
+
+## 1.2.9 · 2026-11-04
+
+- Two open tabs no longer overwrite each other's saves.
+
+## 1.2.8 · 2026-11-04
+
+- The lockdown card uses the new glass icon.
+
+## 1.2.7 · 2026-11-04
+
+- The live header icon uses the new glass glyph.
+
+## 1.2.6 · 2026-11-04
+
+- The panel header shows the new glass icon.
+
+## 1.2.5 · 2026-11-04
+
+- New glass icon.
+
+## 1.2.4 · 2026-11-03
+
+- Site suggestions work from the first day.
+
+## 1.2.3 · 2026-11-03
+
+- Touchscreen laptops keep the desktop panel.
+
+## 1.2.2 · 2026-11-03
+
+- New icon and link previews.
+
+## 1.2.1 · 2026-11-03
+
+- New installs start in setup mode: time is counted, nothing is blocked until you start.
+
+## 1.2.0 · 2026-11-03
+
+- Phone support.
+
+## 1.1.3 · 2026-11-03
+
+- The homepage link points to the Glassware site.
+
+## 1.1.2 · 2026-11-03
+
+- Now part of Glassware.
+
+## 1.1.1 · 2026-11-03
+
+- First release on GitHub, with automatic updates.

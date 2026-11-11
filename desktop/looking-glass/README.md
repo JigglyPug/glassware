@@ -23,3 +23,11 @@ Looking-Glass puts a small circle in the corner of every video, in the site's ow
 - **Best or data saver**: Choose the sharpest file or the lighter one.
 - **Looks harder**: When the feed hides the file, it quietly checks the post page, or opens the post instead.
 - **Right-click for more**: Copy the link, open the post, hide the badge or jump to settings.
+
+## What's new
+
+- **1.2.5** (2026-11-10): An icon address that redirects to your own network is ignored.
+- **1.2.4** (2026-11-07): Security fixes.
+- **1.2.3** (2026-11-06): The panel's size and corners match every other Glassware panel.
+
+[Every change](CHANGES.md)

@@ -32,6 +32,7 @@ It checks, in order:
   registry   every script is listed everywhere the tools need it (pages, screenshots, tests)
   commits    commits not yet pushed are by JigglyPug and carry no chat or session links
   generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
+  changes    each script's CHANGES.md starts at its @version, newest first, every entry with a line
   settings   tools/carry.py: settings and saved data survive the update, from the live version and from
              several releases back (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
@@ -101,6 +102,19 @@ for p, src in S.items():
     if old is not None and old != src:
         ov = hdr(old, 'version'); n += 1
         ok(vtuple(v) > vtuple(ov), f'{slug} changed but @version {v} is not higher than the live {ov}')
+    # CHANGES.md: every release says what changed, in words a person reads; the newest is this @version
+    cf = f'{R}/{plat}/{slug}/CHANGES.md'; n += 1
+    if not os.path.exists(cf): ok(False, f'{slug}: no CHANGES.md'); continue
+    ct = open(cf, encoding='utf-8').read()
+    heads = re.findall(r'(?m)^## (\S+) · (\d{4}-\d\d-\d\d)$', ct)
+    vs = [x[0] for x in heads]
+    if not heads: ok(False, f'{slug}: CHANGES.md has no "## <version> · <date>" entries'); continue
+    n += 4
+    ok(vs[0] == v, f'{slug}: CHANGES.md starts at {vs[0]}, but @version is {v}: add an entry saying what {v} changes')
+    ok(all(vtuple(a) > vtuple(b) for a, b in zip(vs, vs[1:])), f'{slug}: CHANGES.md versions should go newest first, each once')
+    ok(all(a[1] >= b[1] for a, b in zip(heads, heads[1:])), f'{slug}: CHANGES.md dates should go newest first')
+    bodies = re.split(r'(?m)^## .*$', ct)[1:]
+    ok(all(re.search(r'(?m)^- \S', b) for b in bodies), f'{slug}: every CHANGES.md entry needs at least one "- " line')
 done(n)
 
 # The new-script kit (tools/new_script.py) must keep producing scripts that pass every rule below,

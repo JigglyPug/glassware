@@ -29,3 +29,11 @@ Click the ✦ button on AniList and pick a mode. Kaleidoscope has Claude build a
 <table>
 <tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/sequels-light.webp"><img src="images/sequels.webp" width="400"></picture><br><sub><b>Sequels</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/settings-light.webp"><img src="images/settings.webp" width="400"></picture><br><sub><b>Settings</b></sub></td></tr>
 </table>
+
+## What's new
+
+- **2.10.12** (2026-11-10): Damaged saved data can't break the panel or the board page.
+- **2.10.11** (2026-11-10): Closing the Claude tab before the board is ready ends the job right away, with a message.
+- **2.10.10** (2026-11-10): When AniList is slow, down or unreachable, the panel says so plainly.
+
+[Every change](CHANGES.md)

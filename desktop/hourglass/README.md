@@ -45,3 +45,11 @@ The same script switches to a phone layout on its own: a bottom-sheet menu, the 
 <table>
 <tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-dashboard-light.webp"><img src="images/phone-dashboard.webp" width="200"></picture><br><sub><b>Dashboard</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-schedule-light.webp"><img src="images/phone-schedule.webp" width="200"></picture><br><sub><b>Schedule</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-block-light.webp"><img src="images/phone-block.webp" width="200"></picture><br><sub><b>Block screen</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/phone-nudge-light.webp"><img src="images/phone-nudge.webp" width="200"></picture><br><sub><b>Late-night nudge</b></sub></td></tr>
 </table>
+
+## What's new
+
+- **1.5.5** (2026-11-10): Import settings checks the file: every setting stays in range, what can't be read is skipped, and the panel says what happened.
+- **1.5.4** (2026-11-09): Day charts include today so far.
+- **1.5.3** (2026-11-06): Rows of buttons share the width evenly.
+
+[Every change](CHANGES.md)

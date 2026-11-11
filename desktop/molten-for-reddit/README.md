@@ -30,3 +30,11 @@ Molten for Reddit puts a lava-lamp background made from the image or video you a
 <tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/lava-light.webp"><img src="images/lava.webp" width="400"></picture><br><sub><b>Lava</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/video-light.webp"><img src="images/video.webp" width="400"></picture><br><sub><b>Video</b></sub></td></tr>
 <tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/reddit-light.webp"><img src="images/reddit.webp" width="400"></picture><br><sub><b>Reddit</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/search-light.webp"><img src="images/search.webp" width="400"></picture><br><sub><b>Search</b></sub></td></tr>
 </table>
+
+## What's new
+
+- **2.4.7** (2026-11-07): Security fixes.
+- **2.4.6** (2026-11-06): Rows of buttons share the width evenly.
+- **2.4.5** (2026-11-06): The panel's size and corners match every other Glassware panel.
+
+[Every change](CHANGES.md)

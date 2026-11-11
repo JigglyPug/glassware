@@ -30,3 +30,11 @@ Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plu
 <tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/account-light.webp"><img src="images/account.webp" width="400"></picture><br><sub><b>Account</b></sub></td><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/quality-light.webp"><img src="images/quality.webp" width="400"></picture><br><sub><b>Quality</b></sub></td></tr>
 <tr><td align="center" valign="top"><picture><source media="(prefers-color-scheme: light)" srcset="images/lava-light.webp"><img src="images/lava.webp" width="400"></picture><br><sub><b>Lava</b></sub></td></tr>
 </table>
+
+## What's new
+
+- **3.7.8** (2026-11-07): Logs never name your accounts, and no more bouncing between pages when the saved account is missing.
+- **3.7.7** (2026-11-07): Security fixes.
+- **3.7.6** (2026-11-06): Rows of buttons share the width evenly.
+
+[Every change](CHANGES.md)

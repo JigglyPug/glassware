@@ -15,6 +15,15 @@ for p in ['desktop/molten-tools', 'desktop/molten-for-reddit', 'mobile/molten-fo
 def ver(path):
     return re.search(r'@version\s+(\S+)', open(f'{R}/{path}', encoding='utf-8').read()).group(1)
 
+def changes(p, n=None):
+    """The releases in <script>/CHANGES.md, newest first: [(version, date, [lines])]. The file is
+    written by hand, one '## <version> · <date>' heading and its '- ' lines per release."""
+    out = []
+    for m in re.finditer(r'(?m)^## (\S+) · (\d{4}-\d\d-\d\d)\n((?:\n|- .*\n|  .*\n)*)', open(f'{R}/{p}/CHANGES.md', encoding='utf-8').read() + '\n'):
+        items = [x.strip() for x in re.split(r'(?m)^- ', m.group(3)) if x.strip()]
+        out.append((m.group(1), m.group(2), [' '.join(x.split()) for x in items]))
+    return out[:n] if n else out
+
 S = {}
 S['desktop/prism'] = dict(name='Prism', tag="Every app title bar, in its site's own color.", sites='Every site',
  intro='Prism colors the title bar of installed web apps (PWAs) to match the site you are on. It reads the color from the app icon, the manifest, the page\'s own theme color, the favicon or the page header, in whatever order you choose.',
@@ -194,6 +203,7 @@ for p, s in S.items():
     if s.get('phone'):
         txt, shots = s['phone']
         md += '\n## On your phone\n\n' + txt + '\n\n<table>\n<tr>' + ''.join(f'<td align="center" valign="top">{pic(p, f"images/{f}.webp", W200)}<br><sub><b>{cap}</b></sub></td>' for f, cap in shots) + '</tr>\n</table>\n'
+    md += "\n## What's new\n\n" + ''.join(f'- **{v}** ({d}): ' + ' '.join(items) + '\n' for v, d, items in changes(p, 3)) + '\n[Every change](CHANGES.md)\n'
     open(f'{R}/{p}/README.md', 'w', encoding='utf-8').write(md)
 
 def card(p):
