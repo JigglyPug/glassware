@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Hourglass: Screen time and lockdown for every site." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.5.8-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
+[![Install](https://img.shields.io/badge/Install-v1.5.9-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -48,8 +48,8 @@ The same script switches to a phone layout on its own: a bottom-sheet menu, the 
 
 ## What's new
 
+- **1.5.9** (2026-11-11): While Hourglass is paused, its settings fold away: Tracking, Lockdown and the late-night nudge in Settings, the Schedule and Sites tabs, Music mode, and adding sites from the Dashboard. General, Appearance and Your data stay, and turning it back on shows everything as you left it.
 - **1.5.8** (2026-11-11): Resetting stats now also clears the session in progress, in every open tab, so "longest session" starts from zero.
 - **1.5.7** (2026-11-11): The late-night reminder's settings fold away while the reminder is off.
-- **1.5.6** (2026-11-10): On a phone, pull the panel's handle or header down to close it, and taps inside the panel no longer reach the page behind.
 
 [Every change](CHANGES.md)

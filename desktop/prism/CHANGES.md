@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.2.8 · 2026-11-11
+
+- With the main switch off, Sources, Tone and This site fold away. Appearance and Troubleshooting stay, and turning it back on shows everything as you left it.
+
 ## 2.2.7 · 2026-11-10
 
 - An icon address that redirects to your own network is ignored.

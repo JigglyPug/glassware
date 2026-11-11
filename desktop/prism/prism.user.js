@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.7
+// @version      2.2.8
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.7';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.8';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -848,12 +848,15 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:var(--ctl
             E.master = toggle(true, () => { saveSettings({ enabled: !S.settings.enabled }); resolve(); }, 'Prism on or off');
             E.masterD = h('div', { class: 'd' });
             panel.append(h('div', { class: 'card' }, h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Prism' }), E.masterD), E.master)));
+            // everything the master switch turns off folds away with it; Appearance and Troubleshooting stay
+            E.feat = h('div', { 'data-fold': 'on' });
+            panel.append(E.feat);
 
             // SOURCES
             E.list = h('div', { class: 'list' });
             E.fb = h('div', { class: 'src fb' });
             E.srcHint = h('div', { class: 'hint' });
-            panel.append(h('div', { class: 'sec' },
+            E.feat.append(h('div', { class: 'sec' },
                 h('div', { class: 'label' }, 'Sources', h('i', { text: 'drag to reorder' })),
                 E.list, h('div', { style: 'height:6px' }), E.fb,
                 h('div', { class: 'row', style: 'margin-top:8px;min-height:0' }, E.srcHint,
@@ -864,7 +867,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:var(--ctl
                 ...Object.entries(TONES).map(([v, t]) =>
                     h('button', { 'data-v': v, text: t.label, onclick: () => { saveSettings({ tone: v }); if (S.raw && (S.mode === 'auto' || S.mode === 'fallback')) apply(S.raw, { source: S.source, detail: S.detail, trail: S.trail, fromCache: S.fromCache }); else resolve(); } })));
             E.toneD = h('div', { class: 'hint' });
-            panel.append(h('div', { class: 'sec' }, h('div', { class: 'label', text: 'Tone' }), E.toneSeg, E.toneD));
+            E.feat.append(h('div', { class: 'sec' }, h('div', { class: 'label', text: 'Tone' }), E.toneSeg, E.toneD));
 
             // THIS SITE
             E.swatch = h('div', { class: 'swatch' });
@@ -875,7 +878,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:var(--ctl
             E.dropper = ED ? h('button', { class: 'btn primary', onclick: () => this.dropper(ED) }, icon(ICONS.drop, 14), 'Dropper') : null;
             E.off = toggle(false, () => { saveSite({ off: !S.site.off }); resolve(); }, 'Off for this site');
             E.auto = h('button', { class: 'link', text: 'Back to auto', onclick: () => { saveSite({ custom: null }); resolve(); } });
-            panel.append(h('div', { class: 'sec' },
+            E.feat.append(h('div', { class: 'sec' },
                 h('div', { class: 'label', text: 'This site' }),
                 h('div', { class: 'pick' }, E.swatch, h('div', { class: 'hexcol' }, E.hexBox, h('div', { class: 'notes' }, E.hexNote, E.auto)), E.dropper),
                 h('div', { class: 'row', style: 'margin-top:12px' }, h('div', null, h('div', { class: 't', text: 'Off for this site' }), h('div', { class: 'd', text: 'Leave the title bar to the site' })), E.off)));
@@ -972,6 +975,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:var(--ctl
             E.kind.title = app ? 'The color shows in this app\'s title bar' : 'Desktop tabs ignore title bar colors; installed apps, Android Chrome and Safari use them';
 
             E.master.setAttribute('aria-checked', String(set_.enabled));
+            E.feat.hidden = !set_.enabled;
             E.masterD.textContent = set_.enabled ? 'Everything is on. Turn off to stop every feature at once.' : 'Everything is off. Your settings are kept.';
 
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.8
+// @version      1.5.9
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.8';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.9';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -1367,7 +1367,8 @@ h1 span{color:var(--ink)}
             this.scroll = h('div', { class: 'scroll' });
             if (S.cfg.enabled && (!S.cfg.armed || (S.cfg.armAt && !isArmed()))) this.scroll.append(this.welcome());
             if (lock && this.unlocked && this.tab !== 'dash') this.scroll.append(this.banner());
-            const body = this.tab === 'sched' ? this.vSchedule() : this.tab === 'sites' ? this.vSites() : this.tab === 'set' ? this.vSettings() : this.vDash();
+            const paused = !S.cfg.enabled && (this.tab === 'sched' || this.tab === 'sites');   // nothing to change while it's off
+            const body = paused ? this.vPaused() : this.tab === 'sched' ? this.vSchedule() : this.tab === 'sites' ? this.vSites() : this.tab === 'set' ? this.vSettings() : this.vDash();
             this.scroll.append(...[].concat(body));
             this.footEl = h('div', { class: 'foot' });
             const kids = [MOBILE ? h('div', { class: 'grab', 'aria-hidden': 'true' }) : null, head, siteline, tabBar, this.scroll, this.footEl].filter(Boolean);
@@ -1386,10 +1387,15 @@ h1 span{color:var(--ink)}
             this.footEl.replaceChildren(
                 h('div', { class: 'status', role: 'status' }, h('div', { class: 'dot' }), h('div', { class: 'stxt' }, h('b', { text: head }), ' · ' + tail),
                     S.cfg.listen && !MOBILE ? h('span', { class: 'listen', title: 'Listening time today: sound playing in any tab, even while you are tabbed out' }, icon(ICONS.headphones, 13), h('b', { text: fmtDur(listenToday()) }), ' today') : null,
-                    S.music ? h('span', { class: 'mlabel', text: 'Music mode' }) : null,
-                    h('button', { class: 'ibtn music' + (S.music ? ' on' : ''), 'aria-pressed': String(S.music), 'aria-label': 'Music mode', title: 'Music mode: let your Music sites play during lockdown',
+                    S.music && S.cfg.enabled ? h('span', { class: 'mlabel', text: 'Music mode' }) : null,
+                    !S.cfg.enabled ? null : h('button', { class: 'ibtn music' + (S.music ? ' on' : ''), 'aria-pressed': String(S.music), 'aria-label': 'Music mode', title: 'Music mode: let your Music sites play during lockdown',
                         onclick: () => { S.music = !S.music; set('music', S.music); evaluate(); this.render(); } }, icon(ICONS.music, 17))),
                 h('div', { class: 'keys', text: 'Open from the Tampermonkey menu · v' + VERSION + ' · every tab updates live' }));
+        },
+        vPaused() {
+            return h('div', { class: 'tile full' }, this.label('Hourglass is paused'),
+                h('div', { class: 'd', style: 'margin:-4px 0 12px', text: 'Turn it back on in Settings to change this. Your ' + (this.tab === 'sched' ? 'schedule is' : 'sites are') + ' kept.' }),
+                h('button', { class: 'btn primary', text: 'Go to Settings', onclick: () => this.go('set') }));
         },
         go(k) {
             if (this.locked() && k !== 'dash') { this.openGate(k); return; }
@@ -1627,7 +1633,7 @@ h1 span{color:var(--ink)}
             const rows = D.enough ? D.moved : D.topSites;
             const addBtns = s => [h('button', { class: 'btn sm primary', onclick: () => this.addSite(s.k, guessCat(s.k)) }, icon(ICONS.plus, 12, 2.4), 'Add'),
                 h('button', { class: 'btn sm', text: 'Ignore', onclick: () => { S.ignored.push({ d: s.k, avg: s.now }); set('ignored', S.ignored); this.render(); } })];
-            const offList = s => !s.listed && !S.ignored.some(g => g.d === s.k);
+            const offList = s => S.cfg.enabled && !s.listed && !S.ignored.some(g => g.d === s.k);
             const acts = rows.some(offList);
             const spark = s => { const mx = Math.max(...s.spark, 1), W = 64, Hh = 22, p = 2, n = Math.max(1, s.spark.length - 1);
                 const d = s.spark.map((v, i) => (i ? 'L' : 'M') + (p + i * (W - 2 * p) / n).toFixed(1) + ' ' + (Hh - p - v / mx * (Hh - 2 * p)).toFixed(1)).join(' ');
@@ -1641,9 +1647,9 @@ h1 span{color:var(--ink)}
                     spark(s),
                     h('div', { class: 'delta ' + (!D.enough || Math.abs(s.d) < 60 ? 'flat' : s.d > 0 ? 'up' : 'down'), text: D.enough ? sign(s.d) : '' }),
                     h('div', { class: 'acts' }, offList(s) ? addBtns(s) : null))),
-                h('button', { class: 'disc' + (sugOpen ? ' open' : ''), 'aria-expanded': String(sugOpen), onclick: () => { this.ignOpen = !this.ignOpen; this.render(); } }, icon(ICONS.chev, 14),
+                !S.cfg.enabled ? null : h('button', { class: 'disc' + (sugOpen ? ' open' : ''), 'aria-expanded': String(sugOpen), onclick: () => { this.ignOpen = !this.ignOpen; this.render(); } }, icon(ICONS.chev, 14),
                     'Site suggestions · ' + D.sugs.length + (S.ignored.length ? ' · ' + S.ignored.length + ' ignored' : '')),
-                sugOpen ? [
+                sugOpen && S.cfg.enabled ? [
                     D.sugs.length ? D.sugs.map(s => h('div', { class: 'sug2' }, h('span', { class: 'mono', style: 'color:var(--text)', text: s.k }), h('span', { class: 'mono', text: fmtDur(s.now) + ' a day · not on your list' }), h('div', { class: 'acts' }, addBtns(s))))
                         : h('div', { class: 'ign', text: 'No other busy sites off your list.' }),
                     ...S.ignored.map(g => h('div', { class: 'ign' }, h('span', { class: 'mono', style: 'color:var(--text)', text: g.d }), h('span', { class: 'mono', text: fmtDur(g.avg) + ' a day when ignored' }),
@@ -1930,7 +1936,9 @@ h1 span{color:var(--ink)}
             const look = h('div', { class: 'tile full' }, this.label('Appearance'),
                 h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Match my device' }), h('div', { class: 'd', text: 'Light or dark follows your device until you flip the switch up top' })),
                     toggle(get('appearance', 'auto') === 'auto', () => { set('appearance', get('appearance', 'auto') === 'auto' ? (isDark() ? 'dark' : 'light') : 'auto'); blocker.retheme(); this.render(); }, 'Match my device')));
-            return [master, tracking, lockT, bed, general, look, data];
+            // everything the master switch turns off folds away with it; General, Appearance and Your data stay
+            const feat = h('div', { 'data-fold': 'on', hidden: !c.enabled }, tracking, lockT, bed);
+            return [master, feat, general, look, data];
         },
     };
 

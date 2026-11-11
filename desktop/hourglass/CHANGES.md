@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.5.9 · 2026-11-11
+
+- While Hourglass is paused, its settings fold away: Tracking, Lockdown and the late-night nudge in Settings, the Schedule and Sites tabs, Music mode, and adding sites from the Dashboard. General, Appearance and Your data stay, and turning it back on shows everything as you left it.
+
 ## 1.5.8 · 2026-11-11
 
 - Resetting stats now also clears the session in progress, in every open tab, so "longest session" starts from zero.
