@@ -81,9 +81,10 @@ def run(script, p, mode, seed=None, seedls=None):
     url, cmd, extra, tabs = JOBS[p]
     tabs = ([FIRST[p]] + tabs) if p in FIRST else tabs
     args = ['node', f'{HERE}/shot.js', script, url, '/dev/null', '--cmd', cmd, '--' + mode, '--clock', CLOCK, '--vh', '1400']
-    if seed:   # the saved data replaces any demo seed
-        i = extra.index('--seed') if '--seed' in extra else -1
-        extra = extra[:i] + extra[i + 2:] if i >= 0 else extra
+    if seed:   # the saved data replaces any demo seed (storage and page storage both)
+        for flag in ('--seed', '--seedls'):
+            i = extra.index(flag) if flag in extra else -1
+            extra = extra[:i] + extra[i + 2:] if i >= 0 else extra
         args += extra + ['--seed', seed]
     else: args += extra
     if seedls: args += ['--seedls', seedls]

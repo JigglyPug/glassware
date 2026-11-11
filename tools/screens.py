@@ -28,7 +28,7 @@ JOBS = {
     'desktop/prism':          ('https://example.com/', 'Open Prism', [], []),
     'desktop/hourglass':      ('https://www.youtube.com/', 'Open', ['--seed', f'{HERE}/seeds/hourglass.json'], ['Schedule', 'Sites', 'Settings']),
     'desktop/looking-glass':  ('https://example.com/', 'Open Looking', ['--video'], []),
-    'desktop/molten-tools':   ('https://www.youtube.com/', 'Open Molten', ['--seed', f'{HERE}/seeds/molten.json'], ['General', 'Account', 'Quality']),
+    'desktop/molten-tools':   ('https://www.youtube.com/', 'Open Molten', ['--seed', f'{HERE}/seeds/molten.json', '--seedls', f'{HERE}/seeds/molten-ls.json'], ['General', 'Account', 'Quality']),
     'desktop/molten-for-reddit': ('https://www.reddit.com/', 'Open Molten', ['--seed', f'{HERE}/seeds/molten.json'], ['General', 'Video', 'Reddit', 'Search']),
     'desktop/kaleidoscope':   (ANI, 'Open Kaleidoscope', [], ['Sequels', 'Settings']),
     'mobile/kaleidoscope-mobile': (ANI, 'Open Kaleidoscope', ['--mobile'], ['Sequels', 'Settings']),

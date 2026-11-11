@@ -2,6 +2,11 @@
 
 Newest first.
 
+## 3.8.0 · 2026-11-10
+
+- Screenshot safe now sits under Default account in the Account tab. While it's off, only its switch shows; turn it on and its settings open up.
+- While Screenshot safe is on, the panel hides your saved account name and page ID too. Point at them, or click into the box, to read them.
+
 ## 3.7.8 · 2026-11-07
 
 - Logs never name your accounts, and no more bouncing between pages when the saved account is missing.

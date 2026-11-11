@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.7.8
+// @version      3.8.0
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -4638,6 +4638,13 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel input.ytt-text{width:100%;margin-top:4px}' +
       '#ytt-panel .ytt-names-list{margin-top:4px;filter:blur(5px);transition:filter .2s;word-break:break-word}' +
       '#ytt-panel .ytt-names:hover .ytt-names-list{filter:none}' +
+      // Screenshot safe under Default account; names in the panel itself hidden while it's on
+      '#ytt-panel .ytt-ss{margin:16px 0 0;padding-top:12px;border-top:1px solid var(--mt-line)}' +
+      '#ytt-panel .ytt-subhead{color:var(--mt-ink);font:700 10.5px/1.2 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;letter-spacing:.16em;text-transform:uppercase;margin:0 0 2px}' +
+      '#ytt-panel .ytt-subgrp{margin:2px 0 0 4px;padding:0 0 0 12px;border-left:2px solid var(--mt-line)}' +
+      '#ytt-panel b.ytt-secret{filter:blur(5px);transition:filter .2s}' +
+      '#ytt-panel b.ytt-secret:hover{filter:none}' +
+      '#ytt-panel input.ytt-secret:not(:focus){color:transparent!important;text-shadow:0 0 7px var(--mt-text)}' +
       '#ytt-panel select.ytt-sel{max-width:170px;cursor:pointer}' +
       '#ytt-panel select.ytt-sel option{background:var(--mt-solid);color:var(--mt-text)}' +
       '#ytt-panel .ytt-btns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:14px}.ytt-btns>.ytt-btn{text-align:center}' +
@@ -4805,64 +4812,28 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
     // ---------------- Account tab ----------------
     function buildAccount(body) {
-      // ---- Screenshot safe ----
-      section(body, 'Screenshot safe');
-      toggleRow(body, 'Hide my account names', 'Your account and channel names, handles and email, everywhere on ' + SITE_NAME + ' and ' +
-        (IS_MUSIC ? 'YouTube' : 'YouTube Music'), () => PRIV.get('on'), v => { PRIV.set('on', v); render(); });
-      const pv = el('div', PRIV.get('on') ? '' : 'ytt-off');
-      selectRow(pv, 'How', null, [['blur', 'Blur'], ['text', 'Placeholder']], () => PRIV.get('mode'), v => { PRIV.set('mode', v); render(); });
-      if (PRIV.get('mode') === 'text') {
-        const pf = el('div', 'ytt-field');
-        pf.append(labelBlock('Placeholder', 'Shown instead of the name, e.g. "Made for User"'));
-        const pin = el('input', 'ytt-text');
-        pin.type = 'text';
-        pin.value = PRIV.get('placeholder');
-        pin.addEventListener('change', () => PRIV.set('placeholder', pin.value.trim() || 'User'));
-        pf.append(pin);
-        pv.append(pf);
-      }
-      toggleRow(pv, 'First names too', 'Your first name on its own, like "Sam\u2019s Music" (can also catch other people who share it)',
-        () => PRIV.get('firstNames'), v => PRIV.set('firstNames', v));
-      toggleRow(pv, 'Blur my profile pictures', 'Top bar avatar and the account menu', () => PRIV.get('avatars'), v => PRIV.set('avatars', v));
-      const ef = el('div', 'ytt-field');
-      ef.append(labelBlock('Also hide', 'Other names or words, separated by commas'));
-      const ein = el('input', 'ytt-text');
-      ein.type = 'text';
-      ein.value = PRIV.get('extra');
-      ein.placeholder = 'nickname, old channel name';
-      ein.addEventListener('change', () => PRIV.set('extra', ein.value));
-      ef.append(ein);
-      pv.append(ef);
-      const found = PRIV.names();
-      const nf = el('div', 'ytt-info ytt-names');
-      nf.append(el('div', null, found.length ? 'Hiding ' + found.length + ' name' + (found.length === 1 ? '' : 's') + ' (hover to read):' :
-        'No names found yet. Open the account menu once, or press Find names.'));
-      if (found.length) nf.append(el('div', 'ytt-names-list', found.join(' \u00b7 ')));
-      pv.append(nf);
-      const pst = el('div', 'ytt-status');
-      const pb = el('div', 'ytt-btns');
-      btn(pb, 'Find names', async () => {
-        pst.textContent = 'Looking\u2026';
-        const ok = await PRIV.fetchNames();
-        pst.textContent = ok ? 'Updated from your account list.' : 'Could not read the account list here; open the account menu once instead.';
-        if (ok) render();
-      });
-      btn(pb, 'Forget found names', () => { PRIV.forget(); render(); });
-      pv.append(pb, pst);
-      body.append(pv);
-
+      // ---- Default account, with Screenshot safe under it ----
+      // While Screenshot safe is on, this panel hides the account's name and page ID too (blurred, or the
+      // placeholder): readable only while you point at it or type in the box.
+      const hiding = !!PRIV.get('on');
+      const secret = text => {
+        if (!hiding) return el('b', null, text);
+        return PRIV.get('mode') === 'text' ? el('b', null, PRIV.get('placeholder') || 'User') : el('b', 'ytt-secret', text);
+      };
       section(body, 'Default account');
       const saved = ACCT.loadCfg();
       const id = ACCT.currentId();
       const info = el('div', 'ytt-info');
-      const l1 = el('div'); l1.append('Signed in now as page ID: ', el('b', null, id || '(main channel)'));
-      const l2 = el('div', null, saved ? 'Saved default: "' + saved.name + '"' : 'No default saved yet.');
+      const l1 = el('div'); l1.append('Signed in now as page ID: ', id ? secret(id) : el('b', null, '(main channel)'));
+      const l2 = el('div');
+      const showSaved = name => { l2.textContent = ''; if (name) l2.append('Saved default: ', secret('"' + name + '"')); else l2.append('No default saved yet.'); };
+      showSaved(saved && saved.name);
       info.append(l1, l2);
       body.append(info);
 
       const f = el('div', 'ytt-field');
       f.append(labelBlock('Channel name', 'Exactly as shown in the account picker'));
-      const input = el('input', 'ytt-text');
+      const input = el('input', 'ytt-text' + (hiding ? ' ytt-secret' : ''));
       input.type = 'text';
       input.value = saved ? saved.name : '';
       f.append(input);
@@ -4887,14 +4858,64 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
         if (!name) return say('Enter the channel name first.', true);
         ACCT.saveCfg({ enabled, name, id: ACCT.currentId() });
         say('Saved. Applies the next time the app launches.');
-        l2.textContent = 'Saved default: "' + name + '"';
+        showSaved(name);
       }, true);
       btn(btns, 'Clear', () => {
         ACCT.clearCfg();
         say('Default cleared.');
-        l2.textContent = 'No default saved yet.';
+        showSaved(null);
       });
       body.append(btns, status);
+
+      // Screenshot safe: its switch always shows; its settings only while it's on
+      const ss = el('div', 'ytt-ss');
+      ss.append(el('div', 'ytt-subhead', 'Screenshot safe'));
+      toggleRow(ss, 'Hide my account names', 'Your account and channel names, handles and email, everywhere on ' + SITE_NAME + ' and ' +
+        (IS_MUSIC ? 'YouTube' : 'YouTube Music') + ', and in this panel', () => PRIV.get('on'), v => { PRIV.set('on', v); render(); });
+      body.append(ss);
+      if (hiding) {
+        const pv = el('div', 'ytt-subgrp');
+        selectRow(pv, 'How', null, [['blur', 'Blur'], ['text', 'Placeholder']], () => PRIV.get('mode'), v => { PRIV.set('mode', v); render(); });
+        if (PRIV.get('mode') === 'text') {
+          const pf = el('div', 'ytt-field');
+          pf.append(labelBlock('Placeholder', 'Shown instead of the name, e.g. "Made for User"'));
+          const pin = el('input', 'ytt-text');
+          pin.type = 'text';
+          pin.value = PRIV.get('placeholder');
+          pin.addEventListener('change', () => { PRIV.set('placeholder', pin.value.trim() || 'User'); render(); });
+          pf.append(pin);
+          pv.append(pf);
+        }
+        toggleRow(pv, 'First names too', 'Your first name on its own, like "Sam\u2019s Music" (can also catch other people who share it)',
+          () => PRIV.get('firstNames'), v => PRIV.set('firstNames', v));
+        toggleRow(pv, 'Blur my profile pictures', 'Top bar avatar and the account menu', () => PRIV.get('avatars'), v => PRIV.set('avatars', v));
+        const ef = el('div', 'ytt-field');
+        ef.append(labelBlock('Also hide', 'Other names or words, separated by commas'));
+        const ein = el('input', 'ytt-text');
+        ein.type = 'text';
+        ein.value = PRIV.get('extra');
+        ein.placeholder = 'nickname, old channel name';
+        ein.addEventListener('change', () => PRIV.set('extra', ein.value));
+        ef.append(ein);
+        pv.append(ef);
+        const found = PRIV.names();
+        const nf = el('div', 'ytt-info ytt-names');
+        nf.append(el('div', null, found.length ? 'Hiding ' + found.length + ' name' + (found.length === 1 ? '' : 's') + ' (hover to read):' :
+          'No names found yet. Open the account menu once, or press Find names.'));
+        if (found.length) nf.append(el('div', 'ytt-names-list', found.join(' \u00b7 ')));
+        pv.append(nf);
+        const pst = el('div', 'ytt-status');
+        const pb = el('div', 'ytt-btns');
+        btn(pb, 'Find names', async () => {
+          pst.textContent = 'Looking\u2026';
+          const ok = await PRIV.fetchNames();
+          pst.textContent = ok ? 'Updated from your account list.' : 'Could not read the account list here; open the account menu once instead.';
+          if (ok) render();
+        });
+        btn(pb, 'Forget found names', () => { PRIV.forget(); render(); });
+        pv.append(pb, pst);
+        body.append(pv);
+      }
 
       section(body, 'Troubleshooting');
       toggleRow(body, 'Log switching to the console', 'Lines start with [acct-switch] (F12)', ACCT.debugOn, ACCT.setDebug);
