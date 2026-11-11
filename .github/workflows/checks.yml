@@ -1,7 +1,7 @@
 # Runs the release check on every push, so it doesn't depend on someone remembering to run it
-# (CLAUDE.md, Committing): the rules, the security tests, settings carry-over, live updates, the
-# screenshots and the generated pages, for whatever changed. Only the glitch check and the performance
-# test stay local. Actions are pinned to exact commits.
+# (CLAUDE.md, Committing): the rules, the security tests, settings carry-over, live updates and the
+# generated pages, for whatever changed. The glitch check, the performance test and (for now, issue #3)
+# the screenshot comparison stay local. Actions are pinned to exact commits.
 name: Checks
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 jobs:
   checks:
-    # pinned, not ubuntu-latest: screenshots are compared here, and they depend on the exact fonts
+    # pinned, not ubuntu-latest: the test browsers draw with the exact fonts below (screenshots, issue #3)
     # (tools/fonts.conf uses Ubuntu 24.04's fonts-inter, fonts-dejavu-core, fonts-dejavu-mono and fonts-noto-color-emoji, as locally)
     runs-on: ubuntu-24.04
     timeout-minutes: 75
@@ -33,7 +33,7 @@ jobs:
           npx playwright install --with-deps chromium
           sudo apt-get install -y --no-install-recommends fonts-inter fonts-dejavu-core fonts-dejavu-mono fonts-noto-color-emoji
           pip install --require-hashes -r requirements.txt
-      - name: The release check (all but the glitch check and the performance test)
+      - name: The release check (all but the glitch check, the performance test and the screenshots)
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/check.py --quick --ci

@@ -5,8 +5,8 @@
     python3 tools/check.py --all     # glitch and settings tests for every script too (slow)
     python3 tools/check.py --quick   # rules only, no browser tests
     python3 tools/check.py --quick --ci   # what GitHub runs on every push (.github/workflows/checks.yml):
-                                     # everything but the glitch check and the performance test
-                                     # (the browsers draw with tools/fonts.conf, the same everywhere)
+                                     # everything but the glitch check, the performance test and the
+                                     # screenshot comparison
 
 Everything fails closed: if GitHub can't be reached, or a test crashes or reports nothing,
 that's a failure, never a pass.
@@ -57,8 +57,8 @@ It checks, in order:
              or when the test itself changed)
   screenshots the committed panel screenshots still match the panels (changed scripts)
 
-GitHub skips only the glitch check (phone sizes draw in Roboto) and the performance test (shared
-machines time unevenly).
+GitHub skips the glitch check (phone sizes draw in Roboto), the performance test (shared machines time
+unevenly) and, for now, the screenshot comparison (issue #3).
 """
 import glob, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
@@ -424,7 +424,7 @@ for line in git('log', '--format=%H%x09%ae%x09%B%x1e', 'origin/main..HEAD').stdo
 print('  ✓ nothing waiting to push') if n == 0 else done(n)
 
 # ------------------------------------------------------------------ settings + glitches
-# GitHub (--ci) runs these too: settings carry-over, live updates, screenshots and the generated pages.
+# GitHub (--ci) runs these too: settings carry-over, live updates and the generated pages.
 # The glitch check and the performance test stay here (Roboto for phones; shared machines time unevenly).
 FULL = '--quick' not in args or '--ci' in args
 targets = [p for p in (list(RUNS) if '--all' in args else changed)]
@@ -569,7 +569,7 @@ if '--quick' not in args:
             elif res == 'clean': print(f'  ✓ {name.split("/")[-1]}: no leaks, within its time budgets')
             else: ok(False, f'{name.split("/")[-1]}: {res}')
         ok(seen == 1 + len(targets), f'the performance test reported {seen} of {1 + len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
-if FULL:
+if '--quick' not in args:      # local only for now: on GitHub, Kaleidoscope's ✦ still draws differently (issue #3)
     head('screenshots')
     # Recapture each panel in a scratch folder and compare with the committed image. Captures repeat
     # exactly (fixed clock, demo data, animations stopped), so any difference means the panel changed

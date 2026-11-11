@@ -456,7 +456,7 @@ python3 tools/check.py              # release check: everything below, plus the 
   scrolls (part of the panel would be missing), so give long panels a taller `--vh`.
 - Captures repeat exactly (fixed clock, demo data, animations stopped, the fonts in `tools/fonts.conf`),
   so `tools/check.py` recaptures every changed script's panels in a scratch folder and fails if a
-  committed screenshot no longer matches its panel, here and on GitHub.
+  committed screenshot no longer matches its panel.
 
 ## Committing
 
@@ -472,10 +472,11 @@ python3 tools/check.py              # release check: everything below, plus the 
   fails closed: if GitHub can't be reached, or a test crashes or reports nothing, that's a
   failure, never a pass. When a rule here changes, change the check too.
 - GitHub runs the release check on every push (`.github/workflows/checks.yml`, `check.py --quick --ci`;
-  actions pinned to exact commits): the rules, every security test, settings carry-over, live updates,
-  the screenshots and the generated pages for whatever changed. Only the glitch check (phone sizes in
-  Roboto) and the performance test (shared machines time unevenly) stay local, so it doesn't replace
-  the local check. Screenshots match there because every test browser draws with the same fonts
+  actions pinned to exact commits): the rules, every security test, settings carry-over, live updates
+  and the generated pages for whatever changed. The glitch check (phone sizes in Roboto), the
+  performance test (shared machines time unevenly) and the screenshot comparison stay local, so it
+  doesn't replace the local check. Screenshots match there for every script but Kaleidoscope, whose ✦
+  still draws differently (issue #3), because every test browser draws with the same fonts
   (`tools/fonts.conf`: Ubuntu 24.04's `fonts-inter`, `fonts-dejavu-core`, `fonts-dejavu-mono` and `fonts-noto-color-emoji`,
   no hinting); the job runs on `ubuntu-24.04` (not `ubuntu-latest`) and installs those four packages. A failed run gets fixed
   before anything else; `gh run list --workflow checks.yml` shows the latest.
