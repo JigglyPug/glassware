@@ -93,6 +93,7 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1{font-size:clamp(44px,8vw,96px);line-height:.95;letter-spacing:-.045em;margin:0 0 18px;font-weight:800}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
+.hero p.need{font-size:14px;margin:-14px auto 24px}.hero p.need a{color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .chip{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:8px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--edge);color:var(--sub)}
 /* grid */
@@ -267,6 +268,7 @@ set(fromHash()||(phone?'phone':'all'))})();
 body = f"""<main class="wrap">
 <header class="hero"><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>
+<p class="need">Needs <a href="https://www.tampermonkey.net/">Tampermonkey</a> 5 or later. On Chrome and Edge, turn on <b>Allow user scripts</b> on Tampermonkey's details page. <a href="{REPO_URL}#what-you-need">Install not working?</a></p>
 <div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
 <div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></header>
 {sections}</main>

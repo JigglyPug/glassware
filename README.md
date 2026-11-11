@@ -21,6 +21,18 @@ Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates it
 | <img src="assets/icons/kaleidoscope-mobile.png" alt="" width="20" align="center"> [Kaleidoscope Mobile](mobile/kaleidoscope-mobile) | [Kaleidoscope](desktop/kaleidoscope) ↗ | ✓ | anilist.co |
 | <img src="assets/icons/molten-for-reddit-mobile.png" alt="" width="20" align="center"> [Molten for Reddit Mobile](mobile/molten-for-reddit-mobile) | [Molten for Reddit](desktop/molten-for-reddit) ↗ | ✓ | reddit.com |
 
+## What you need
+
+- **Tampermonkey 5 or later**, in any browser it runs in. The scripts are made for it: they keep their
+  settings in Tampermonkey's storage, hear each other's changes so every open tab updates at once,
+  add their commands to its menu, and (Kaleidoscope, Prism, Looking-Glass and the Molten scripts) make
+  their requests through it. Other script managers may run them, but they aren't tested there.
+- **Chrome and Edge:** turn on **Allow user scripts** on Tampermonkey's details page (the browser's
+  Extensions page → Tampermonkey → Details), or no script runs.
+- **Install shows the script's code instead of Tampermonkey's install page?** Update Tampermonkey:
+  recent versions of Chrome no longer hand `.user.js` links to extensions, and newer Tampermonkey
+  builds install them another way. Until then, copy the Install link and paste it into the URL box on
+  the Utilities tab of Tampermonkey's dashboard.
 
 ## Desktop and phone
 
