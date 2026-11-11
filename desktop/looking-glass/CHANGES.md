@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.2.8 · 2026-11-11
+
+- With the main switch off, the rest of the settings fold away. Appearance and Troubleshooting stay, and turning it back on shows everything as you left it.
+
 ## 1.2.7 · 2026-11-11
 
 - "Corner here" folds away while badges are off on the site.

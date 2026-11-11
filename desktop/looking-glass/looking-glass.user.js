@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.7
+// @version      1.2.8
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.7';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.8';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1395,7 +1395,9 @@ button:disabled{cursor:not-allowed}
             // master switch first, like the other Glassware panels
             const master = h('div', { class: 'tile master' },
                 this.row('Looking-Glass', c.on ? 'Everything is on. Turn off to stop every feature at once.' : 'Everything is off. Your settings are kept.', toggle(c.on, () => upd('on', !c.on), 'Looking-Glass on')));
-            const out = [master, here, badge, opening];
+            // everything the master switch turns off folds away with it; Appearance and Troubleshooting stay
+            const feat = h('div', { 'data-fold': 'on', hidden: !c.on }, here, badge, opening);
+            const out = [master, feat];
 
             const rec = get('recent', []);
             const recent = h('div', { class: 'tile' }, this.label('Recent', c.recent && rec.length ? h('button', { class: 'link', text: 'Clear', onclick: () => { set('recent', []); this.render(); } }) : null),
@@ -1410,10 +1412,10 @@ button:disabled{cursor:not-allowed}
                     h('button', { class: 'ibtn', 'aria-label': 'Copy link', title: 'Copy link', onclick: () => { copy(r.u); layer.toast('Video link copied'); } }, icon(ICONS.copy, 15))));
                 recent.append(list, h('div', { class: 'd', style: 'margin-top:6px', text: 'Direct links from big sites expire after a while. If one stops working, open it from the post again.' }));
             }
-            out.push(recent);
+            feat.append(recent);
 
             const offSites = Object.entries(S.sites).filter(([, v]) => v.off).map(([k]) => k).filter(k => k !== HOST);
-            if (offSites.length) out.push(h('div', { class: 'tile' }, this.label('Turned off on'),
+            if (offSites.length) feat.append(h('div', { class: 'tile' }, this.label('Turned off on'),
                 h('div', { class: 'chips' }, offSites.map(d => h('button', { class: 'chip', 'aria-label': 'Turn back on for ' + d, onclick: () => { const s = S.sites[d]; delete s.off; if (!Object.keys(s).length) delete S.sites[d]; set('sites', S.sites); this.render(); } }, d, h('span', null, icon(ICONS.close, 9, 2.6)))))));
 
 

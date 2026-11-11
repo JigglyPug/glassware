@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Looking-Glass: Open any video on its own." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.2.7-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
+[![Install](https://img.shields.io/badge/Install-v1.2.8-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -26,8 +26,8 @@ Looking-Glass puts a small circle in the corner of every video, in the site's ow
 
 ## What's new
 
+- **1.2.8** (2026-11-11): With the main switch off, the rest of the settings fold away. Appearance and Troubleshooting stay, and turning it back on shows everything as you left it.
 - **1.2.7** (2026-11-11): "Corner here" folds away while badges are off on the site.
 - **1.2.6** (2026-11-10): On a phone, pull the panel's handle or header down to close it, and touches inside the panel no longer reach the page behind.
-- **1.2.5** (2026-11-10): An icon address that redirects to your own network is ignored.
 
 [Every change](CHANGES.md)

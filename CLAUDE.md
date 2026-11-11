@@ -209,8 +209,9 @@ and keep existing ones on it.
   the switch itself always stays. Nothing is reset: turn it back on and they're as they were. Never
   dim them instead. `data-fold="off"` is for the opposite case (shown only while the switch is off),
   `data-fold="far"` for a group whose switch or choice sits somewhere else. The Molten scripts have a
-  `fold(show, kind)` helper; elsewhere set `data-fold` and `hidden`. The master switch is not one of
-  these: with it off, the panel still shows everything. `tools/live.py` flips every switch and fails if
+  `fold(show, kind)` helper; elsewhere set `data-fold` and `hidden`. Looking-Glass's master switch
+  works the same way: off, only its card, Appearance and Troubleshooting remain. The other scripts'
+  master switches don't fold their panels yet. `tools/live.py` flips every switch and fails if
   a fold shows or hides out of step with it, or if anything under an off switch is merely dimmed.
 - **Counters** for things a script does for you on its own (prompts answered, app prompts skipped,
   reply threads opened) go on an extra line under that feature's description, worded
