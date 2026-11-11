@@ -204,6 +204,14 @@ and keep existing ones on it.
   options sit inline on the right. Longer sets stay compact: the row shows the current choice as a
   small pill with a chevron on the right; tapping it opens the segmented buttons underneath (up to 4
   per row) and picking one folds them away. Sliders keep a number box beside them.
+- **Settings fold away with their switch.** The settings that belong to a feature's switch sit in a
+  group straight after the switch's row, marked `data-fold`, and show only while the switch is on;
+  the switch itself always stays. Nothing is reset: turn it back on and they're as they were. Never
+  dim them instead. `data-fold="off"` is for the opposite case (shown only while the switch is off),
+  `data-fold="far"` for a group whose switch or choice sits somewhere else. The Molten scripts have a
+  `fold(show, kind)` helper; elsewhere set `data-fold` and `hidden`. The master switch is not one of
+  these: with it off, the panel still shows everything. `tools/live.py` flips every switch and fails if
+  a fold shows or hides out of step with it, or if anything under an off switch is merely dimmed.
 - **Counters** for things a script does for you on its own (prompts answered, app prompts skipped,
   reply threads opened) go on an extra line under that feature's description, worded
   "<Did> N <things> so far" ("Skipped 37 app prompts so far"), hidden while it's 0. Counts only,

@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.4.9 · 2026-11-11
+
+- Settings that belong to a switch now fold away while it's off (lava, seek bar color, the profile 🔍) instead of sitting there dimmed. Turn the switch on and they're back as you left them.
+
 ## 1.4.8 · 2026-11-10
 
 - Pull the panel's handle or header down to close it, and touches inside the panel no longer reach Reddit behind it.

@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten Tools: Molten glass and quality-of-life fixes for YouTube." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v3.8.0-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-tools/molten-tools.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-tools/)
+[![Install](https://img.shields.io/badge/Install-v3.8.1-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-tools/molten-tools.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-tools/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-YouTube%2C%20YouTube%20Music-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -33,8 +33,8 @@ Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plu
 
 ## What's new
 
+- **3.8.1** (2026-11-11): Settings that belong to a switch now fold away while it's off (quality, player size, lava, random motion, title bar and seek bar colors) instead of sitting there dimmed. Turn the switch on and they're back as you left them.
 - **3.8.0** (2026-11-10): Screenshot safe now sits under Default account in the Account tab. While it's off, only its switch shows; turn it on and its settings open up. While Screenshot safe is on, the panel hides your saved account name and page ID too. Point at them, or click into the box, to read them.
 - **3.7.8** (2026-11-07): Logs never name your accounts, and no more bouncing between pages when the saved account is missing.
-- **3.7.7** (2026-11-07): Security fixes.
 
 [Every change](CHANGES.md)

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.8.0
+// @version      3.8.1
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -4658,6 +4658,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       '#ytt-panel .ytt-info b{font-weight:650}' +
       '#ytt-panel .ytt-note{opacity:.65;font-size:11.5px;margin-top:12px}' +
       '#ytt-panel .ytt-off{opacity:.4;pointer-events:none}' +
+      '#ytt-panel [data-fold][hidden]{display:none!important}' +
       '#ytt-panel details{margin-top:10px}' +
       '#ytt-panel .ytt-master{margin:10px 0 2px;padding:4px 12px;border-radius:12px;background:rgba(255,154,61,.1);border:1px solid rgba(255,154,61,.25)}' +
       '#ytt-panel .ytt-master .ytt-label{font-weight:650;font-size:14px}' +
@@ -4714,6 +4715,9 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       return l;
     }
     function section(parent, title) { parent.append(el('div', 'ytt-sec', title)); }
+    // The settings that belong to a switch sit in a fold straight after its row, and show only while it's
+    // on (kind 'off': only while it's off; 'far': its switch or choice is somewhere else). Nothing saved changes.
+    function fold(show, kind) { const d = el('div'); d.setAttribute('data-fold', kind || 'on'); d.hidden = !show; return d; }
 
     function toggleRow(parent, label, hint, get, set) {
       const row = el('label', 'ytt-row');
@@ -4873,8 +4877,8 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       toggleRow(ss, 'Hide my account names', 'Your account and channel names, handles and email, everywhere on ' + SITE_NAME + ' and ' +
         (IS_MUSIC ? 'YouTube' : 'YouTube Music') + ', and in this panel', () => PRIV.get('on'), v => { PRIV.set('on', v); render(); });
       body.append(ss);
-      if (hiding) {
-        const pv = el('div', 'ytt-subgrp');
+      {
+        const pv = fold(hiding); pv.className = 'ytt-subgrp';
         selectRow(pv, 'How', null, [['blur', 'Blur'], ['text', 'Placeholder']], () => PRIV.get('mode'), v => { PRIV.set('mode', v); render(); });
         if (PRIV.get('mode') === 'text') {
           const pf = el('div', 'ytt-field');
@@ -4941,7 +4945,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       const get = k => () => hd[k];
 
       toggleRow(body, 'Set quality automatically', 'Applies to every video you open', get('changeResolution'), set('changeResolution', 'res'));
-      const q = el('div', hd.changeResolution ? '' : 'ytt-off');
+      const q = fold(hd.changeResolution);
       section(q, 'YouTube');
       selectRow(q, 'Default', "If a video doesn't have it, the next lower one is used", QUALITIES, get('targetRes'), set('targetRes', 'res'));
       selectRow(q, '60 fps videos', 'Separate choice for high-frame-rate videos', [['', 'Same']].concat(QUALITIES),
@@ -4957,7 +4961,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       section(body, 'YouTube player');
       toggleRow(body, 'Open videos in theater mode', null, get('autoTheater'), set('autoTheater', 'theater'));
       toggleRow(body, 'Resize player in theater mode', 'Sizes it to match the chosen quality', get('changePlayerSize'), set('changePlayerSize', 'size'));
-      const sz = el('div', hd.changePlayerSize ? '' : 'ytt-off');
+      const sz = fold(hd.changePlayerSize);
       toggleRow(sz, 'Use a custom height', null, get('useCustomSize'), set('useCustomSize', 'size'));
       if (hd.useCustomSize) {
         sliderRow(sz, 'Custom height', null, { min: 270, max: 2160, step: 10, unit: 'px', hardMin: 270 },
@@ -4993,7 +4997,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
         '. This switch is per site.',
         () => lavaOn, v => { setLavaOn(v); render(); });
 
-      const all = el('div', lavaOn ? '' : 'ytt-off');
+      const all = fold(lavaOn);
 
       section(all, 'Profile');
       const seg = el('div', 'ytt-seg');
@@ -5016,7 +5020,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
       section(all, 'Motion');
       toggleRow(all, 'Random motion', 'Off = the theme\'s fixed animation (speed and amount need this on)', get('randomize'), set('randomize'));
-      const mo = el('div', lava.randomize ? '' : 'ytt-off');
+      const mo = fold(lava.randomize);
       sliderRow(mo, 'Speed', '1 = normal, 2 = twice as fast', { min: 0.1, max: 4, step: 0.05, unit: '×', hardMin: 0.05 },
         get('motionSpeed'), set('motionSpeed'), P.motionSpeed);
       sliderRow(mo, 'Amount', 'How far it breathes, drifts, tilts and wanders', { min: 0, max: 3, step: 0.05, unit: '×', hardMin: 0 },
@@ -5101,14 +5105,14 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
       section(body, 'Title bar');
       toggleRow(body, 'Match the title bar to the art', 'Takes the color from ' + from, get('titleColor'), set('titleColor'));
-      const t = el('div', gen.titleColor ? '' : 'ytt-off');
+      const t = fold(gen.titleColor);
       selectRow(t, 'Tone', 'Dark is easiest to read', [['dark', 'Dark'], ['vivid', 'Vivid'], ['muted', 'Muted']], get('titleTone'), set('titleTone'));
       swatch(t, TITLE.color);
       body.append(t);
 
       section(body, 'Seek bar');
       toggleRow(body, 'Match the seek bar to the art', 'Uses the same art color as the title bar', get('seekColor'), set('seekColor'));
-      const k = el('div', gen.seekColor ? '' : 'ytt-off');
+      const k = fold(gen.seekColor);
       selectRow(k, 'Tone', 'Bright is easiest to see', [['bright', 'Bright'], ['title', 'Match title bar']], get('seekTone'), set('seekTone'));
       swatch(k, TITLE.seek);
       body.append(k);

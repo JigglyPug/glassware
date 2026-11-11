@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.6
+// @version      1.2.7
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.6';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.7';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1219,7 +1219,7 @@ button:disabled{cursor:not-allowed}
 .label i{font-style:normal;letter-spacing:.02em;text-transform:none;font-family:inherit;color:var(--sub);font-weight:400;margin-left:auto}
 .label .link{margin-left:auto;letter-spacing:0;text-transform:none;font-family:${FONT}}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px}
-.row+.row,.row+.slr,.slr+.row{margin-top:10px}
+.row+.row,.row+.slr,.slr+.row,.row+[data-fold]{margin-top:10px}
 .t{font-weight:500}
 .d{font-size:11.5px;color:var(--sub);margin-top:2px}
 .d b{color:var(--text);font-weight:600}
@@ -1370,9 +1370,10 @@ button:disabled{cursor:not-allowed}
 
             const here = h('div', { class: 'card' }, this.label('This site', SITE ? SITE.name + ' support' : 'Any plain video'),
                 this.row('Badges on ' + HOST, !c.on ? 'Paused everywhere. Turn it back on at the top.' : st.off ? 'Off here. Every other site still gets badges.' : 'A circle in the corner of each video', toggle(!st.off, () => updSite({ off: !st.off }), 'Badges on this site', !c.on)),
-                this.row('Corner here', st.corner ? 'Only on ' + HOST + '. ' : 'Same as everywhere else',
+                // this site's own settings: only while badges are on here
+                h('div', { 'data-fold': 'on', hidden: !!st.off }, this.row('Corner here', st.corner ? 'Only on ' + HOST + '. ' : 'Same as everywhere else',
                     h('div', { class: 'cpw' }, st.corner ? h('button', { class: 'link', text: 'Reset', onclick: () => updSite({ corner: null }) }) : null,
-                        this.cornerPick(cornerHere(), k => updSite({ corner: k === c.corner ? null : k })))),
+                        this.cornerPick(cornerHere(), k => updSite({ corner: k === c.corner ? null : k }))))),
                 null);
 
             const badge = h('div', { class: 'tile' }, this.label('Badge'),

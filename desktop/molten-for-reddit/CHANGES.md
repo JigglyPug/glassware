@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.4.8 · 2026-11-11
+
+- Settings that belong to a switch now fold away while it's off (lava, random motion, videos in the lava, title bar and seek bar colors, the sidebar, the profile 🔍) instead of sitting there dimmed. Turn the switch on and they're back as you left them.
+
 ## 2.4.7 · 2026-11-07
 
 - Security fixes.

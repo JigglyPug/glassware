@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.2.7 · 2026-11-11
+
+- "Corner here" folds away while badges are off on the site.
+
 ## 1.2.6 · 2026-11-10
 
 - On a phone, pull the panel's handle or header down to close it, and touches inside the panel no longer reach the page behind.

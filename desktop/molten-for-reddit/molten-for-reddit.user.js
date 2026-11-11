@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.4.7
+// @version      2.4.8
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -2009,6 +2009,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-info b{font-weight:650}' +
       '#ytt-panel .ytt-note{opacity:.65;font-size:11.5px;margin-top:12px}' +
       '#ytt-panel .ytt-off{opacity:.4;pointer-events:none}' +
+      '#ytt-panel [data-fold][hidden]{display:none!important}' +
       '#ytt-panel details{margin-top:10px}' +
       '#ytt-panel .ytt-master{margin:10px 0 2px;padding:4px 12px;border-radius:12px;background:rgba(255,154,61,.1);border:1px solid rgba(255,154,61,.25)}' +
       '#ytt-panel .ytt-master .ytt-label{font-weight:650;font-size:14px}' +
@@ -2065,6 +2066,9 @@ div.lava-blobs {
       return l;
     }
     function section(parent, title) { parent.append(el('div', 'ytt-sec', title)); }
+    // The settings that belong to a switch sit in a fold straight after its row, and show only while it's
+    // on (kind 'off': only while it's off; 'far': its switch or choice is somewhere else). Nothing saved changes.
+    function fold(show, kind) { const d = el('div'); d.setAttribute('data-fold', kind || 'on'); d.hidden = !show; return d; }
 
     function toggleRow(parent, label, hint, get, set) {
       const row = el('label', 'ytt-row');
@@ -2197,7 +2201,7 @@ div.lava-blobs {
 
       section(body, 'Title bar');
       toggleRow(body, 'Match the title bar to the art', 'Same picture or video the lava is showing', get('titleColor'), set('titleColor'));
-      const t = el('div', gen.titleColor ? '' : 'ytt-off');
+      const t = fold(gen.titleColor);
       selectRow(t, 'Tone', 'Dark is easiest to read', [['dark', 'Dark'], ['vivid', 'Vivid'], ['muted', 'Muted']], get('titleTone'), set('titleTone'));
       swatchRow(t, TITLE.color);
       body.append(t);
@@ -2206,7 +2210,7 @@ div.lava-blobs {
 
       section(body, 'Video seek bar');
       toggleRow(body, 'Match the seek bar to the art', 'The played part and the ball, same color as the title bar', get('seekColor'), set('seekColor'));
-      const k = el('div', gen.seekColor ? '' : 'ytt-off');
+      const k = fold(gen.seekColor);
       selectRow(k, 'Tone', 'Bright is easiest to see', [['bright', 'Bright'], ['title', 'Match title bar']], get('seekTone'), set('seekTone'));
       swatchRow(k, TITLE.seek);
       body.append(k);
@@ -2239,7 +2243,7 @@ div.lava-blobs {
       const GD = GLASS_DEFAULTS;
 
       toggleRow(body, 'Lava background', 'Off = clear glass over a plain black page', lget('on'), lset('on'));
-      const look = el('div', lava.on ? '' : 'ytt-off');
+      const look = fold(lava.on);
       const seg = el('div', 'ytt-seg');
       for (const p of Object.keys(PRESETS)) {
         const b = el('button', 'ytt-segbtn' + (p === lavaStore.profile ? ' on' : ''), PROFILE_NAMES[p]);
@@ -2255,7 +2259,7 @@ div.lava-blobs {
       sliderRow(look, 'Zoom', null, { min: 1, max: 2.5, step: 0.01, hardMin: 0.1 }, lget('bgScale'), lset('bgScale'), P.bgScale);
       section(look, 'Motion');
       toggleRow(look, 'Random motion', 'Off = a fixed animation', lget('randomize'), lset('randomize'));
-      const mo = el('div', lava.randomize ? '' : 'ytt-off');
+      const mo = fold(lava.randomize);
       sliderRow(mo, 'Speed', '1 = normal, 2 = twice as fast', { min: 0.1, max: 4, step: 0.05, unit: '×', hardMin: 0.05 }, lget('motionSpeed'), lset('motionSpeed'), P.motionSpeed);
       sliderRow(mo, 'Amount', 'How far it breathes, drifts, tilts and wanders', { min: 0, max: 3, step: 0.05, unit: '×', hardMin: 0 }, lget('motionAmount'), lset('motionAmount'), P.motionAmount);
       look.append(mo);
@@ -2278,10 +2282,9 @@ div.lava-blobs {
       toggleRow(body, 'Text shadow', 'Keeps the white writing readable over bright lava', gget('textShadow'), gset('textShadow'));
 
       section(body, 'Behaviour');
-      const be = el('div');
+      const be = fold(lava.on, 'far');
       toggleRow(be, 'Follow posts as you scroll', 'The lava takes the picture of the post in the middle of the screen', lget('followScroll'), lset('followScroll'));
       toggleRow(be, 'Pause the lava while scrolling', 'Smoother on long feeds', lget('pauseOnScroll'), lset('pauseOnScroll'));
-      if (!lava.on) be.className = 'ytt-off';
       body.append(be);
       toggleRow(body, 'Clear leftover solid backgrounds', 'Finds big solid blocks Reddit paints and makes them see-through', gget('cleanup'), gset('cleanup'));
       const rb = el('div', 'ytt-btns');
@@ -2310,7 +2313,7 @@ div.lava-blobs {
       section(body, 'Videos in the lava');
       selectRow(body, 'Playing videos', 'A playing video takes over the lava while it plays',
         [['any', 'Everywhere'], ['post', 'Posts only'], ['off', 'Never']], lget('videoSource'), lset('videoSource'));
-      const v = el('div', lava.videoSource !== 'off' && lava.on ? '' : 'ytt-off');
+      const v = fold(lava.videoSource !== 'off' && lava.on, 'far');
       sliderRow(v, 'Frame rate', 'Lower = cheaper; it is blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps', hardMin: 1, hardMax: 60 }, lget('videoFps'), lset('videoFps'), S.videoFps);
       sliderRow(v, 'Frame copy width', 'Small is fine behind the blur', { min: 32, max: 512, step: 16, unit: 'px', hardMin: 8, hardMax: 1024 }, lget('videoWidth'), lset('videoWidth'), S.videoWidth);
       toggleRow(v, 'Crop black bars', 'Leaves bars baked into a video out of the lava (measured from its first frame when needed)', lget('videoCropBars'), lset('videoCropBars'));
@@ -2328,7 +2331,7 @@ div.lava-blobs {
       COUNTS.line(toggleRow(body, 'Auto-expand "more replies"', 'Opens collapsed reply threads as you scroll to them', get('autoExpand'), set('autoExpand')), 'replies');
       section(body, 'Layout');
       toggleRow(body, 'Hide the right sidebar', 'More room for posts', get('hideRightSidebar'), set('hideRightSidebar'));
-      const f = el('div', rd.hideRightSidebar ? 'ytt-off' : '');
+      const f = fold(!rd.hideRightSidebar, 'off');
       toggleRow(f, 'Hide the legal links', 'Reddit Rules, Privacy Policy, User Agreement, © ... under the sidebar', get('hideFooter'), set('hideFooter'));
       body.append(f);
     }
@@ -2375,7 +2378,7 @@ div.lava-blobs {
 
       section(body, 'The 🔍 on profiles');
       toggleRow(body, 'Show 🔍 next to the name', 'On profile pages; opens their history on Arctic Shift', get('profileButton'), set('profileButton'));
-      const o = el('div', srch.profileButton ? '' : 'ytt-off');
+      const o = fold(srch.profileButton);
       selectRow(o, 'Opens', null, [['posts', 'Posts'], ['comments', 'Comments']], get('type'), set('type'));
       body.append(o);
       section(body, 'Results');

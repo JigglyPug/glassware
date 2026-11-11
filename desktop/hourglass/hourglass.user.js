@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.6
+// @version      1.5.7
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.6';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.7';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -1898,7 +1898,7 @@ h1 span{color:var(--ink)}
             const off = !c.nudge;
             const bed = h('div', { class: 'tile full' }, this.label('Late-night nudge', inBedtime() ? 'Bedtime now' : null),
                 h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Take-a-break reminder' }), h('div', { class: 'd', text: "A friendly nudge when you're still browsing past bedtime, even outside lockdown." })), toggle(c.nudge, () => upd('nudge', !c.nudge), 'Late-night nudge')),
-                h('div', { style: 'margin-top:8px;' + (off ? 'opacity:.5' : '') },
+                h('div', { 'data-fold': 'on', hidden: off, style: 'margin-top:8px' },   // the reminder's own settings: only while it's on
                     this.slr('Bedtime starts', 'When late-night time starts counting', this.slider({ min: 36, max: 54, value: c.bedS < 24 ? c.bedS + 48 : c.bedS, disabled: off, label: 'Bedtime starts', fmt: v => fmtU(v % 48), commit: v => upd('bedS', v % 48) })),
                     this.slr('Bedtime ends', 'Morning, when it stops', this.slider({ min: 2, max: 22, value: c.bedE, disabled: off, label: 'Bedtime ends', fmt: v => fmtU(v), commit: v => upd('bedE', v) })),
                     this.slr('Nudge after', 'Minutes of late-night browsing between nudges', this.slider({ min: 5, max: 60, step: 5, value: c.nudgeAfter, disabled: off, label: 'Nudge after minutes', fmt: v => v + ' min', commit: v => upd('nudgeAfter', v) })),

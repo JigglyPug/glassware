@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 3.8.1 · 2026-11-11
+
+- Settings that belong to a switch now fold away while it's off (quality, player size, lava, random motion, title bar and seek bar colors) instead of sitting there dimmed. Turn the switch on and they're back as you left them.
+
 ## 3.8.0 · 2026-11-10
 
 - Screenshot safe now sits under Default account in the Account tab. While it's off, only its switch shows; turn it on and its settings open up.

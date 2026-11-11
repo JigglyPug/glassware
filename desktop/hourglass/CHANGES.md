@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.5.7 · 2026-11-11
+
+- The late-night reminder's settings fold away while the reminder is off.
+
 ## 1.5.6 · 2026-11-10
 
 - On a phone, pull the panel's handle or header down to close it, and taps inside the panel no longer reach the page behind.

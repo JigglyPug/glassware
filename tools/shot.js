@@ -247,6 +247,32 @@ function stubPage() {
   await page.waitForTimeout(waitMs);
   const helpers = `
     window.__all = (root = document) => { const out = []; const walk = r => { r.querySelectorAll('*').forEach(e => { out.push(e); if (e.shadowRoot) walk(e.shadowRoot); }); }; walk(root); return out; };
+    // Settings that belong to a switch fold away while it's off (CLAUDE.md, the panel frame): a [data-fold]
+    // straight after its switch's row shows only while the switch is on ("off": only while it's off; "far":
+    // its switch or choice is elsewhere, not checked here). And nothing is merely dimmed under an off switch.
+    window.__offSettings = () => {
+      const out = [];
+      const sw = el => el && (el.matches('input[type=checkbox],[role=switch]') ? el : el.querySelector('input[type=checkbox],[role=switch]'));
+      const isOn = s => s.matches('input') ? s.checked : s.getAttribute('aria-checked') === 'true';
+      const shown = e => e.getClientRects().length > 0;
+      const said = e => (e.textContent || '').replace(/[ \\n\\t]+/g, ' ').trim().slice(0, 40);
+      for (const e of __all()) {
+        const prev = e.previousElementSibling;
+        if (e.hasAttribute('data-fold')) {
+          const kind = e.getAttribute('data-fold') || 'on';
+          if (kind === 'far') continue;
+          const s = sw(prev);
+          if (!s) { out.push('a fold has no switch in the row before it ("' + said(e) + '")'); continue; }
+          if (!shown(s)) continue;
+          const want = isOn(s) === (kind !== 'off');
+          if (shown(e) !== want) out.push('the settings under "' + said(prev) + '" are ' + (shown(e) ? 'showing' : 'hidden') + ' while it is ' + (isOn(s) ? 'on' : 'off'));
+        } else if (prev && shown(e) && +getComputedStyle(e).opacity < 0.75 && e.querySelector('input,button,select,[role=switch],[role=slider]')) {
+          const s = sw(prev);
+          if (s && shown(s) && !isOn(s)) out.push('the settings under "' + said(prev) + '" are dimmed while it is off: fold them away (data-fold)');
+        }
+      }
+      return out;
+    };
     window.__panelRect = () => { const vw = innerWidth, vh = innerHeight; let best = null, ba = 0;
       for (const e of __all()) { const cs = getComputedStyle(e); if (cs.position !== 'fixed' || cs.display === 'none' || cs.visibility === 'hidden') continue;
         const r = e.getBoundingClientRect(); const a = r.width * r.height; if (a < 40000 || a > vw * vh * (window.__maxFrac || 0.92)) continue; if (window.__sheet && r.top < 8) continue; if (a > ba) { ba = a; best = r; } }
@@ -589,6 +615,7 @@ function stubPage() {
       await goTab(t);
       if (two) { await openOther(); if (t !== 'main') { await other.evaluate(t => __clickTab(t), t); await other.waitForTimeout(450); } }
       const n = await page.evaluate(() => __ctl().length);
+      for (const x of await page.evaluate(() => __offSettings())) issues.push(`${t} | ${x}`);
       if (has('--verbose')) console.log('CTL ' + t + ' ' + JSON.stringify(await page.evaluate(() => __ctl().map(c => c.kind + ':' + c.label + '=' + c.value))));
       // --slice k/n: only every n-th control, starting at the k-th (tools/live.py splits a tab over several browsers)
       const [sk, sn] = opt('--slice', '0/1').split('/').map(Number);
@@ -603,6 +630,7 @@ function stubPage() {
           return null; }, i);
         if (!what) continue;
         await page.waitForTimeout(1200);   // long enough for a fade or a color pick to land
+        for (const x of await page.evaluate(() => __offSettings())) issues.push(`${t} | ${x}`);
         const pg = two ? other : page;
         const live = await read(t, pg); await reopen(t, pg); const fresh = await read(t, pg);
         if (has('--verbose')) console.log('READ ' + what.slice(0, 40) + ' :: ' + JSON.stringify(live.st.filter(x => /^swatch|^field/.test(x[0]))));

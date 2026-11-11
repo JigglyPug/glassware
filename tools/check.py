@@ -109,6 +109,8 @@ for p, src in S.items():
     if old is not None and old != src:
         ov = hdr(old, 'version'); n += 1
         ok(vtuple(v) > vtuple(ov), f'{slug} changed but @version {v} is not higher than the live {ov}')
+    # settings under a switch fold away while it's off (data-fold), never just dimmed (tools/live.py checks the panels)
+    n += 1; ok(not re.search(r"\? '' : '[\w-]*off'\)|\? '[\w-]*off' : ''\)", src), f"{slug}: a group is dimmed with an 'off' class by its switch: fold it away instead (data-fold; CLAUDE.md, the panel frame)")
     # CHANGES.md: every release says what changed, in words a person reads; the newest is this @version
     cf = f'{R}/{plat}/{slug}/CHANGES.md'; n += 1
     if not os.path.exists(cf): ok(False, f'{slug}: no CHANGES.md'); continue

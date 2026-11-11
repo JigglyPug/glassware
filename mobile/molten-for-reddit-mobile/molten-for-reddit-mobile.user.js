@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.4.8
+// @version      1.4.9
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -2016,6 +2016,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-info b{font-weight:650}' +
       '#ytt-panel .ytt-note{opacity:.65;font-size:11.5px;margin-top:12px}' +
       '#ytt-panel .ytt-off{opacity:.4;pointer-events:none}' +
+      '#ytt-panel [data-fold][hidden]{display:none!important}' +
       '#ytt-panel details{margin-top:10px}' +
       '#ytt-panel .ytt-master{margin:10px 0 2px;padding:4px 12px;border-radius:12px;background:rgba(255,154,61,.1);border:1px solid rgba(255,154,61,.25)}' +
       '#ytt-panel .ytt-master .ytt-label{font-weight:650;font-size:14px}' +
@@ -2099,6 +2100,9 @@ div.lava-blobs {
       return l;
     }
     function section(parent, title) { parent.append(el('div', 'ytt-sec', title)); }
+    // The settings that belong to a switch sit in a fold straight after its row, and show only while it's
+    // on (kind 'off': only while it's off; 'far': its switch or choice is somewhere else). Nothing saved changes.
+    function fold(show, kind) { const d = el('div'); d.setAttribute('data-fold', kind || 'on'); d.hidden = !show; return d; }
 
     function toggleRow(parent, label, hint, get, set) {
       const row = el('label', 'ytt-row');
@@ -2232,7 +2236,7 @@ div.lava-blobs {
       section(body, 'Colors from the art');
       toggleRow(body, 'Match the video seek bar to the art', 'The address bar follows too, in browsers that support it',
         get('seekColor'), v => { gen.seekColor = v; gen.titleColor = v; saveGen(); TITLE.refresh(); render(); });
-      const k = el('div', gen.seekColor ? '' : 'ytt-off');
+      const k = fold(gen.seekColor);
       selectRow(k, 'Seek bar tone', null, [['bright', 'Bright'], ['title', 'Darker']], get('seekTone'), set('seekTone'));
       swatchRow(k, TITLE.seek);
       body.append(k);
@@ -2278,7 +2282,7 @@ div.lava-blobs {
 
     function buildLava(body) {
       toggleRow(body, 'Lava background', 'Off = clear glass over a plain dark page', () => lava.on, v => { lavaSet('on', v); render(); });
-      const look = el('div', lava.on ? '' : 'ytt-off');
+      const look = fold(lava.on);
       section(look, 'Lava');
       choiceRow(look, null, null, Object.keys(PRESETS).map(p => [p, PROFILE_NAMES[p]]), lavaStore.profile, p => lavaSwitchProfile(p));
       look.append(el('div', 'ytt-hint ytt-seg-hint', { calm: 'Soft and slow. Easiest on the battery.', user: 'A bit more color and movement.',
@@ -2367,7 +2371,7 @@ div.lava-blobs {
 
       section(body, 'The 🔍 on profiles');
       toggleRow(body, 'Show 🔍 next to the name', 'On profile pages; opens their history on Arctic Shift', get('profileButton'), set('profileButton'));
-      const o = el('div', srch.profileButton ? '' : 'ytt-off');
+      const o = fold(srch.profileButton);
       selectRow(o, 'Opens', null, [['posts', 'Posts'], ['comments', 'Comments']], get('type'), set('type'));
       body.append(o);
       section(body, 'Results');
