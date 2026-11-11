@@ -43,7 +43,8 @@ It checks, in order:
              a prompt goes only to the claude.ai tab opened for it (when Kaleidoscope changed)
   dashboard  the demo history matches its generator; tools/dash.py: every Hourglass card answers
              its question in a sentence that names the change, no figure on two cards, labelled
-             axes (when Hourglass changed)
+             axes; tools/importtest.py: Import settings keeps any file it's given in range, skips what
+             it can't read and won't read one over 1 MB (when Hourglass changed)
   live       tools/live.py: every control updates the panel on the spot, in the same tab and in a
              second open tab, with nothing waiting for a reopen (changed scripts)
   performance  tools/perf.py: over a long session nothing a script leaves behind keeps growing
@@ -407,6 +408,13 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/hou
         elif l.strip(): ok(False, f'hourglass dashboard: {l.strip()}')
     want = 2 * len(hgseed.PLANTED)
     ok(runs == want, f'the dashboard test reported {runs} of {want} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+    # tools/importtest.py: Import settings takes any file (damaged, from another app, huge) without harm
+    r = subprocess.run([sys.executable, f'{HERE}/importtest.py'], capture_output=True, text=True)
+    runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]
+    for l in runs:
+        if not l.endswith('clean'): ok(False, l[3:])
+    ok(len(runs) >= 9, f'the import test reported {len(runs)} of 9 cases: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+    if len(runs) >= 9 and r.returncode == 0: print('  ✓ hourglass import: damaged, foreign, out-of-range and oversized files change nothing they shouldn\'t')
 
 # ------------------------------------------------------------------ kaleidoscope
 # a board is AI-written code: tools/boardtest.py proves a hostile one can't send anything out, and

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.4
+// @version      1.5.5
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.4';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.5';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -1895,9 +1895,10 @@ h1 span{color:var(--ink)}
                 h('div', { class: 'dbtns' },
                     h('button', { class: 'btn', onclick: () => exportCSV() }, icon(ICONS.down, 13, 2.2), 'Export CSV'),
                     h('button', { class: 'btn', onclick: () => exportSettings() }, icon(ICONS.down, 13, 2.2), 'Export settings'),
-                    h('button', { class: 'btn', disabled: lock, title: lock ? 'Import after lockdown' : null, onclick: () => importSettings(() => this.render()) }, icon(ICONS.up, 13, 2.2), 'Import settings'),
+                    h('button', { class: 'btn', disabled: lock, title: lock ? 'Import after lockdown' : null, onclick: () => importSettings(m => { this.importMsg = m; this.render(); }) }, icon(ICONS.up, 13, 2.2), 'Import settings'),
                     h('button', { class: 'btn danger', disabled: lock, text: armed ? 'Click again to erase' : 'Reset all stats',
-                        onclick: () => { if (inLockdown()) return; if (Date.now() - this.resetArm < 4000) { resetStats(); this.resetArm = 0; } else this.resetArm = Date.now(); this.render(); } })));
+                        onclick: () => { if (inLockdown()) return; if (Date.now() - this.resetArm < 4000) { resetStats(); this.resetArm = 0; } else this.resetArm = Date.now(); this.render(); } })),
+                this.importMsg ? h('div', { class: 'd imp', role: 'status', style: 'margin-top:10px', text: this.importMsg }) : null);
             const look = h('div', { class: 'tile full' }, this.label('Appearance'),
                 h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Match my device' }), h('div', { class: 'd', text: 'Light or dark follows your device until you flip the switch up top' })),
                     toggle(get('appearance', 'auto') === 'auto', () => { set('appearance', get('appearance', 'auto') === 'auto' ? (isDark() ? 'dark' : 'light') : 'auto'); blocker.retheme(); this.render(); }, 'Match my device')));
@@ -1926,19 +1927,84 @@ h1 span{color:var(--ink)}
     function exportSettings() {
         download('hourglass-settings.json', JSON.stringify({ hourglass: VERSION, settings: S.cfg, schedule: S.sched, sites: S.sites, ignored: S.ignored }, null, 2), 'application/json');
     }
+    // An imported file is read as untrusted: only the settings Hourglass has, each the right kind and
+    // inside the range its control allows (so a file can't give you 1000 passes or a 0-second wait),
+    // the schedule and site lists checked entry by entry, and nothing over IMPORT_MAX bytes read at all.
+    const IMPORT_MAX = 1024 * 1024, LIST_MAX = 2000;
+    const RANGES = { passes: [0, 10], passLen: [1, 15], passWait: [10, 60], idle: [1, 10], gateDelay: [3, 15], goal: [60, 480], bedS: [0, 47], bedE: [2, 22], nudgeAfter: [5, 60] };
+    const CHOICES = { hist: [30, 90, 365], weekStart: ['mon', 'sun'], nudgeScope: ['list', 'all'] };
+    const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+    function cleanImport(j) {
+        const out = {}, skipped = [];
+        if (!isObj(j) || !['settings', 'schedule', 'sites', 'ignored'].some(k => k in j)) return null;
+        if ('settings' in j) {
+            if (!isObj(j.settings)) skipped.push('settings');
+            else {
+                const c = {};
+                for (const k of Object.keys(DEFAULTS)) {
+                    const v = j.settings[k], d = DEFAULTS[k];
+                    if (CHOICES[k]) { if (CHOICES[k].includes(v)) c[k] = v; }
+                    else if (typeof d === 'boolean') { if (typeof v === 'boolean') c[k] = v; }
+                    else if (typeof d === 'number' && typeof v === 'number' && isFinite(v)) {
+                        const [lo, hi] = RANGES[k], n = Math.min(hi, Math.max(lo, Math.round(v)));
+                        if (k !== 'bedS' || n >= 36 || n <= 6) c[k] = n;   // bedtime starts between 6 PM and 3 AM, as its slider allows
+                    }
+                }
+                if (typeof j.settings.armed === 'boolean') c.armed = j.settings.armed;
+                out.settings = c;
+            }
+        }
+        if ('schedule' in j) {
+            const ok = Array.isArray(j.schedule) && j.schedule.length === 7 && j.schedule.every(isObj);
+            if (!ok) skipped.push('schedule');
+            else out.schedule = j.schedule.map(d => ({ on: d.on === true, blocks: (Array.isArray(d.blocks) ? d.blocks : []).filter(b => isObj(b) &&
+                Number.isInteger(b.s) && Number.isInteger(b.e) && b.s >= 0 && b.e <= 48 && b.s < b.e).slice(0, 48).map(b => ({ s: b.s, e: b.e })) }));
+        }
+        if ('sites' in j) {
+            if (!Array.isArray(j.sites)) skipped.push('sites');
+            else {
+                const seen = new Set();
+                out.sites = j.sites.slice(0, LIST_MAX).map(x => isObj(x) && typeof x.d === 'string' ? { d: cleanDomain(x.d), cat: CAT[x.cat] ? x.cat : 'custom',
+                    rule: x.rule === 'always' ? 'always' : 'sched', on: x.on !== false } : null).filter(x => x && x.d && !seen.has(x.d) && seen.add(x.d));
+            }
+        }
+        if ('ignored' in j) {
+            if (!Array.isArray(j.ignored)) skipped.push('ignored sites');
+            else {
+                const seen = new Set();
+                out.ignored = j.ignored.slice(0, LIST_MAX).map(x => isObj(x) && typeof x.d === 'string' ? { d: cleanDomain(x.d), avg: typeof x.avg === 'number' && isFinite(x.avg) && x.avg > 0 ? x.avg : 0 } : null)
+                    .filter(x => x && x.d && !seen.has(x.d) && seen.add(x.d));
+            }
+        }
+        out.skipped = skipped;
+        return out;
+    }
     function importSettings(done) {
         if (inLockdown()) return;
         const inp = h('input', { type: 'file', accept: '.json,application/json', style: 'display:none' });
         inp.addEventListener('change', async () => {
+            let msg;
             try {
-                const j = JSON.parse(await inp.files[0].text());
-                if (j.settings) { S.cfg = Object.assign(clone(DEFAULTS), j.settings); if (typeof j.settings.armed !== 'boolean') S.cfg.armed = true; S.cfg.armAt = 0; saveCfg(); }
-                if (Array.isArray(j.schedule) && j.schedule.length === 7) { S.sched = j.schedule; set('schedule', S.sched); }
-                if (Array.isArray(j.sites)) { S.sites = j.sites.filter(s => s && cleanDomain(s.d)); set('sites', S.sites); }
-                if (Array.isArray(j.ignored)) { S.ignored = j.ignored; set('ignored', S.ignored); }
-                evaluate();
-            } catch {}
-            inp.remove(); done && done();
+                const f = inp.files[0];
+                if (!f) msg = '';
+                else if (f.size > IMPORT_MAX) msg = 'That file is too big to be Hourglass settings (' + (f.size / 1048576).toFixed(1) + ' MB), so nothing was imported.';
+                else {
+                    let j = null;
+                    try { j = JSON.parse(await f.text()); } catch {}
+                    const c = j === null ? null : cleanImport(j);
+                    if (!c) msg = 'That isn\'t an Hourglass settings file, so nothing was imported.';
+                    else if (inLockdown()) msg = 'Import after lockdown.';
+                    else {
+                        if (c.settings) { S.cfg = Object.assign(clone(DEFAULTS), c.settings); if (typeof c.settings.armed !== 'boolean') S.cfg.armed = true; S.cfg.armAt = 0; saveCfg(); }
+                        if (c.schedule) { S.sched = c.schedule; set('schedule', S.sched); }
+                        if (c.sites) { S.sites = c.sites; set('sites', S.sites); }
+                        if (c.ignored) { S.ignored = c.ignored; set('ignored', S.ignored); }
+                        evaluate();
+                        msg = 'Imported.' + (c.skipped.length ? ' Skipped the ' + c.skipped.join(' and ') + ', which couldn\'t be read.' : '');
+                    }
+                }
+            } catch (e) { msg = 'Couldn\'t read that file, so nothing was imported.'; }
+            inp.remove(); done && done(msg);
         });
         (document.body || document.documentElement).append(inp); inp.click();
     }

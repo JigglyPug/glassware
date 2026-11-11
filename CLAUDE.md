@@ -138,6 +138,11 @@ tools/                                builders for all of the above
 - `tools/check.py` enforces the last two (permissions, privacy) on every run, runs the Kaleidoscope
   tests when Kaleidoscope changes, the logging test when Molten Tools changes and the network test when a
   script that makes requests changes (GitHub runs all three every time).
+- **An imported file is untrusted.** Hourglass's Import settings won't read a file over 1 MB, keeps
+  only the settings it has (each the right kind, inside the range its control allows, so a file
+  can't hand out 1000 passes), checks the schedule and site lists entry by entry, skips a part it
+  can't read, and says in the panel what happened. `tools/importtest.py` hands it damaged, foreign,
+  out-of-range and oversized files and its own export. A new import gets the same treatment and a case there.
 
 ## The panel frame (every script's settings panel)
 
