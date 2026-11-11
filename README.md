@@ -41,15 +41,13 @@ Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates it
 <tr><td align="center" valign="top" width="50%"><a href="mobile/kaleidoscope-mobile"><img src="mobile/kaleidoscope-mobile/images/card-cut.webp" alt="Kaleidoscope Mobile in light and dark" width="380"></a><br><h3><img src="assets/icons/kaleidoscope-mobile.png" alt="" width="44" align="center"> <a href="mobile/kaleidoscope-mobile">Kaleidoscope Mobile</a></h3>Kaleidoscope, made for your phone.<br><sub>anilist.co</sub><br><sub>Desktop version: <a href="desktop/kaleidoscope">Kaleidoscope</a></sub><br><br><a href="https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js"><img src="https://img.shields.io/badge/Install-v1.3.7-3db4f2?style=for-the-badge"></a></td><td align="center" valign="top" width="50%"><a href="mobile/molten-for-reddit-mobile"><img src="mobile/molten-for-reddit-mobile/images/card-cut.webp" alt="Molten for Reddit Mobile in light and dark" width="380"></a><br><h3><img src="assets/icons/molten-for-reddit-mobile.png" alt="" width="44" align="center"> <a href="mobile/molten-for-reddit-mobile">Molten for Reddit Mobile</a></h3>Molten glass for Reddit, pocket size.<br><sub>reddit.com</sub><br><sub>Desktop version: <a href="desktop/molten-for-reddit">Molten for Reddit</a></sub><br><br><a href="https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js"><img src="https://img.shields.io/badge/Install-v1.4.7-ff8a3d?style=for-the-badge"></a></td></tr>
 </table>
 
-## Help
+<a name="help"></a>
+<details><summary><b>Help</b></summary>
 
-- **What you need: Tampermonkey 5 or later**, in any browser it runs in. The scripts are made for it: they keep their
-  settings in Tampermonkey's storage, hear each other's changes so every open tab updates at once,
-  add their commands to its menu, and (Kaleidoscope, Prism, Looking-Glass and the Molten scripts) make
-  their requests through it. Other script managers may run them, but they aren't tested there.
-- **Chrome and Edge:** turn on **Allow user scripts** on Tampermonkey's details page (the browser's
-  Extensions page → Tampermonkey → Details), or no script runs.
+- **What you need:** [Tampermonkey](https://www.tampermonkey.net/) 5 or later.
 - **Install shows the script's code instead of Tampermonkey's install page?** Update Tampermonkey:
   recent versions of Chrome no longer hand `.user.js` links to extensions, and newer Tampermonkey
   builds install them another way. Until then, copy the Install link and paste it into the URL box on
   the Utilities tab of Tampermonkey's dashboard.
+
+</details>

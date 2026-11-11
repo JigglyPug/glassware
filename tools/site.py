@@ -94,7 +94,7 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
 .hero p.need{font-size:13px;margin:-16px auto 22px}.hero p.need a{color:var(--sub)}
-.help{max-width:720px;margin:56px auto 0}.help .note{font-size:14px;line-height:1.6}.help .note p{margin:0}.help .note p+p{margin-top:10px}.help b{color:var(--fg)}
+.help{max-width:720px;margin:56px auto 0;text-align:center}.help summary{display:inline-block;cursor:pointer;font-size:13px;color:var(--sub);list-style:none;padding:4px 10px;border-radius:8px}.help summary::-webkit-details-marker{display:none}.help summary::after{content:' ▾'}.help[open] summary::after{content:' ▴'}.help summary:hover{color:var(--fg)}.help .note{margin-top:10px;text-align:left;font-size:14px;line-height:1.6}.help .note p{margin:0}.help .note p+p{margin-top:10px}.help b{color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
 .chip{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:8px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--edge);color:var(--sub)}
 /* grid */
@@ -264,7 +264,10 @@ function fromHash(){var h=location.hash.slice(1);if(h==='mobile')h='phone';retur
 bs.forEach(function(x){x.addEventListener('click',function(){set(x.dataset.v,true)})});
 addEventListener('hashchange',function(){var h=fromHash();if(h){set(h);scrollTo({top:0})}});
 var phone=matchMedia('(pointer:coarse) and (max-width:860px)').matches;
-set(fromHash()||(phone?'phone':'all'))})();
+set(fromHash()||(phone?'phone':'all'));
+var help=document.getElementById('help');function openHelp(){if(help&&location.hash==='#help')help.open=true}
+addEventListener('hashchange',openHelp);openHelp();
+[].forEach.call(document.querySelectorAll('a[href="#help"]'),function(a){a.addEventListener('click',function(){if(help)help.open=true})})})();
 </script>"""
 body = f"""<main class="wrap">
 <header class="hero"><h1>Glass for the <span>web.</span></h1>
@@ -273,10 +276,10 @@ body = f"""<main class="wrap">
 <div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
 <div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></header>
 {sections}
-<section class="help" id="help"><div class="label">Help</div><div class="note glass">
-<p><b>What you need.</b> <a href="https://www.tampermonkey.net/">Tampermonkey</a> 5 or later. On Chrome and Edge, also turn on <b>Allow user scripts</b> on Tampermonkey's details page (the browser's Extensions page, then Tampermonkey, then Details), or no script runs.</p>
+<details class="help" id="help"><summary>Help</summary><div class="note glass">
+<p><b>What you need.</b> <a href="https://www.tampermonkey.net/">Tampermonkey</a> 5 or later.</p>
 <p><b>Install shows the script's code?</b> Update Tampermonkey: recent versions of Chrome no longer hand <code>.user.js</code> links to extensions, and newer Tampermonkey builds install them another way. Until then, copy the Install link and paste it into the URL box on the Utilities tab of Tampermonkey's dashboard.</p>
-</div></section></main>
+</div></details></main>
 {FILTER}"""
 (lambda h: None if ONLY else open(f'{D}/index.html', 'w', encoding='utf-8').write(h))(page('Glassware by JigglyPug', 'Glassware: frosted-glass, lava-lit tools for Tampermonkey.', 'molten', '#ff8a3d', body, 0, '', 'og.png'))
 

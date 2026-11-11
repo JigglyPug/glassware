@@ -50,10 +50,10 @@
 <div class="meta"><span class="chip">reddit.com</span><span class="chip">Phone</span><span class="chip">v1.4.7</span><a class="chip" href="desktop/molten-for-reddit/">Desktop version ↗</a></div>
 <div class="acts"><a class="btn pri" href="https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js">Install</a><a class="btn sec" href="mobile/molten-for-reddit-mobile/">Details</a></div></div></article></div></section>
 
-<section class="help" id="help"><div class="label">Help</div><div class="note glass">
-<p><b>What you need.</b> <a href="https://www.tampermonkey.net/">Tampermonkey</a> 5 or later. On Chrome and Edge, also turn on <b>Allow user scripts</b> on Tampermonkey's details page (the browser's Extensions page, then Tampermonkey, then Details), or no script runs.</p>
+<details class="help" id="help"><summary>Help</summary><div class="note glass">
+<p><b>What you need.</b> <a href="https://www.tampermonkey.net/">Tampermonkey</a> 5 or later.</p>
 <p><b>Install shows the script's code?</b> Update Tampermonkey: recent versions of Chrome no longer hand <code>.user.js</code> links to extensions, and newer Tampermonkey builds install them another way. Until then, copy the Install link and paste it into the URL box on the Utilities tab of Tampermonkey's dashboard.</p>
-</div></section></main>
+</div></details></main>
 <script>
 (function(){var b=document.body,bs=[].slice.call(document.querySelectorAll('.seg button'));
 function set(v,push){b.dataset.for=v;bs.forEach(function(x){x.setAttribute('aria-pressed',x.dataset.v===v)});
@@ -62,7 +62,10 @@ function fromHash(){var h=location.hash.slice(1);if(h==='mobile')h='phone';retur
 bs.forEach(function(x){x.addEventListener('click',function(){set(x.dataset.v,true)})});
 addEventListener('hashchange',function(){var h=fromHash();if(h){set(h);scrollTo({top:0})}});
 var phone=matchMedia('(pointer:coarse) and (max-width:860px)').matches;
-set(fromHash()||(phone?'phone':'all'))})();
+set(fromHash()||(phone?'phone':'all'));
+var help=document.getElementById('help');function openHelp(){if(help&&location.hash==='#help')help.open=true}
+addEventListener('hashchange',openHelp);openHelp();
+[].forEach.call(document.querySelectorAll('a[href="#help"]'),function(a){a.addEventListener('click',function(){if(help)help.open=true})})})();
 </script>
 <footer>Made by <b>JigglyPug</b> · Built for <a href="https://www.tampermonkey.net/">Tampermonkey</a> · <a href="https://github.com/JigglyPug/glassware">Source on GitHub</a><span class="matchwrap" hidden> · <button class="match" type="button">Match my device</button></span></footer>
 <script>

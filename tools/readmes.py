@@ -237,18 +237,16 @@ Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates it
 ## {title}
 
 {grid(g)}""" for g, title in GROUPS) + """
-## Help
+<a name="help"></a>
+<details><summary><b>Help</b></summary>
 
-- **What you need: Tampermonkey 5 or later**, in any browser it runs in. The scripts are made for it: they keep their
-  settings in Tampermonkey's storage, hear each other's changes so every open tab updates at once,
-  add their commands to its menu, and (Kaleidoscope, Prism, Looking-Glass and the Molten scripts) make
-  their requests through it. Other script managers may run them, but they aren't tested there.
-- **Chrome and Edge:** turn on **Allow user scripts** on Tampermonkey's details page (the browser's
-  Extensions page → Tampermonkey → Details), or no script runs.
+- **What you need:** [Tampermonkey](https://www.tampermonkey.net/) 5 or later.
 - **Install shows the script's code instead of Tampermonkey's install page?** Update Tampermonkey:
   recent versions of Chrome no longer hand `.user.js` links to extensions, and newer Tampermonkey
   builds install them another way. Until then, copy the Install link and paste it into the URL box on
   the Utilities tab of Tampermonkey's dashboard.
+
+</details>
 """
 if not ONLY: open(f'{R}/README.md', 'w', encoding='utf-8').write(root)
 ROOT_CARD = card
