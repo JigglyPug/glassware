@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Hourglass: Screen time and lockdown for every site." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.5.5-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
+[![Install](https://img.shields.io/badge/Install-v1.5.6-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -48,8 +48,8 @@ The same script switches to a phone layout on its own: a bottom-sheet menu, the 
 
 ## What's new
 
+- **1.5.6** (2026-11-10): On a phone, pull the panel's handle or header down to close it, and taps inside the panel no longer reach the page behind.
 - **1.5.5** (2026-11-10): Import settings checks the file: every setting stays in range, what can't be read is skipped, and the panel says what happened.
 - **1.5.4** (2026-11-09): Day charts include today so far.
-- **1.5.3** (2026-11-06): Rows of buttons share the width evenly.
 
 [Every change](CHANGES.md)

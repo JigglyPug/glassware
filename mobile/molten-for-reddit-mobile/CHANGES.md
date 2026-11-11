@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.4.8 · 2026-11-10
+
+- Pull the panel's handle or header down to close it, and touches inside the panel no longer reach Reddit behind it.
+
 ## 1.4.7 · 2026-11-07
 
 - Security fixes.

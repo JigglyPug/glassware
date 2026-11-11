@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Kaleidoscope Mobile: Kaleidoscope, made for your phone." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.3.7-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/kaleidoscope-mobile/)
+[![Install](https://img.shields.io/badge/Install-v1.3.8-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/kaleidoscope-mobile/kaleidoscope-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/kaleidoscope-mobile/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Phone-555?style=flat-square)
 
@@ -31,8 +31,8 @@ This is the phone version of Kaleidoscope, built for Edge on Android. It uses th
 
 ## What's new
 
+- **1.3.8** (2026-11-10): Pull the menu's handle or header down to close it, and taps inside the menu no longer reach AniList behind it.
 - **1.3.7** (2026-11-10): When AniList is slow, down or unreachable, the panel says so plainly.
 - **1.3.6** (2026-11-06): Rows of buttons share the width evenly.
-- **1.3.5** (2026-11-06): The panel's size and corners match every other Glassware panel.
 
 [Every change](CHANGES.md)

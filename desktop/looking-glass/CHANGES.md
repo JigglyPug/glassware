@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.2.6 · 2026-11-10
+
+- On a phone, pull the panel's handle or header down to close it, and touches inside the panel no longer reach the page behind.
+
 ## 1.2.5 · 2026-11-10
 
 - An icon address that redirects to your own network is ignored.

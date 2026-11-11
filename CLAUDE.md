@@ -159,7 +159,10 @@ and keep existing ones on it.
 
 - **Shell.** Desktop: top right, 16px from the edges, 400px wide, 22px corners (panel shape below), scrolling inside
   (Hourglass stays at its fixed 760px top-right size for the dashboard; don't change it).
-  Phones: a bottom sheet with a grab handle.
+  Phones: a bottom sheet with a grab handle. Pulling the handle or the header down closes it (a short
+  pull springs back), and no touch, tap or click inside it reaches the page behind. Both come from
+  `gwSheetGestures()`, stamped by `tools/frame.py` like the controls; every script that runs on phones
+  calls it, and `tools/touchtest.py` works each sheet with real touches (`shot.js --drive`).
 - **Header.** Icon tile (the script's glyph on its own colors), then name and tagline, then the
   sun/moon switch (`aria-label` "Dark mode"), then a round close button on the right.
 - **Control sizes** (the same in every panel; design tokens in `tools/tokens.json`, which the frame,

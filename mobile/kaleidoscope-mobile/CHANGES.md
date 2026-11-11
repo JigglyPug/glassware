@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.3.8 · 2026-11-10
+
+- Pull the menu's handle or header down to close it, and taps inside the menu no longer reach AniList behind it.
+
 ## 1.3.7 · 2026-11-10
 
 - When AniList is slow, down or unreachable, the panel says so plainly.

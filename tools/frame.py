@@ -10,7 +10,8 @@ variables and CSS style. Change the frame here, run this, recapture and ship; ne
 block by hand (the check fails), and never style these controls outside it (the check fails too).
 
 The close button's icon is stamped the same way (`gwCloseIcon()`, between `glassware:icon` markers),
-so every panel draws the same ×.
+so every panel draws the same ×, and so is a phone sheet's touch handling (`gwSheetGestures()`,
+between `glassware:sheet` markers): every sheet swipes down to close and keeps touches to itself.
 """
 import os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
@@ -122,6 +123,34 @@ ICON = """function gwCloseIcon() {   // glassware:icon (the close button's ×, s
 {i}    return s;
 {i}}   // glassware:icon end"""
 
+SHEET = """function gwSheetGestures(sheet, grip, close, wall) {   // glassware:sheet (a phone sheet's touch handling, stamped by tools/frame.py)
+{i}    // Touches inside the sheet stay inside: none reach the page behind (wall: where they stop, the shadow
+{i}    // host when there is one, so the panel's own listeners still hear them). Pull the handle or the
+{i}    // header (grip: a selector, or a test of the touched element) down and the sheet follows the finger; let go past 90px, or flick, and
+{i}    // it closes; any shorter and it springs back. Buttons and switches in the header still just tap.
+{i}    for (const t of ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointerup', 'click']) (wall || sheet).addEventListener(t, e => e.stopPropagation());
+{i}    let y0 = null, t0 = 0, dy = 0;
+{i}    const isGrip = typeof grip === 'function' ? grip : t => !!t.closest(grip);
+{i}    sheet.addEventListener('touchstart', e => {
+{i}        const t = e.target;
+{i}        if (e.touches.length !== 1 || !t.closest || !isGrip(t) || t.closest('button,input,select,textarea,a,label,[role="tab"],[role="switch"]')) return;
+{i}        y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0; sheet.style.transition = 'none';
+{i}    }, { passive: true });
+{i}    sheet.addEventListener('touchmove', e => {
+{i}        if (y0 === null) return;
+{i}        dy = Math.max(0, e.touches[0].clientY - y0); sheet.style.transform = dy ? 'translateY(' + dy + 'px)' : '';
+{i}        if (dy > 4 && e.cancelable) e.preventDefault();   // the page mustn't scroll or pull-to-refresh underneath
+{i}    }, { passive: false });
+{i}    const end = () => {
+{i}        if (y0 === null) return;
+{i}        const flick = dy > 30 && dy / Math.max(1, Date.now() - t0) > 0.6; y0 = null;
+{i}        sheet.style.transition = 'transform .2s ease';
+{i}        if (dy > 90 || flick) { sheet.style.transform = 'translateY(100%)'; setTimeout(() => { close(); sheet.style.transform = ''; sheet.style.transition = ''; }, 180); }
+{i}        else sheet.style.transform = '';
+{i}    };
+{i}    sheet.addEventListener('touchend', end); sheet.addEventListener('touchcancel', end);
+{i}}   // glassware:sheet end"""
+
 def stamp(src, p):
     f = FRAMES[p]
     m = re.search(r'([ \t]*)(?:/\*|//) ' + re.escape(START) + r'.*?' + re.escape(END) + r'(?: \*/)?', src, re.S)
@@ -129,7 +158,11 @@ def stamp(src, p):
     src = src[:m.start()] + (m.group(1) if f['css'] == 'template' else '') + block(p, f, m.group(1)) + src[m.end():]
     m = re.search(r'([ \t]*)function gwCloseIcon\(\) \{   // glassware:icon.*?// glassware:icon end', src, re.S)
     if not m: raise SystemExit(f'{p}: no gwCloseIcon() block')
-    return src[:m.start()] + m.group(1) + ICON.replace('{i}', m.group(1)) + src[m.end():]
+    src = src[:m.start()] + m.group(1) + ICON.replace('{i}', m.group(1)) + src[m.end():]
+    # phone sheets (scripts that run on phones, and the kit) carry the shared touch handling too
+    m = re.search(r'([ \t]*)function gwSheetGestures\(sheet, grip, close, wall\) \{   // glassware:sheet.*?// glassware:sheet end', src, re.S)
+    if m: src = src[:m.start()] + m.group(1) + SHEET.replace('{i}', m.group(1)) + src[m.end():]
+    return src
 
 # Selectors only the stamped block may style (so a copy can't drift outside it).
 def owned(f):

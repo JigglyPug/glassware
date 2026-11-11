@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.4.7
+// @version      1.4.8
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -2035,6 +2035,33 @@ div.lava-blobs {
         for (const d of ['M6 6l12 12', 'M18 6 6 18']) { const q = document.createElementNS(NS, 'path'); q.setAttribute('d', d); s.append(q); }
         return s;
     }   // glassware:icon end
+    function gwSheetGestures(sheet, grip, close, wall) {   // glassware:sheet (a phone sheet's touch handling, stamped by tools/frame.py)
+        // Touches inside the sheet stay inside: none reach the page behind (wall: where they stop, the shadow
+        // host when there is one, so the panel's own listeners still hear them). Pull the handle or the
+        // header (grip: a selector, or a test of the touched element) down and the sheet follows the finger; let go past 90px, or flick, and
+        // it closes; any shorter and it springs back. Buttons and switches in the header still just tap.
+        for (const t of ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointerup', 'click']) (wall || sheet).addEventListener(t, e => e.stopPropagation());
+        let y0 = null, t0 = 0, dy = 0;
+        const isGrip = typeof grip === 'function' ? grip : t => !!t.closest(grip);
+        sheet.addEventListener('touchstart', e => {
+            const t = e.target;
+            if (e.touches.length !== 1 || !t.closest || !isGrip(t) || t.closest('button,input,select,textarea,a,label,[role="tab"],[role="switch"]')) return;
+            y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0; sheet.style.transition = 'none';
+        }, { passive: true });
+        sheet.addEventListener('touchmove', e => {
+            if (y0 === null) return;
+            dy = Math.max(0, e.touches[0].clientY - y0); sheet.style.transform = dy ? 'translateY(' + dy + 'px)' : '';
+            if (dy > 4 && e.cancelable) e.preventDefault();   // the page mustn't scroll or pull-to-refresh underneath
+        }, { passive: false });
+        const end = () => {
+            if (y0 === null) return;
+            const flick = dy > 30 && dy / Math.max(1, Date.now() - t0) > 0.6; y0 = null;
+            sheet.style.transition = 'transform .2s ease';
+            if (dy > 90 || flick) { sheet.style.transform = 'translateY(100%)'; setTimeout(() => { close(); sheet.style.transform = ''; sheet.style.transition = ''; }, 180); }
+            else sheet.style.transform = '';
+        };
+        sheet.addEventListener('touchend', end); sheet.addEventListener('touchcancel', end);
+    }   // glassware:sheet end
     const el = (tag, cls, text) => {
       const e = document.createElement(tag);
       if (cls) e.className = cls;
@@ -2419,8 +2446,9 @@ div.lava-blobs {
           e.stopPropagation();
         });
       }
-      // clicks inside the panel shouldn't reach Reddit (it would open the post underneath)
-      panelEl.addEventListener('click', e => e.stopPropagation());
+      // clicks and touches inside the panel shouldn't reach Reddit (it would open the post underneath);
+      // pull the handle or the header down to close
+      gwSheetGestures(panelEl, t => t === panelEl || !!t.closest('.ytt-head'), close);
 
       document.body.append(panelEl);
       LOOK.apply();

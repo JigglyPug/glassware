@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Looking-Glass: Open any video on its own." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.2.5-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
+[![Install](https://img.shields.io/badge/Install-v1.2.6-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -26,8 +26,8 @@ Looking-Glass puts a small circle in the corner of every video, in the site's ow
 
 ## What's new
 
+- **1.2.6** (2026-11-10): On a phone, pull the panel's handle or header down to close it, and touches inside the panel no longer reach the page behind.
 - **1.2.5** (2026-11-10): An icon address that redirects to your own network is ignored.
 - **1.2.4** (2026-11-07): Security fixes.
-- **1.2.3** (2026-11-06): The panel's size and corners match every other Glassware panel.
 
 [Every change](CHANGES.md)

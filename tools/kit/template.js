@@ -107,6 +107,33 @@ __APPLY__
         for (const d of ['M6 6l12 12', 'M18 6 6 18']) { const q = document.createElementNS(NS, 'path'); q.setAttribute('d', d); s.append(q); }
         return s;
     }   // glassware:icon end
+    function gwSheetGestures(sheet, grip, close, wall) {   // glassware:sheet (a phone sheet's touch handling, stamped by tools/frame.py)
+        // Touches inside the sheet stay inside: none reach the page behind (wall: where they stop, the shadow
+        // host when there is one, so the panel's own listeners still hear them). Pull the handle or the
+        // header (grip: a selector, or a test of the touched element) down and the sheet follows the finger; let go past 90px, or flick, and
+        // it closes; any shorter and it springs back. Buttons and switches in the header still just tap.
+        for (const t of ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointerup', 'click']) (wall || sheet).addEventListener(t, e => e.stopPropagation());
+        let y0 = null, t0 = 0, dy = 0;
+        const isGrip = typeof grip === 'function' ? grip : t => !!t.closest(grip);
+        sheet.addEventListener('touchstart', e => {
+            const t = e.target;
+            if (e.touches.length !== 1 || !t.closest || !isGrip(t) || t.closest('button,input,select,textarea,a,label,[role="tab"],[role="switch"]')) return;
+            y0 = e.touches[0].clientY; t0 = Date.now(); dy = 0; sheet.style.transition = 'none';
+        }, { passive: true });
+        sheet.addEventListener('touchmove', e => {
+            if (y0 === null) return;
+            dy = Math.max(0, e.touches[0].clientY - y0); sheet.style.transform = dy ? 'translateY(' + dy + 'px)' : '';
+            if (dy > 4 && e.cancelable) e.preventDefault();   // the page mustn't scroll or pull-to-refresh underneath
+        }, { passive: false });
+        const end = () => {
+            if (y0 === null) return;
+            const flick = dy > 30 && dy / Math.max(1, Date.now() - t0) > 0.6; y0 = null;
+            sheet.style.transition = 'transform .2s ease';
+            if (dy > 90 || flick) { sheet.style.transform = 'translateY(100%)'; setTimeout(() => { close(); sheet.style.transform = ''; sheet.style.transition = ''; }, 180); }
+            else sheet.style.transform = '';
+        };
+        sheet.addEventListener('touchend', end); sheet.addEventListener('touchcancel', end);
+    }   // glassware:sheet end
     function h(tag, attrs, ...kids) {
         const el = document.createElement(tag);
         for (const [k, v] of Object.entries(attrs || {})) {
@@ -233,6 +260,8 @@ button{cursor:pointer}
             // clicks and keys inside the panel never reach the site
             for (const t of ['click', 'mousedown', 'pointerdown', 'keydown', 'keyup', 'keypress', 'wheel', 'touchstart'])
                 this.host.addEventListener(t, e => { e.stopPropagation(); if (t === 'keydown' && e.key === 'Escape') this.close(); });
+            // on a phone (a bottom sheet): touches stay inside, and pulling the handle or the header down closes it
+            if (matchMedia('(pointer: coarse)').matches) gwSheetGestures(this.panel, '.grab, .head', () => this.close(), this.host);
             this.esc = e => { if (e.key === 'Escape') this.close(); };
             document.addEventListener('keydown', this.esc, true);
             document.documentElement.append(this.host);

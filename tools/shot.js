@@ -458,6 +458,9 @@ function stubPage() {
   if (has('--audit')) { await page.evaluate(t => { window.__theme = t; }, theme); await page.evaluate(auditJs); }
   if (opt('--maxfrac', '')) await page.evaluate(f => { window.__maxFrac = f; }, +opt('--maxfrac', '0.92'));
   if (has('--sheet')) await page.evaluate(() => { window.__sheet = true; });
+  // --drive <file.js>: a Node module (async (page, ctx) => result) that works the page from outside, the way a
+  // person does: real taps and swipes on a touchscreen (tools/touchtest.py). Its result prints as EVAL, like --eval.
+  if (opt('--drive', '')) { const v = await require(require('path').resolve(opt('--drive', '')))(page, ctx); console.log('EVAL ' + JSON.stringify(v)); await browser.close(); return; }
   if (evalJs) { const v = await page.evaluate(evalJs); if (has('--print')) console.log('EVAL ' + JSON.stringify(v)); await page.waitForTimeout(900); }   // --print: show what --eval returned
   // nothing to capture: a test that only wanted what --eval found (and the requests and console lines on the way)
   if (evalJs && out === '/dev/null' && !has('--audit')) { await browser.close(); return; }

@@ -33,6 +33,8 @@ It checks, in order:
   commits    commits not yet pushed are by JigglyPug and carry no chat or session links
   generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
   changes    each script's CHANGES.md starts at its @version, newest first, every entry with a line
+  touch      tools/touchtest.py: every phone sheet with real touches: taps work, a scroll stays in the
+             sheet, nothing reaches the page, the handle swipes it closed (phone scripts changed)
   settings   tools/carry.py: settings and saved data survive the update, from the live version and from
              several releases back (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
@@ -380,6 +382,13 @@ done(n)
 
 # ------------------------------------------------------------------ registry
 head('registry'); n = 0
+# every script that runs on a phone (and the kit) uses the stamped sheet handling, and is in tools/touchtest.py
+import touchtest
+for p, src in {**S, **KIT}.items():
+    plat, slug = info(p); key = f'{plat}/{slug}'
+    if key in RUNS and RUNS[key] == 'desktop': continue
+    n += 1; ok(src.count('gwSheetGestures(') >= 2, f'{slug} runs on phones: its sheet should call gwSheetGestures() (the stamped touch handling; tools/frame.py)')
+    if key in RUNS: n += 1; ok(key in touchtest.PHONE, f'{slug} runs on phones: add it to PHONE in tools/touchtest.py')
 from screens import JOBS
 from features import F
 from site_themes import THEME
@@ -483,6 +492,17 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kal
         for l in lines:
             if l.startswith('== ') and l.endswith('clean'): print('  ✓ ' + (goods[runs.index(l)] if runs.index(l) < len(goods) else l[3:]))
             elif not l.startswith('== '): ok(False, l[3:].split(':')[0] + ': ' + l.strip() if l.startswith('== ') else 'kaleidoscope: ' + l.strip())
+
+# ------------------------------------------------------------------ touch
+# tools/touchtest.py: every phone sheet with real touches (taps, a scroll inside, the handle), none reaching the page
+TOUCHES = list(touchtest.PHONE)
+touch_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/touchtest.py', 'tools/touch_drive.js', 'tools/frame.py').returncode != 0
+if '--ci' in args or ('--quick' not in args and ('--all' in args or touch_tool or any(p in changed for p in TOUCHES))):
+    head('touch')
+    r = subprocess.run([sys.executable, f'{HERE}/touchtest.py'], capture_output=True, text=True)
+    runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]
+    for l in runs: ok(l.endswith('clean'), 'touch: ' + l[3:]) if not l.endswith('clean') else print('  ✓ ' + l[3:].replace(': clean', ': taps, scrolling, the handle; nothing reaches the page'))
+    ok(len(runs) == len(TOUCHES), f'the touch test reported {len(runs)} of {len(TOUCHES)} sheets: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
 
 # ------------------------------------------------------------------ network
 # tools/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope when requests hang, fail, return junk or drop
