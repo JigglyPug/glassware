@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.4.8
+// @version      2.4.9
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1688,7 +1688,11 @@ div.lava-blobs {
       if (!ENABLED || !rd.commentSort || !isPostPage()) return;
       const next = sortedUrl(location.href);
       const key = 'molten.sorted:' + location.pathname;
-      if (next && !sessionStorage.getItem(key)) {
+      // if this browser won't let the page read its storage, leave the sort alone: without the note below
+      // it couldn't tell a first visit from a sort you picked yourself, and would keep forcing its own
+      let seen = true;
+      try { seen = !!sessionStorage.getItem(key); } catch (e) { /* storage blocked */ }
+      if (next && !seen) {
         try { sessionStorage.setItem(key, '1'); } catch (e) { /* ignore */ }
         location.replace(next);
       }
@@ -1699,7 +1703,7 @@ div.lava-blobs {
     const seenBtns = new WeakSet();
     const io = new IntersectionObserver(entries => {
       for (const en of entries) {
-        if (!en.isIntersecting || !ENABLED || !rd.autoExpand || clicks > 150) continue;
+        if (!en.isIntersecting || !ENABLED || !rd.autoExpand || clicks >= 150) continue;
         io.unobserve(en.target);
         clicks++;
         en.target.click();

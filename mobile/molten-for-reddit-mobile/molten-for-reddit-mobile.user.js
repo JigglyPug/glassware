@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.4.9
+// @version      1.4.10
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1694,7 +1694,11 @@ div.lava-blobs {
       if (!ENABLED || !rd.commentSort || !isPostPage()) return;
       const next = sortedUrl(location.href);
       const key = 'molten.sorted:' + location.pathname;
-      if (next && !sessionStorage.getItem(key)) {
+      // if this browser won't let the page read its storage, leave the sort alone: without the note below
+      // it couldn't tell a first visit from a sort you picked yourself, and would keep forcing its own
+      let seen = true;
+      try { seen = !!sessionStorage.getItem(key); } catch (e) { /* storage blocked */ }
+      if (next && !seen) {
         try { sessionStorage.setItem(key, '1'); } catch (e) { /* ignore */ }
         location.replace(next);
       }
@@ -1705,7 +1709,7 @@ div.lava-blobs {
     const seenBtns = new WeakSet();
     const io = new IntersectionObserver(entries => {
       for (const en of entries) {
-        if (!en.isIntersecting || !ENABLED || !rd.autoExpand || clicks > 150) continue;
+        if (!en.isIntersecting || !ENABLED || !rd.autoExpand || clicks >= 150) continue;
         io.unobserve(en.target);
         clicks++;
         en.target.click();

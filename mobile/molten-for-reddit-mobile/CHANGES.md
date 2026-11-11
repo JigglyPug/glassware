@@ -2,6 +2,11 @@
 
 Newest first.
 
+## 1.4.10 · 2026-11-11
+
+- Opening reply threads on its own now stops at exactly 150 per page (it allowed 151).
+- If the browser blocks the page's storage, the comment-sort step is skipped instead of stopping the script from starting.
+
 ## 1.4.9 · 2026-11-11
 
 - Settings that belong to a switch now fold away while it's off (lava, seek bar color, the profile 🔍) instead of sitting there dimmed. Turn the switch on and they're back as you left them.

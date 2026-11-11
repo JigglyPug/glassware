@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten for Reddit Mobile: Molten glass for Reddit, pocket size." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.4.9-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/molten-for-reddit-mobile/)
+[![Install](https://img.shields.io/badge/Install-v1.4.10-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/molten-for-reddit-mobile/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Phone-555?style=flat-square)
 
@@ -31,8 +31,8 @@ This is the phone version of Molten for Reddit: a gentle lava background from th
 
 ## What's new
 
+- **1.4.10** (2026-11-11): Opening reply threads on its own now stops at exactly 150 per page (it allowed 151). If the browser blocks the page's storage, the comment-sort step is skipped instead of stopping the script from starting.
 - **1.4.9** (2026-11-11): Settings that belong to a switch now fold away while it's off (lava, seek bar color, the profile 🔍) instead of sitting there dimmed. Turn the switch on and they're back as you left them.
 - **1.4.8** (2026-11-10): Pull the panel's handle or header down to close it, and touches inside the panel no longer reach Reddit behind it.
-- **1.4.7** (2026-11-07): Security fixes.
 
 [Every change](CHANGES.md)
