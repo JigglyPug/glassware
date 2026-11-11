@@ -30,6 +30,8 @@ jobs:
       - name: Install the pinned tools
         run: |
           npm ci
+          # GitHub's own package mirror sometimes can't be reached for hours; Ubuntu's main one is the same packages
+          getent hosts azure.archive.ubuntu.com > /dev/null || sudo sed -i 's|azure\.archive\.ubuntu\.com|archive.ubuntu.com|g' /etc/apt/apt-mirrors.txt /etc/apt/sources.list.d/*.sources 2>/dev/null || true
           npx playwright install --with-deps chromium
           sudo apt-get install -y --no-install-recommends fonts-inter fonts-dejavu-core fonts-dejavu-mono fonts-noto-color-emoji
           pip install --require-hashes -r requirements.txt
