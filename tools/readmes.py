@@ -234,7 +234,7 @@ root = f"""<div align="center">
 
 <img src="assets/glassware-banner.svg" alt="Glassware: glass for the web, by JigglyPug" width="100%">
 
-[![Visit the site]({badge("Visit the site", "jigglypug.github.io", "ff8a3d")})]({SITE})
+[![Visit the site]({badge("Visit the site", "jigglypug.github.io", "ff8a3d")})]({SITE}) [![Watch the trailer]({badge("Watch the trailer", "2:00", "222")})]({SITE}#trailer)
 
 Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates itself from this repo. [Trouble installing?](#help)
 

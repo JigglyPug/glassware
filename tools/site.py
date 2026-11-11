@@ -35,6 +35,7 @@ for p in S:
     for f in os.listdir(f'{R}/{p}/images'):
         shutil.copy(f'{R}/{p}/images/{f}', f'{dst}/{f}')
     shutil.copy(f'{R}/assets/icons/{p.split("/")[1]}.png', f'{dst}/icon.png')   # the app icon
+shutil.copytree(f'{R}/assets/trailer', f'{D}/trailer', dirs_exist_ok=True)   # the trailer and its still frame
 open(f'{D}/.nojekyll', 'w').close()
 
 CSS = r"""
@@ -95,6 +96,12 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
 .hero p.need{font-size:13px;margin:-16px auto 22px}.hero p.need a{color:var(--sub)}
+.trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px}
+.trailer video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000;object-fit:cover}
+.trailer .play{position:absolute;inset:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:0;border-radius:16px;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.45));color:#fff;font:600 15px/1.2 inherit;letter-spacing:.01em;cursor:pointer;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.trailer .play svg{transition:transform .15s}.trailer .play:hover svg{transform:scale(1.08)}
+.trailer .play:focus-visible{outline:2px solid #ff8a3d;outline-offset:2px}
+.trailer.on .play{display:none}
 .news{font-size:15px;line-height:1.55}.news p{margin:0}.news p+p{margin-top:8px}.news b{color:var(--fg)}.news .when{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;margin:0 6px}.news a{color:var(--fg)}
 .help{max-width:720px;margin:56px auto 0;text-align:center}.help summary{display:inline-block;cursor:pointer;font-size:13px;color:var(--sub);list-style:none;padding:4px 10px;border-radius:8px}.help summary::-webkit-details-marker{display:none}.help summary::after{content:' ▾'}.help[open] summary::after{content:' ▴'}.help summary:hover{color:var(--fg)}.help .note{margin-top:10px;text-align:left;font-size:14px;line-height:1.6}.help .note p{margin:0}.help .note p+p{margin-top:10px}.help b{color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
@@ -267,6 +274,7 @@ bs.forEach(function(x){x.addEventListener('click',function(){set(x.dataset.v,tru
 addEventListener('hashchange',function(){var h=fromHash();if(h){set(h);scrollTo({top:0})}});
 var phone=matchMedia('(pointer:coarse) and (max-width:860px)').matches;
 set(fromHash()||(phone?'phone':'all'));
+var tr=document.getElementById('trailer');if(tr){var v=tr.querySelector('video');tr.querySelector('.play').addEventListener('click',function(){tr.classList.add('on');v.controls=true;v.play()})}
 var help=document.getElementById('help');function openHelp(){if(help&&location.hash==='#help')help.open=true}
 addEventListener('hashchange',openHelp);openHelp();
 [].forEach.call(document.querySelectorAll('a[href="#help"]'),function(a){a.addEventListener('click',function(){if(help)help.open=true})})})();
@@ -275,6 +283,8 @@ body = f"""<main class="wrap">
 <header class="hero"><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>
 <p class="need"><a href="#help">Trouble installing?</a></p>
+<figure class="trailer glass" id="trailer"><video preload="none" playsinline poster="trailer/poster.webp" aria-label="Glassware trailer"><source src="trailer/glassware-trailer.mp4" type="video/mp4"></video>
+<button class="play" type="button"><svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M26 20v24l19-12z" fill="#fff"/></svg><span>Watch the trailer · 2:00</span></button></figure>
 <div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
 <div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></header>
 {sections}

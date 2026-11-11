@@ -12,6 +12,8 @@
 <header class="hero"><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>
 <p class="need"><a href="#help">Trouble installing?</a></p>
+<figure class="trailer glass" id="trailer"><video preload="none" playsinline poster="trailer/poster.webp" aria-label="Glassware trailer"><source src="trailer/glassware-trailer.mp4" type="video/mp4"></video>
+<button class="play" type="button"><svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M26 20v24l19-12z" fill="#fff"/></svg><span>Watch the trailer · 2:00</span></button></figure>
 <div class="chips"><span class="chip">8 scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
 <div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></header>
 <section id="both"><div class="label">Desktop and phone<span class="r">The same script, on your computer and your phone</span></div><div class="grid"><article class="card glass" style="--acc:#5b5bd6">
@@ -30,7 +32,7 @@
 <div class="acts"><a class="btn pri" href="https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js">Install</a><a class="btn sec" href="desktop/prism/">Details</a></div></div></article><article class="card glass" style="--acc:#ff8a3d">
 <a class="shot" href="desktop/molten-tools/"><img class="dk" src="img/molten-tools/card.webp" alt="Molten Tools settings panel" loading="lazy"><img class="lt" src="img/molten-tools/card-light.webp" alt="Molten Tools settings panel" loading="lazy"></a>
 <div class="body"><h3><img class="appicon" src="img/molten-tools/icon.png" alt="" width="40" height="40"><a href="desktop/molten-tools/">Molten Tools</a></h3><p>Molten glass and quality-of-life fixes for YouTube.</p>
-<div class="meta"><span class="chip">YouTube, YouTube Music</span><span class="chip">Desktop</span><span class="chip">v3.7.8</span></div>
+<div class="meta"><span class="chip">YouTube, YouTube Music</span><span class="chip">Desktop</span><span class="chip">v3.8.0</span></div>
 <div class="acts"><a class="btn pri" href="https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-tools/molten-tools.user.js">Install</a><a class="btn sec" href="desktop/molten-tools/">Details</a></div></div></article><article class="card glass" style="--acc:#ff8a3d">
 <a class="shot" href="desktop/molten-for-reddit/"><img class="dk" src="img/molten-for-reddit/card.webp" alt="Molten for Reddit settings panel" loading="lazy"><img class="lt" src="img/molten-for-reddit/card-light.webp" alt="Molten for Reddit settings panel" loading="lazy"></a>
 <div class="body"><h3><img class="appicon" src="img/molten-for-reddit/icon.png" alt="" width="40" height="40"><a href="desktop/molten-for-reddit/">Molten for Reddit</a></h3><p>Molten glass for new Reddit.</p>
@@ -63,6 +65,7 @@ bs.forEach(function(x){x.addEventListener('click',function(){set(x.dataset.v,tru
 addEventListener('hashchange',function(){var h=fromHash();if(h){set(h);scrollTo({top:0})}});
 var phone=matchMedia('(pointer:coarse) and (max-width:860px)').matches;
 set(fromHash()||(phone?'phone':'all'));
+var tr=document.getElementById('trailer');if(tr){var v=tr.querySelector('video');tr.querySelector('.play').addEventListener('click',function(){tr.classList.add('on');v.controls=true;v.play()})}
 var help=document.getElementById('help');function openHelp(){if(help&&location.hash==='#help')help.open=true}
 addEventListener('hashchange',openHelp);openHelp();
 [].forEach.call(document.querySelectorAll('a[href="#help"]'),function(a){a.addEventListener('click',function(){if(help)help.open=true})})})();
