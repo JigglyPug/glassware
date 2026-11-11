@@ -364,7 +364,7 @@ script leaves running matters more than how fast it starts.
 
 ```
 npm ci && pip install --require-hashes -r requirements.txt   # the locked tools (Playwright, Pillow); then npx playwright install chromium
-npm audit && pip-audit -r requirements.txt  # whenever a pin changes: no known vulnerabilities in the tools
+npm audit && pip-audit -r requirements.txt  # no known vulnerabilities in the tools (check.py runs both when a pin changes)
 python3 tools/screens.py [script]   # recapture panel screenshots (needs Playwright + Chromium)
 python3 tools/pages.py              # rebuild every README, banner, site page and link preview
 python3 tools/audit.py [script]     # check panels for small visual glitches (run after panel changes)
@@ -378,7 +378,12 @@ python3 tools/check.py              # release check: everything below, plus the 
 - The tools are locked: Node in `package-lock.json`, Python in `requirements.txt`, which is made from the pins
   in `requirements.in` (change a pin there, then run the `uv pip compile` line at its top) and holds every
   package, dependencies included, with hashes. `tools/check.py` fails if the two disagree or a package has
-  no hash.
+  no hash. `pip-audit` itself is locked the same way, apart from the tools (`requirements-audit.in` →
+  `requirements-audit.txt`).
+- Known vulnerabilities: GitHub's `audit` job runs `npm audit` and `pip-audit` on both Python locks on
+  every push and weekly. It's a job of its own, not part of "checks", so a vulnerability published today
+  shows up red without holding back a release or a rollback: fix it (raise the pin, re-lock) before the
+  next change. `tools/check.py` runs the same audits whenever a lock file changes, and fails if it can't.
 - `tools/audit.py` opens every panel, tab and fold-out picker at laptop, desktop and phone sizes
   (phones in Roboto), once on a plain page and once with common site-wide CSS, and lists text
   spilling out of buttons, things cut off or off screen, sideways scrolling and overlaps. It also

@@ -6,6 +6,8 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '17 9 * * 1'   # weekly, so a vulnerability published between pushes still shows up
 permissions:
   contents: read
 jobs:
@@ -31,3 +33,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/check.py --quick --ci
+
+  # Known vulnerabilities in the tools (Node from package-lock.json, Python from requirements.txt).
+  # A job of its own, not part of "checks": a vulnerability published today shows up red here and
+  # gets fixed, but can't hold back a release or a rollback (tools/push.py waits for "checks" only).
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: 22
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version: '3.12'
+      - name: npm audit
+        run: npm audit --audit-level=low
+      - name: pip-audit (itself locked with hashes, in its own environment)
+        run: |
+          python3 -m venv /tmp/audit
+          /tmp/audit/bin/pip install --require-hashes -r requirements-audit.txt
+          /tmp/audit/bin/pip-audit -r requirements.txt --require-hashes --disable-pip
+          /tmp/audit/bin/pip-audit -r requirements-audit.txt --require-hashes --disable-pip

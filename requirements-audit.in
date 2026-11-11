@@ -1,0 +1,4 @@
+# The vulnerability checker GitHub runs on the tools (the "audit" job), kept apart from the tools themselves.
+# requirements-audit.txt is the full lock made from this, with hashes:
+#   uv pip compile requirements-audit.in --generate-hashes --universal --python-version 3.12 -o requirements-audit.txt
+pip-audit==2.10.1

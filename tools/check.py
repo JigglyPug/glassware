@@ -254,14 +254,40 @@ head('tools'); n = 0
 # requirements.in holds the chosen pins; requirements.txt is the full lock made from it, every package hashed
 import re as _re
 pin_re = _re.compile(r'^([A-Za-z0-9_.-]+)==([^\s\\;]+)')
-lock_txt = open(f'{R}/requirements.txt').read()
-pins = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, lock_txt.splitlines()) if m}
-chosen = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, open(f'{R}/requirements.in').read().splitlines()) if m}
-blocks = _re.split(r'\n(?=[A-Za-z0-9_.-]+==)', lock_txt)
-unhashed = [b.split('==')[0].split('\n')[-1] for b in blocks if '==' in b and '--hash=sha256:' not in b]
-n += 2
-ok(all(pins.get(k) == v for k, v in chosen.items()), f'requirements.txt is out of step with requirements.in ({chosen}): run uv pip compile (see requirements.in)')
-ok(not unhashed, f'requirements.txt has packages without hashes: {unhashed}')
+def locked(name, src):
+    """The pins chosen in <src>; the lock <name> made from them, every package hashed."""
+    global n
+    lock_txt = open(f'{R}/{name}').read()
+    pins = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, lock_txt.splitlines()) if m}
+    chosen = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, open(f'{R}/{src}').read().splitlines()) if m}
+    blocks = _re.split(r'\n(?=[A-Za-z0-9_.-]+==)', lock_txt)
+    unhashed = [b.split('==')[0].split('\n')[-1] for b in blocks if '==' in b and '--hash=sha256:' not in b]
+    n += 2
+    ok(all(pins.get(k) == v for k, v in chosen.items()), f'{name} is out of step with {src} ({chosen}): run uv pip compile (see {src})')
+    ok(not unhashed, f'{name} has packages without hashes: {unhashed}')
+    return pins
+pins = locked('requirements.txt', 'requirements.in')
+locked('requirements-audit.txt', 'requirements-audit.in')     # pip-audit, which GitHub's "audit" job runs
+# GitHub's "audit" job checks both locks and the Node lock for known vulnerabilities, weekly and on every push
+wf = open(f'{R}/.github/workflows/checks.yml').read()
+n += 1
+ok(all(x in wf for x in ('\n  audit:', 'npm audit', 'pip-audit -r requirements.txt --require-hashes', 'pip-audit -r requirements-audit.txt --require-hashes', 'schedule:')),
+   ".github/workflows/checks.yml has lost its audit job (npm audit and pip-audit on both locks, weekly too)")
+# a pin changed: look for known vulnerabilities here too, before it ships (fails closed if the checker is missing)
+pinfiles = ['package-lock.json', 'requirements.txt', 'requirements-audit.txt']
+if '--all' in args or git('diff', '--quiet', 'origin/main', '--', *pinfiles).returncode != 0:
+    n += 2
+    r = subprocess.run(['npm', 'audit', '--audit-level=low'], cwd=R, capture_output=True, text=True)
+    clean = r.returncode == 0
+    ok(clean, 'npm audit: ' + ((r.stdout.strip().splitlines() or ['no output'])[-1]))
+    try:
+        r = subprocess.run(['pip-audit', '-r', f'{R}/requirements.txt', '-r', f'{R}/requirements-audit.txt', '--require-hashes', '--disable-pip'],
+                           capture_output=True, text=True, timeout=600)
+        clean &= r.returncode == 0
+        ok(r.returncode == 0, 'pip-audit: ' + (((r.stdout.strip() or r.stderr.strip()).splitlines() or ['no output'])[-1]))
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        clean = False; ok(False, f'a pin changed and pip-audit could not run ({type(e).__name__}; install it from requirements-audit.txt)')
+    if clean: print('  ✓ the changed pins have no known vulnerabilities (npm audit, pip-audit)')
 pkg = json.load(open(f'{R}/package.json')); lock = json.load(open(f'{R}/package-lock.json'))
 npin = pkg['devDependencies']['playwright']
 n += 2
