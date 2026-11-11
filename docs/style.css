@@ -55,7 +55,7 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
 .hero p.need{font-size:13px;margin:-16px auto 22px}.hero p.need a{color:var(--sub)}
-.trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px}
+.trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px;overflow:hidden;min-width:0}
 .trailer video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000;object-fit:cover}
 .trailer .play{position:absolute;inset:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:0;border-radius:16px;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.45));color:#fff;font:600 15px/1.2 inherit;letter-spacing:.01em;cursor:pointer;text-shadow:0 1px 8px rgba(0,0,0,.6)}
 .trailer .play svg{transition:transform .15s}.trailer .play:hover svg{transform:scale(1.08)}

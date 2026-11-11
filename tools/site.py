@@ -96,7 +96,7 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
 .hero p.need{font-size:13px;margin:-16px auto 22px}.hero p.need a{color:var(--sub)}
-.trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px}
+.trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px;overflow:hidden;min-width:0}
 .trailer video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000;object-fit:cover}
 .trailer .play{position:absolute;inset:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:0;border-radius:16px;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.45));color:#fff;font:600 15px/1.2 inherit;letter-spacing:.01em;cursor:pointer;text-shadow:0 1px 8px rgba(0,0,0,.6)}
 .trailer .play svg{transition:transform .15s}.trailer .play:hover svg{transform:scale(1.08)}
@@ -175,6 +175,10 @@ footer a{color:var(--fg)}
 @media (max-width:860px){.phero,.phero.phone{grid-template-columns:1fr;padding-top:48px}.phero>div{position:static}.gal{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero{padding-top:64px}}
 """
 if not ONLY: open(f'{D}/style.css', 'w', encoding='utf-8').write(CSS.strip() + '\n')
+# pages link the stylesheet with a fingerprint of it, so a phone that cached the old one fetches the new
+# one along with the new page (an old stylesheet under a new page left the trailer at full size)
+import hashlib
+CSS_V = hashlib.sha1((CSS.strip() + '\n').encode()).hexdigest()[:10]
 
 SITE = f'https://{OWNER.lower()}.github.io/glassware/'
 # Light or dark: the visitor's choice (saved in this browser), otherwise their device's setting.
@@ -229,7 +233,7 @@ def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=Non
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}">
-<meta name="theme-color" content="{acc}">{meta}<meta name="color-scheme" content="light dark"><link rel="stylesheet" href="{up}style.css">
+<meta name="theme-color" content="{acc}">{meta}<meta name="color-scheme" content="light dark"><link rel="stylesheet" href="{up}style.css?v={CSS_V}">
 {MODE_HEAD}
 {('<link rel="icon" type="image/png" href="' + up + favicon + '">') if favicon else '''<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff8a3d'/%3E%3Cstop offset='.55' stop-color='%23ff2d6f'/%3E%3Cstop offset='1' stop-color='%237a2cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3C/svg%3E">'''}
 </head><body data-theme="{theme}" style="--acc:{acc}">
@@ -283,7 +287,7 @@ body = f"""<main class="wrap">
 <header class="hero"><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>
 <p class="need"><a href="#help">Trouble installing?</a></p>
-<figure class="trailer glass" id="trailer"><video preload="none" playsinline poster="trailer/poster.webp" aria-label="Glassware trailer"><source src="trailer/glassware-trailer.mp4" type="video/mp4"></video>
+<figure class="trailer glass" id="trailer"><video preload="none" playsinline poster="trailer/poster.webp" aria-label="Glassware trailer" width="1280" height="720" style="width:100%;height:auto;max-width:100%"><source src="trailer/glassware-trailer.mp4" type="video/mp4"></video>
 <button class="play" type="button"><svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M26 20v24l19-12z" fill="#fff"/></svg><span>Watch the trailer · 2:00</span></button></figure>
 <div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
 <div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></header>
