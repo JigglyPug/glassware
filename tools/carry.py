@@ -10,6 +10,8 @@ For each script it takes the version that's live on GitHub (origin/main) and:
      and keeps what it saved, exactly as Tampermonkey would;
   2. reopens the live version with that saved data, and notes what every control shows;
   3. opens the new version with the same saved data, and notes what every control shows.
+In 2 and 3, settings that fold away while their feature is off are read too: each switch that's off
+is turned on for a moment, the controls it reveals are noted, and it's turned back off.
 Any setting that shows differently in 3 than in 2 didn't carry over. Saved data the live
 version reads but the new one never looks at is flagged too (that's how history or boards get
 lost). It also checks that @name and @namespace haven't changed, since Tampermonkey would

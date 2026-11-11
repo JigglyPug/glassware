@@ -601,7 +601,21 @@ function stubPage() {
     const goTab = async t => { if (t !== 'main') { await page.evaluate(t => __clickTab(t), t); await page.waitForTimeout(500); } };
     if (has('--exercise')) for (const t of tabList) { await goTab(t); await page.evaluate(() => __exercise()); await page.waitForTimeout(300); }
     const state = [];
-    for (const t of tabList) { await goTab(t); state.push(...await page.evaluate(t => __state(t), t)); }
+    for (const t of tabList) {
+      await goTab(t);
+      const seen = await page.evaluate(t => __state(t), t);
+      const keys = new Set(seen.map(x => x.key));
+      state.push(...seen);
+      // settings that fold away while their feature is off: switch each off switch on for a moment, note
+      // the controls that appear (they show what was saved), and switch it back
+      for (const x of seen.filter(x => x.key.includes(' | toggle | ') && x.value === false && !/Everything is (on|off)/.test(x.key))) {
+        const flip = () => page.evaluate(([t, key]) => { const c = __ctl().find((c, i) => __state(t)[i] && __state(t)[i].key === key); if (c && !c.el.disabled) { c.el.click(); return true; } return false; }, [t, x.key]);
+        if (!await flip()) continue;
+        await page.waitForTimeout(350);
+        for (const y of await page.evaluate(t => __state(t), t)) if (!keys.has(y.key)) { keys.add(y.key); state.push(y); }
+        await flip(); await page.waitForTimeout(350);
+      }
+    }
     await page.waitForTimeout(800);
     console.log('CARRY ' + JSON.stringify({ state, ...(await page.evaluate(() => __dump())) }));
     await browser.close(); return;
