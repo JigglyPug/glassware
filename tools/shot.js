@@ -468,10 +468,11 @@ function stubPage() {
   // nothing to capture: a test that only wanted what --eval found (and the requests and console lines on the way)
   if (evalJs && out === '/dev/null' && !has('--audit')) { await browser.close(); return; }
   // Wait until the panel's text stops changing (data still loading, a list still filling in), so a slower
-  // machine (GitHub's) captures the same moment as a fast one. Gives up after 10 seconds.
+  // machine (GitHub's) captures the same moment as a fast one: 2 seconds without a change, which outlasts
+  // the slowest footer refresh (Looking-Glass's, every 1.5 s). Gives up after 12 seconds.
   async function settle() {
     let last = null, same = 0;
-    for (let i = 0; i < 50 && same < 3; i++) {
+    for (let i = 0; i < 60 && same < 10; i++) {
       const t = await page.evaluate(() => __all().map(e => e.shadowRoot ? '' : (e.children.length ? '' : e.textContent)).join('|'));
       same = t === last ? same + 1 : 0; last = t;
       await page.waitForTimeout(200);
@@ -480,9 +481,14 @@ function stubPage() {
   async function snap(file) {
     await settle();
     await page.evaluate(() => __hideErr());
-    // Screenshots never show the version: they only need recapturing when a panel changes.
-    await page.evaluate(() => { for (const e of __all()) for (const n of e.childNodes) if (n.nodeType === 3 && /v\d+\.\d+/.test(n.nodeValue))
-      n.nodeValue = n.nodeValue.replace(/\s*·\s*v\d+(\.\d+)+/g, '').replace(/v\d+(\.\d+)+\s*·\s*/g, '').replace(/\bv\d+(\.\d+)+\b/g, ''); });
+    // Screenshots never show the version: they only need recapturing when a panel changes. A footer that
+    // redraws itself on a timer (Looking-Glass's) would bring it back, so it's taken out again on every change.
+    await page.evaluate(() => {
+      const strip = () => { for (const e of __all()) for (const n of e.childNodes) if (n.nodeType === 3 && /v\d+\.\d+/.test(n.nodeValue))
+        n.nodeValue = n.nodeValue.replace(/\s*·\s*v\d+(\.\d+)+/g, '').replace(/v\d+(\.\d+)+\s*·\s*/g, '').replace(/\bv\d+(\.\d+)+\b/g, ''); };
+      if (!window.__noVersion) { window.__noVersion = new MutationObserver(strip);
+        for (const r of [document, ...__all().filter(e => e.shadowRoot).map(e => e.shadowRoot)]) window.__noVersion.observe(r, { subtree: true, childList: true, characterData: true }); }
+      strip(); });
     let clip;
     if (crop) { const sel = opt('--clipsel', ''); const r = await page.evaluate(sel => { if (sel) { const e = __all().find(x => x.matches && x.matches(sel)); if (e) { const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; } } return __panelRect(); }, sel); if (r) { const pad = 28; const vp = page.viewportSize();
       const x = Math.max(0, r.x - pad), y = Math.max(0, r.y - pad); clip = { x, y, width: Math.min(vp.width - x, r.w + pad * 2), height: Math.min(vp.height - y, r.h + pad * 2) }; } }
