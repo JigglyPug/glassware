@@ -17,7 +17,12 @@ sys.path.insert(0, HERE)
 from screens import JOBS
 
 # where each phone sheet is opened (the scripts that run on phones; RUNS in tools/readmes.py)
-PHONE = {'desktop/hourglass': ('https://www.youtube.com/', 'Open', ['--seed', f'{HERE}/seeds/hourglass.json']),
+# Hourglass's demo data has a weekday lockdown; the test runs at whatever time it is, so its copy is disarmed
+# (during a lockdown the block screen is up and the sheet isn't what's being tested)
+import tempfile
+_hg = json.load(open(f'{HERE}/seeds/hourglass.json')); _hg['settings'] = dict(_hg['settings'], armed=False)
+HG_SEED = os.path.join(tempfile.gettempdir(), 'glassware-touch-hourglass.json'); json.dump(_hg, open(HG_SEED, 'w'))
+PHONE = {'desktop/hourglass': ('https://www.youtube.com/', 'Open', ['--seed', HG_SEED]),
          'desktop/looking-glass': ('https://example.com/', 'Open', []),
          'mobile/kaleidoscope-mobile': (JOBS['mobile/kaleidoscope-mobile'][0], 'Open', []),
          'mobile/molten-for-reddit-mobile': ('https://www.reddit.com/', 'Open', ['--seed', f'{HERE}/seeds/molten.json'])}

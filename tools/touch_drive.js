@@ -38,12 +38,16 @@ module.exports = async (page) => {
   await page.evaluate(() => { window.__leak = []; for (const t of ['click', 'touchstart', 'touchend', 'pointerdown'])
     document.addEventListener(t, e => { const p = e.composedPath(); if (window.__sheet && p.includes(window.__sheet)) window.__leak.push(t); }); });
   const out = {};
+  // wait for the sheet to be up and still (it slides in, and a busy machine takes longer), up to 6 s
   let s = await find();
+  for (let i = 0, still = 0; i < 30 && still < 3; i++) { await sleep(200); const t = await find(); still = t.open && t.top === s.top ? still + 1 : 0; s = t; }
   out.opened = s.open; out.top = s.top;
   if (!s.open) return out;
   if (s.sw) { await page.touchscreen.tap(s.sw.x, s.sw.y); await sleep(500); const t = await find(); out.switchTap = { before: s.swOn, after: t.swOn }; s = t; }
   const other = s.tabs.find(t => !t.on);
-  if (other) { await page.touchscreen.tap(other.x, other.y); await sleep(600); const t = await find(); out.tabTap = { tab: other.text, selected: (t.tabs.find(x => x.text === other.text) || {}).on }; s = t; }
+  if (other) { await page.touchscreen.tap(other.x, other.y); let t = await find();
+    for (let i = 0; i < 15 && !(t.tabs.find(x => x.text === other.text) || {}).on; i++) { await sleep(200); t = await find(); }
+    await sleep(400); t = await find(); out.tabTap = { tab: other.text, selected: (t.tabs.find(x => x.text === other.text) || {}).on }; s = t; }
   if (s.scroller) {
     await page.evaluate(() => { if (window.__scroller) window.__scroller.scrollTop = 0; scrollTo(0, 0); }); await sleep(200);
     s = await find();
