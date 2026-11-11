@@ -3,6 +3,7 @@
     python3 tools/carry.py              # every script whose code differs from GitHub
     python3 tools/carry.py --all        # every script
     python3 tools/carry.py prism        # just one (folder name)
+    python3 tools/carry.py --all --back 5   # from 5 releases before the live one (several updates skipped)
 
 For each script it takes the version that's live on GitHub (origin/main) and:
   1. opens its panel, changes every setting it can (switches, choices, sliders) on every tab,
@@ -25,6 +26,7 @@ from screens import JOBS, CLOCK
 FIRST = {'desktop/hourglass': 'Dashboard', 'desktop/molten-tools': 'Lava', 'desktop/molten-for-reddit': 'Lava',
          'mobile/molten-for-reddit-mobile': 'Lava', 'desktop/kaleidoscope': 'Recommend', 'mobile/kaleidoscope-mobile': 'Recommend'}
 OK_FILE = f'{HERE}/settings_ok.txt'
+CARRY_BACK = 4   # tools/check.py also starts from this many releases before the live one
 
 def git(*a): return subprocess.run(['git', '-C', R] + list(a), capture_output=True, text=True)
 
@@ -48,6 +50,29 @@ def live_source(p):
     r = git('show', path)
     if r.returncode != 0: raise GitError(f"couldn't read the live {p}: {r.stderr.strip()}")
     return r.stdout
+
+def releases(p):
+    """Every released version of a script on GitHub, newest first: [(version, commit)], the commit
+    being the first one that shipped that version."""
+    path = f'{p}/{p.split("/")[1]}.user.js'
+    r = git('log', '--format=%H', 'origin/main', '--', path)
+    if r.returncode != 0: raise GitError(f"couldn't read {p}'s history: {r.stderr.strip()}")
+    out = []
+    for c in r.stdout.split():
+        src = git('show', f'{c}:{path}')
+        if src.returncode != 0: continue                   # moved or deleted at that commit
+        v = header(src.stdout, 'version')
+        if not v: continue
+        if out and out[-1][0] == v: out[-1] = (v, c)        # same version, an earlier commit: keep the first that shipped it
+        elif not any(x[0] == v for x in out): out.append((v, c))
+    return out
+
+def old_source(p, back):
+    """The script as it was <back> releases before the live one (0 = live); None if it's that new."""
+    rel = releases(p)
+    if back >= len(rel): return None, None
+    v, c = rel[back]
+    return git('show', f'{c}:{p}/{p.split("/")[1]}.user.js').stdout, v
 
 def header(src, key):
     m = re.search(r'(?m)^//[ \t]*@' + key + r'(?:[ \t]+(.*?))?[ \t]*$', src); return (m.group(1) or '') if m else None   # one line only: an empty @namespace is valid
@@ -73,10 +98,11 @@ def run(script, p, mode, seed=None, seedls=None):
         raise RuntimeError(f'browser run ({mode}) reported no settings; the panel probably didn\'t open')
     return out
 
-def check(p):
-    """Returns a list of problems (strings) for one script."""
+def check(p, back=0):
+    """Returns a list of problems (strings) for one script. back: start from the version that many
+    releases before the live one (people who skipped updates, or whose browser was off for weeks)."""
     slug = p.split('/')[1]; new_path = f'{R}/{p}/{slug}.user.js'
-    old_src = live_source(p)
+    old_src = live_source(p) if not back else old_source(p, back)[0]
     if old_src is None: return [], None              # a brand-new script has nobody to carry over
     new_src = open(new_path, encoding='utf-8').read()
     probs = []
@@ -121,13 +147,21 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     try: print('comparing against GitHub at', fetch_live()[:7])
     except GitError as e: print('✗', e); sys.exit(1)
+    # --back N: start from N releases before the live version instead (several updates skipped at once)
+    back = int(args[args.index('--back') + 1]) if '--back' in args else 0
     targets = list(JOBS) if '--all' in args else [p for p in JOBS if p.split('/')[1] in args] or changed()
     bad = 0
     if not targets: print('no script differs from GitHub; nothing to check')
     for p in targets:
-        try: probs, n = check(p)
+        frm = ''
+        try:
+            if back:
+                v = old_source(p, back)[1]
+                if v is None: print(f'== {p}: fewer than {back + 1} releases; skipped'); continue
+                frm = f' from {v}'
+            probs, n = check(p, back)
         except Exception as e: probs, n = [f'test could not run: {e}'], 0
-        print(f'== {p}: ' + ('new script, nothing to carry over yet' if n is None else 'settings carry over' if not probs else f'{len(probs)} problem(s)') + ('' if n is None else f' ({n} settings checked)'))
+        print(f'== {p}{frm}: ' + ('new script, nothing to carry over yet' if n is None else 'settings carry over' if not probs else f'{len(probs)} problem(s)') + ('' if n is None else f' ({n} settings checked)'))
         for x in probs: print('   ' + x)
         bad += bool(probs)
     sys.exit(1 if bad else 0)

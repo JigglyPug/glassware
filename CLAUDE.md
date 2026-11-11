@@ -69,7 +69,9 @@ tools/                                builders for all of the above
 - People's settings and saved data must survive every update. `python3 tools/carry.py` proves it:
   it changes every setting on the live version (from GitHub), then opens the new version with
   that saved data and compares what every control shows, and flags saved data (history, boards)
-  the new version no longer reads, or a changed `@name`/`@namespace`. Fix anything it flags with a
+  the new version no longer reads, or a changed `@name`/`@namespace`. `tools/check.py` runs it twice:
+  from the live version and from the release `CARRY_BACK` (4) before it, since people who skip updates
+  jump several versions at once (`--back N` to try further). Fix anything it flags with a
   migration. Only a setting that was retired on purpose goes in `tools/settings_ok.txt`.
 - No Greasy Fork links anywhere. Nothing that identifies a real person beyond the name
   JigglyPug: no emails, real names, local paths, account names or personal preferences

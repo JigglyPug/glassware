@@ -32,7 +32,8 @@ It checks, in order:
   registry   every script is listed everywhere the tools need it (pages, screenshots, tests)
   commits    commits not yet pushed are by JigglyPug and carry no chat or session links
   generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
-  settings   tools/carry.py: settings and saved data survive the update (changed scripts)
+  settings   tools/carry.py: settings and saved data survive the update, from the live version and from
+             several releases back (changed scripts)
   glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
              recipe, nothing faint or hard to see, in both themes (changed scripts)
   network    tools/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope with requests that hang, fail,
@@ -407,6 +408,15 @@ if '--quick' not in args:
             except Exception as e: probs, k = [f'test could not run: {e}'], 0
             for x in probs: ok(False, f'{p.split("/")[1]}: {x}')
             if not probs: print(f'  ✓ {p.split("/")[1]}: ' + ('new script, nothing to carry over yet' if k is None else f'{k} settings carry over'))
+            # and from CARRY_BACK releases before the live one: people who skipped updates (browser closed for
+            # weeks, Tampermonkey's updates off) jump several versions at once
+            try:
+                src, v = carry.old_source(p, carry.CARRY_BACK)
+                if src is None: continue                      # too new to have that many releases
+                probs, k = carry.check(p, carry.CARRY_BACK)
+            except Exception as e: probs, v = [f'test could not run: {e}'], '?'
+            for x in probs: ok(False, f'{p.split("/")[1]} from {v}: {x}')
+            if not probs: print(f'  ✓ {p.split("/")[1]}: {k} settings carry over from {v} too')
     head('glitches')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
