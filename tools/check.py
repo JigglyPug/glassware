@@ -41,6 +41,8 @@ It checks, in order:
              recipe, nothing faint or hard to see, in both themes (changed scripts)
   network    tools/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope with requests that hang, fail,
              return junk or drop (when one of them or the test changed)
+  hand-off   tools/ownertest.py: Prism keeps standing by for a script that holds the title bar, also
+             after being switched off and on (when Prism or the test changed)
   logging    tools/logtest.py: with logging on, Molten Tools never prints an account's name, handle,
              email or id (when Molten Tools changed)
   kaleidoscope  tools/boardtest.py: a hostile board can't send anything out; tools/handofftest.py:
@@ -535,6 +537,19 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or net_tool or 
     if seen == 24 and r.returncode == 0:
         print('  ✓ 4 scripts × 5 ways the network fails: no errors, every one falls back')
         print('  ✓ Prism and Looking-Glass: nothing used that came back from a private address after a redirect')
+
+# ------------------------------------------------------------------ hand-off
+# tools/ownertest.py: Prism stands by while another script holds the title bar, also after being
+# switched off and back on (everywhere or for the site), and takes it back once the other lets go
+owner_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/ownertest.py').returncode != 0
+if '--ci' in args or ('--quick' not in args and ('--all' in args or owner_tool or 'desktop/prism' in changed)):
+    head('hand-off')
+    r = subprocess.run([sys.executable, f'{HERE}/ownertest.py'], capture_output=True, text=True)
+    lines = [l for l in r.stdout.splitlines() if l.strip()]
+    for l in lines:
+        if not l.startswith('== '): ok(False, l.strip())
+    ok(r.returncode == 0 or any(not l.startswith('== ') for l in lines), 'the hand-off test failed: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
+    if r.returncode == 0: print('  ✓ prism: stands by for another script, also after being switched off and on')
 
 # ------------------------------------------------------------------ logging
 # tools/logtest.py: with every logging switch on, Molten Tools' account paths never print an account's

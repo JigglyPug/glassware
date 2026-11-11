@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.8
+// @version      2.2.9
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.8';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.9';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -552,7 +552,10 @@
         S.settings = loadSettings(); S.site = loadSite();
         if (!S.settings.enabled) return idle('disabled', 'off everywhere');
         if (S.site.off) return idle('off', 'off for ' + HOST);
-        if (S.yielded) return ui.refresh();
+        if (S.yielded) {   // still standing by: say so again (turning Prism off and on, or off and on for this site, passes through here)
+            S.mode = 'yielded'; S.yieldColor = currentTitleColor();
+            return ui.refresh();
+        }
         if (S.site.custom) return apply(S.site.custom, { source: 'custom' });
 
         const sig = sourceSig(), c = cacheGet();
