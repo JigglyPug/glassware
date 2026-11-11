@@ -273,9 +273,10 @@ wf = open(f'{R}/.github/workflows/checks.yml').read()
 n += 1
 ok(all(x in wf for x in ('\n  audit:', 'npm audit', 'pip-audit -r requirements.txt --require-hashes', 'pip-audit -r requirements-audit.txt --require-hashes', 'schedule:')),
    ".github/workflows/checks.yml has lost its audit job (npm audit and pip-audit on both locks, weekly too)")
-# a pin changed: look for known vulnerabilities here too, before it ships (fails closed if the checker is missing)
+# a pin changed: look for known vulnerabilities here too, before it ships (fails closed if the checker is missing).
+# Not on GitHub (--ci): there the "audit" job does it, with pip-audit installed from its own lock.
 pinfiles = ['package-lock.json', 'requirements.txt', 'requirements-audit.txt']
-if '--all' in args or git('diff', '--quiet', 'origin/main', '--', *pinfiles).returncode != 0:
+if '--ci' not in args and ('--all' in args or git('diff', '--quiet', 'origin/main', '--', *pinfiles).returncode != 0):
     n += 2
     r = subprocess.run(['npm', 'audit', '--audit-level=low'], cwd=R, capture_output=True, text=True)
     clean = r.returncode == 0
