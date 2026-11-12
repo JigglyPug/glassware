@@ -1,7 +1,7 @@
 """The prism cut: one image that shows a panel in light and dark at once, for the link previews
 (the one place that can't follow a light/dark switch).
 
-    python3 tools/prismcut.py light.webp dark.webp out.png [--accent '#ff9a3d'] [--lava]
+    python3 tools/build/prismcut.py light.webp dark.webp out.png [--accent '#ff9a3d'] [--lava]
 
 The light capture fills the upper left and the dark one the lower right, split along a diagonal.
 The seam is a thin line in the script's accent color with a faint glow, kept light enough that
@@ -11,7 +11,7 @@ the same size: same panel, same demo data, only the theme differs.
 """
 import json, os, sys
 import numpy as np
-CUT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tokens.json'), encoding='utf-8'))['cut']   # tools/tokens.json
+CUT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib', 'tokens.json'), encoding='utf-8'))['cut']   # tools/lib/tokens.json
 from PIL import Image
 
 def hex_rgb(h):

@@ -2,7 +2,7 @@
 import os
 import re, shutil, html, json
 ONLY = [x for x in os.environ.get('ONLY', '').split(',') if x]
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); D = f'{R}/docs'
+R = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))); D = f'{R}/docs'
 src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readmes.py'), encoding='utf-8').read()
 ns = {'__file__': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'readmes.py')}; exec(src[:src.index('\nACCENT = {')], ns)   # S, ver, RAW, OWNER
 S, ver, RAW, OWNER = ns['S'], ns['ver'], ns['RAW'], ns['OWNER']
@@ -219,7 +219,7 @@ def og_ver(og):
             f = f'{R}/{p}/images/{n}'
             if os.path.exists(f): hsh.update(open(f, 'rb').read())
         hsh.update((S[p]['name'] + S[p]['tag'] + S[p]['kicker'] + THEME[p][0] + THEME[p][1]).encode())
-    for t in ('og.py', 'prismcut.py'): hsh.update(open(f'{R}/tools/{t}', 'rb').read())
+    for t in ('og.py', 'prismcut.py'): hsh.update(open(f'{R}/tools/build/{t}', 'rb').read())
     return og + '?v=' + hsh.hexdigest()[:10]
 
 def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=None):

@@ -1,6 +1,6 @@
 """Check Hourglass's dashboard says something true and useful about each made-up history.
 
-    python3 tools/dash.py
+    python3 tools/tests/dash.py
 
 Runs the dashboard on every scenario in tools/seeds/hourglass.py (a habit change, a good stretch,
 a new install, no data), on desktop and on a phone, for both ranges (7 days and 4 weeks), and
@@ -16,8 +16,8 @@ prints one line per problem ("clean" otherwise):
 """
 import json, os, re, subprocess, sys, tempfile
 from concurrent.futures import ThreadPoolExecutor
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, os.path.join(HERE, 'seeds')); sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path.insert(0, os.path.join(HERE, 'seeds')); sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 import hourglass as SEEDS
 from screens import CLOCK
 
@@ -62,7 +62,7 @@ def figures(text):
 def run(scen, mobile):
     store = SEEDS.make(scen)
     seed = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False); json.dump(store, seed); seed.close()
-    args = ['node', f'{HERE}/shot.js', JS, 'https://www.youtube.com/', '/dev/null', '--cmd', 'Open', '--clock', CLOCK,
+    args = ['node', f'{HERE}/lib/shot.js', JS, 'https://www.youtube.com/', '/dev/null', '--cmd', 'Open', '--clock', CLOCK,
             '--seed', seed.name, '--eval', READ, '--print'] + (['--mobile', '--vh', '2600'] if mobile else ['--vh', '3000'])
     r = subprocess.run(args, capture_output=True, text=True, timeout=300)
     os.unlink(seed.name)

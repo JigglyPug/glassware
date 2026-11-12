@@ -1,8 +1,8 @@
 """How much each script costs over a long session, and whether anything it leaves behind keeps growing.
 
-    python3 tools/perf.py [script ...]          # all scripts if none named
-    python3 tools/perf.py --table [script ...]  # print every number, not just problems
-    python3 tools/perf.py --selftest            # only prove the test catches a leaky, slow script
+    python3 tools/tests/perf.py [script ...]          # all scripts if none named
+    python3 tools/tests/perf.py --table [script ...]  # print every number, not just problems
+    python3 tools/tests/perf.py --selftest            # only prove the test catches a leaky, slow script
 
 Opens each script on a stand-in page of its site and runs a long session on it (shot.js --perf):
 40 rounds, each adding 200 feed items of the kind the site uses (YouTube's video and comment
@@ -29,8 +29,8 @@ suddenly costs much more, not small drifts. Runs one browser at a time (two at o
 down and the numbers stop meaning anything): about five minutes for all scripts.
 """
 import json, os, subprocess, sys, tempfile
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import JOBS
 
 BUDGET = {
@@ -73,7 +73,7 @@ def job(p):
     return url, tags, keep
 
 def run(src, url, tags, keep, base=False):
-    args = ['node', f'{HERE}/shot.js', src, url, '/dev/null', '--perf', '--rounds', str(ROUNDS), '--quiet', str(QUIET),
+    args = ['node', f'{HERE}/lib/shot.js', src, url, '/dev/null', '--perf', '--rounds', str(ROUNDS), '--quiet', str(QUIET),
             '--tags', json.dumps(tags)] + keep + (['--noscript'] if base else [])
     r = subprocess.run(args, capture_output=True, text=True, timeout=600)
     line = next((l for l in r.stdout.splitlines() if l.startswith('PERF ')), None)

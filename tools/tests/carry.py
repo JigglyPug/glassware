@@ -1,9 +1,9 @@
 """Settings carry-over test: do people's settings and saved data survive an update?
 
-    python3 tools/carry.py              # every script whose code differs from GitHub
-    python3 tools/carry.py --all        # every script
-    python3 tools/carry.py prism        # just one (folder name)
-    python3 tools/carry.py --all --back 5   # from 5 releases before the live one (several updates skipped)
+    python3 tools/tests/carry.py              # every script whose code differs from GitHub
+    python3 tools/tests/carry.py --all        # every script
+    python3 tools/tests/carry.py prism        # just one (folder name)
+    python3 tools/tests/carry.py --all --back 5   # from 5 releases before the live one (several updates skipped)
 
 For each script it takes the version that's live on GitHub (origin/main) and:
   1. opens its panel, changes every setting it can (switches, choices, sliders) on every tab,
@@ -17,17 +17,17 @@ version reads but the new one never looks at is flagged too (that's how history 
 lost). It also checks that @name and @namespace haven't changed, since Tampermonkey would
 install the new version as a separate script with fresh settings.
 
-A deliberate change (a setting really was retired) goes in tools/settings_ok.txt as
+A deliberate change (a setting really was retired) goes in tools/tests/settings_ok.txt as
 "<script> | <the line this prints>" so it stops being flagged.
 """
 import json, os, re, subprocess, sys, tempfile
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import JOBS, CLOCK
 
 FIRST = {'desktop/hourglass': 'Dashboard', 'desktop/molten-tools': 'Lava', 'desktop/molten-for-reddit': 'Lava',
          'mobile/molten-for-reddit-mobile': 'Lava', 'desktop/kaleidoscope': 'Recommend', 'mobile/kaleidoscope-mobile': 'Recommend'}
-OK_FILE = f'{HERE}/settings_ok.txt'
+OK_FILE = f'{HERE}/tests/settings_ok.txt'
 CARRY_BACK = 4   # tools/check.py also starts from this many releases before the live one
 
 def git(*a): return subprocess.run(['git', '-C', R] + list(a), capture_output=True, text=True)
@@ -82,7 +82,7 @@ def header(src, key):
 def run(script, p, mode, seed=None, seedls=None):
     url, cmd, extra, tabs = JOBS[p]
     tabs = ([FIRST[p]] + tabs) if p in FIRST else tabs
-    args = ['node', f'{HERE}/shot.js', script, url, '/dev/null', '--cmd', cmd, '--' + mode, '--clock', CLOCK, '--vh', '1400']
+    args = ['node', f'{HERE}/lib/shot.js', script, url, '/dev/null', '--cmd', cmd, '--' + mode, '--clock', CLOCK, '--vh', '1400']
     if seed:   # the saved data replaces any demo seed (storage and page storage both)
         for flag in ('--seed', '--seedls'):
             i = extra.index(flag) if flag in extra else -1

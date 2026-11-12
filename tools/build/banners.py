@@ -3,7 +3,7 @@ light and dark at once along the prism cut, since GitHub has no light/dark switc
 import html, os, sys
 ONLY = [x for x in os.environ.get('ONLY', '').split(',') if x]
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+R = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Each page theme in both modes: bg, text, sub, glass, glass edge, blob colors.
 THEMES = {
@@ -34,14 +34,14 @@ def layer(id_, title, sub, theme, mode, kicker, w, h):
 <text x="102" y="{238 if k else 222}" font-size="23" fill="{sb}">{s}</text></g></g>'''
 
 def banner(title, sub, theme, kicker='', accent='#ffffff', lava=False, w=1200, h=320):
-    """Light and dark on one banner, cut along the same diagonal as the link previews (tools/prismcut.py):
+    """Light and dark on one banner, cut along the same diagonal as the link previews (tools/build/prismcut.py):
     light upper left, dark lower right, a thin seam in the script's accent. For Molten the edge is a
     lava lamp: a slow wave with wax drops of light glass melting off it into the dark (a goo filter), kept clear
     of the text."""
     import math
     import json
-    CUT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tokens.json'), encoding='utf-8'))['cut']
-    x0, x1 = w * CUT['top'], w * CUT['bottom']   # the same diagonal as the link previews (tools/tokens.json)
+    CUT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib', 'tokens.json'), encoding='utf-8'))['cut']
+    x0, x1 = w * CUT['top'], w * CUT['bottom']   # the same diagonal as the link previews (tools/lib/tokens.json)
     nx, ny = h, -(x1 - x0); L = math.hypot(nx, ny); nx, ny = nx / L, ny / L   # unit normal, toward the dark side
     amp = 1 if lava else 0
     pts = []

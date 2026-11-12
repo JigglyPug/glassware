@@ -1,6 +1,6 @@
 """Check that Hourglass's "Import settings" copes with any file you give it.
 
-    python3 tools/importtest.py [script]     # Hourglass, or the copy given (to compare an older one)
+    python3 tools/tests/importtest.py [script]     # Hourglass, or the copy given (to compare an older one)
 
 An imported file is untrusted: it may be from another app, damaged, hand-edited, or huge. Each case
 opens Hourglass (stand-in YouTube page, the screenshot seed), goes to Settings, presses Import settings
@@ -17,8 +17,8 @@ Every case also fails on an uncaught error or "undefined"/"NaN"/"[object" in the
 Prints "clean" for each case, or what went wrong.
 """
 import json, os, re, subprocess, sys, tempfile
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import CLOCK
 JS = f'{R}/desktop/hourglass/hourglass.user.js'
 SEED = json.load(open(f'{HERE}/seeds/hourglass.json'))
@@ -53,7 +53,7 @@ DRIVE = """(async () => {
 
 def drive(content, script=JS):
     seed = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False); json.dump(SEED, seed); seed.close()
-    r = subprocess.run(['node', f'{HERE}/shot.js', script, 'https://www.youtube.com/', '/dev/null', '--clock', CLOCK, '--seed', seed.name,
+    r = subprocess.run(['node', f'{HERE}/lib/shot.js', script, 'https://www.youtube.com/', '/dev/null', '--clock', CLOCK, '--seed', seed.name,
                         '--eval', DRIVE.replace('CASE', json.dumps(content)), '--print'], capture_output=True, text=True, timeout=120)
     os.unlink(seed.name)
     line = next((l for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)

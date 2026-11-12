@@ -1,6 +1,6 @@
 """Check that a Kaleidoscope board can't send anything anywhere, or get hold of your data.
 
-    python3 tools/boardtest.py [script]
+    python3 tools/tests/boardtest.py [script]
 
 A board is a page an AI wrote, so Kaleidoscope treats it as untrusted code (CLAUDE.md, Security). This
 opens made-up hostile boards in desktop Kaleidoscope (or the copy given, to compare an older one):
@@ -18,8 +18,8 @@ cover images, and "Open on AniList" (opened by Kaleidoscope, AniList addresses o
 activity itself shows on the page around the board. Prints "clean" or the problems.
 """
 import json, os, subprocess, sys, tempfile
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import CLOCK
 
 EVIL = 'evil.example'
@@ -94,7 +94,7 @@ def open_board(script, html, js=None):
     js = js or """(async () => { await new Promise(r => setTimeout(r, 3000));
       const strip = document.querySelector('.krecent');
       return { opened: window.__opened || [], strip: strip ? strip.textContent : '' }; })()"""
-    r = subprocess.run(['node', f'{HERE}/shot.js', script, 'https://anilist.co/home#kaleidoscope-board=hostile', '/dev/null', '--clock', CLOCK,
+    r = subprocess.run(['node', f'{HERE}/lib/shot.js', script, 'https://anilist.co/home#kaleidoscope-board=hostile', '/dev/null', '--clock', CLOCK,
                         '--seed', seed.name, '--requests', '--commit', '--eval', js, '--print'], capture_output=True, text=True, timeout=180)
     os.unlink(seed.name)
     ev = next((l for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)

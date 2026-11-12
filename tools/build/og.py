@@ -1,6 +1,6 @@
 """Link-preview images (1280x640) for the site, one per page, in each page's own theme.
 
-    python3 tools/og.py      (pages.py runs it for you)
+    python3 tools/build/og.py      (pages.py runs it for you)
 
 Writes docs/og.png (landing, also used as the GitHub social preview) and
 docs/img/<script>/og.png. Rendered with Playwright from the panel screenshots.
@@ -8,9 +8,9 @@ docs/img/<script>/og.png. Rendered with Playwright from the panel screenshots.
 import base64, html, os, sys, tempfile
 from playwright.sync_api import sync_playwright
 
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE); D = f'{R}/docs'
-sys.path.insert(0, HERE)
-RP = os.path.join(HERE, 'readmes.py'); src = open(RP, encoding='utf-8').read(); ns = {'__file__': RP}
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE); D = f'{R}/docs'   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
+RP = os.path.join(HERE, 'build', 'readmes.py'); src = open(RP, encoding='utf-8').read(); ns = {'__file__': RP}
 exec(src[:src.index('\nACCENT = {')], ns); S = ns['S']
 from site_themes import THEME
 
@@ -58,12 +58,12 @@ def lead(p):
 
 if __name__ == '__main__':
     with sync_playwright() as pw:
-        b = pw.chromium.launch(env=dict(os.environ, FONTCONFIG_FILE=os.environ.get('FONTCONFIG_FILE') or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fonts.conf')))   # the same fonts everywhere (tools/fonts.conf)
+        b = pw.chromium.launch(env=dict(os.environ, FONTCONFIG_FILE=os.environ.get('FONTCONFIG_FILE') or os.path.join(HERE, 'lib', 'fonts.conf')))   # the same fonts everywhere (tools/lib/fonts.conf)
         page = b.new_page(viewport={'width': 1280, 'height': 640})
         def render(h, out):
             page.set_content(h); page.wait_for_timeout(150); page.screenshot(path=out)
         # landing: three panels fanned out
-        # each panel in light and dark at once (the cut, made by tools/readmes.py), like the per-script previews
+        # each panel in light and dark at once (the cut, made by tools/build/readmes.py), like the per-script previews
         cut = lambda p: f'{R}/{p}/images/card-cut.webp' if os.path.exists(f'{R}/{p}/images/card-cut.webp') else f'{R}/{p}/images/card.webp'
         fan = [(cut('desktop/prism'), -8, -300, 150, 1), (cut('desktop/molten-tools'), 2, -150, 50, 2), (cut('desktop/kaleidoscope'), 10, 10, 190, 3)]
         # landing preview: screenshots only (no icon row), so a new script doesn't mean redrawing it

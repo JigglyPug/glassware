@@ -1,6 +1,6 @@
 """Check that the scripts that use the network cope when it fails.
 
-    python3 tools/nettest.py [script ...]    # prism, looking-glass, kaleidoscope, kaleidoscope-mobile
+    python3 tools/tests/nettest.py [script ...]    # prism, looking-glass, kaleidoscope, kaleidoscope-mobile
 
 Every script that makes requests is opened with the network failing each way it can (shot.js --net):
 - hang: the server never answers (Tampermonkey gives up at the request's timeout; the page's own fetches hang)
@@ -20,8 +20,8 @@ rejection, if the panel doesn't open or shows "undefined"/"NaN"/"[object", or if
   a spinner forever), within 20 s when AniList never answers
 """
 import json, os, subprocess, sys
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import JOBS
 
 MODES = ['ok', 'hang', 'status', 'malformed', 'abort']
@@ -53,7 +53,7 @@ def run(name, mode):
     url, cmd, extra, _ = JOBS[path]
     if name.startswith('kaleidoscope') and mode != 'ok': wait = 23000 if mode == 'hang' else 4000
     if name == 'prism' and mode == 'hang': wait = 20000            # its own fetch gives up at 8 s, then it falls back
-    args = ['node', f'{HERE}/shot.js', f'{R}/{path}/{path.split("/")[1]}.user.js', url, '/dev/null', '--cmd', cmd, '--net', mode,
+    args = ['node', f'{HERE}/lib/shot.js', f'{R}/{path}/{path.split("/")[1]}.user.js', url, '/dev/null', '--cmd', cmd, '--net', mode,
             '--eval', js.replace('WAIT', str(wait)), '--print'] + [a for a in extra if a in ('--mobile',)]
     r = subprocess.run(args, capture_output=True, text=True, timeout=120)
     line = next((l for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)

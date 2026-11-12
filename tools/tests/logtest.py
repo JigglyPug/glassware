@@ -1,6 +1,6 @@
 """Check that console logging never prints account or channel names, handles, emails or ids.
 
-    python3 tools/logtest.py [script]       # Molten Tools, or the copy given (to compare an older one)
+    python3 tools/tests/logtest.py [script]       # Molten Tools, or the copy given (to compare an older one)
 
 People share console captures, so a script's log lines must not name their accounts even with
 logging on (CLAUDE.md, Security). This turns on every logging switch in Molten Tools (account
@@ -15,7 +15,8 @@ It passes when no console line contains any of the made-up names, handles, email
 names included). Prints "clean" for each path, or the lines that gave something away.
 """
 import json, os, re, subprocess, sys, tempfile
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 JS = f'{R}/desktop/molten-tools/molten-tools.user.js'
 
 MINE = {'name': 'Quillon Vantablack', 'handle': '@quillonvanta', 'email': 'quillon.vanta@example.com', 'id': 'UCquillonSentinel000001'}
@@ -89,7 +90,7 @@ def run_case(url, wait, case):
     for k, v in (('init', INIT % {'case': json.dumps(case)}), ('gm', json.dumps(GM)), ('ls', json.dumps(LS))):
         files[k] = os.path.join(tmp, k); open(files[k], 'w').write(v)
     # the wait is the harness's, not the page's, so it carries on through the script's own page changes
-    r = subprocess.run(['node', f'{HERE}/shot.js', JS, url, '/dev/null', '--cmd', 'none', '--console', '--init', files['init'],
+    r = subprocess.run(['node', f'{HERE}/lib/shot.js', JS, url, '/dev/null', '--cmd', 'none', '--console', '--init', files['init'],
                         '--seed', files['gm'], '--seedls', files['ls'], '--wait', str(wait), '--eval', 'location.href', '--print'],
                        capture_output=True, text=True, timeout=180)
     lines = [json.loads(l.split(' ', 2)[2]) for l in r.stdout.splitlines() if l.startswith('CONSOLE ')]

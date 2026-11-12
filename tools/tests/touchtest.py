@@ -1,10 +1,10 @@
 """Check every phone sheet with real touches: taps, scrolling, and the handle.
 
-    python3 tools/touchtest.py [script ...]      # every script that runs on phones, or the ones named
-    python3 tools/touchtest.py --file <copy.user.js> <script>   # an older copy in place of one script
+    python3 tools/tests/touchtest.py [script ...]      # every script that runs on phones, or the ones named
+    python3 tools/tests/touchtest.py --file <copy.user.js> <script>   # an older copy in place of one script
 
 Each script that runs on a phone is opened on a stand-in page in a phone-sized touch browser, and
-tools/touch_drive.js works its sheet the way a thumb does (CDP touch events, not mouse clicks):
+tools/tests/touch_drive.js works its sheet the way a thumb does (CDP touch events, not mouse clicks):
 - a tap on a switch flips it, a tap on another tab opens it
 - a drag inside the sheet scrolls the sheet, and the page behind it doesn't move
 - none of those touches, taps or clicks reach the page behind (a listener on the page's document)
@@ -12,11 +12,11 @@ tools/touch_drive.js works its sheet the way a thumb does (CDP touch events, not
 It fails on any of those, or an uncaught error. Prints "clean" for each script, or what went wrong.
 """
 import json, os, subprocess, sys
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import JOBS
 
-# where each phone sheet is opened (the scripts that run on phones; RUNS in tools/readmes.py)
+# where each phone sheet is opened (the scripts that run on phones; RUNS in tools/build/readmes.py)
 # Hourglass's demo data has a weekday lockdown; the test runs at whatever time it is, so its copy is disarmed
 # (during a lockdown the block screen is up and the sheet isn't what's being tested)
 import tempfile
@@ -30,7 +30,7 @@ PHONE = {'desktop/hourglass': ('https://www.youtube.com/', 'Open', ['--seed', HG
 def run(p, script=None):
     url, cmd, extra = PHONE[p]
     script = script or f'{R}/{p}/{p.split("/")[1]}.user.js'
-    r = subprocess.run(['node', f'{HERE}/shot.js', script, url, '/dev/null', '--mobile', '--cmd', cmd, *extra, '--drive', f'{HERE}/touch_drive.js'],
+    r = subprocess.run(['node', f'{HERE}/lib/shot.js', script, url, '/dev/null', '--mobile', '--cmd', cmd, *extra, '--drive', f'{HERE}/tests/touch_drive.js'],
                        capture_output=True, text=True, timeout=180)
     line = next((l for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)
     if not line: return [f'could not run: {(r.stderr or r.stdout).strip()[-200:]}']

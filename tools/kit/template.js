@@ -150,7 +150,7 @@ __APPLY__
 
     const isDark = () => S.settings.appearance === 'dark' || (S.settings.appearance === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
 
-    // The glass recipe (tools/tokens.json, filled in by tools/new_script.py): only neutrals swap between
+    // The glass recipe (tools/lib/tokens.json, filled in by tools/new_script.py): only neutrals swap between
     // light and dark; accents stay.
     const CSS = `
 :host{all:initial}

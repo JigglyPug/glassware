@@ -1,10 +1,10 @@
-"""Made-up Hourglass histories: the demo seed for the screenshots, and the scenarios tools/dash.py checks.
+"""Made-up Hourglass histories: the demo seed for the screenshots, and the scenarios tools/tests/dash.py checks.
 
     python3 tools/seeds/hourglass.py        # rewrite tools/seeds/hourglass.json (the demo: 'habit')
 
 Every history ends on Tuesday 2026-11-03 at 8:40 PM, the screenshot clock. Nothing here is real
 browsing data. make(name) returns the GM store for a scenario; PLANTED says what each scenario's
-dashboard has to say, card by card (tools/dash.py checks it).
+dashboard has to say, card by card (tools/tests/dash.py checks it).
 """
 import json, os, random
 from datetime import date, datetime, timedelta, timezone

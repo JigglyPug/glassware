@@ -1,6 +1,6 @@
 """Check that Kaleidoscope's prompt only goes to the claude.ai tab it opened.
 
-    python3 tools/handofftest.py
+    python3 tools/tests/handofftest.py
 
 Opens claude.ai pages (stand-ins) with a prompt waiting in Kaleidoscope's storage and checks who takes
 it: the tab opened for it (its one-time id in the address) does; a plain claude.ai/new tab you opened
@@ -29,8 +29,8 @@ or "undefined"/"NaN"/"[object" on screen):
 Prints "clean" or the problems.
 """
 import json, os, subprocess, sys, tempfile
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import CLOCK
 from datetime import datetime
 
@@ -40,7 +40,7 @@ READ = "(async () => { await new Promise(r => setTimeout(r, 800)); return { left
 
 def taken(url, handoff, script=JS):
     seed = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False); json.dump({'kaleidoscope.handoff': handoff}, seed); seed.close()
-    r = subprocess.run(['node', f'{HERE}/shot.js', script, url, '/dev/null', '--clock', CLOCK, '--seed', seed.name, '--eval', READ, '--print'],
+    r = subprocess.run(['node', f'{HERE}/lib/shot.js', script, url, '/dev/null', '--clock', CLOCK, '--seed', seed.name, '--eval', READ, '--print'],
                        capture_output=True, text=True, timeout=120)
     os.unlink(seed.name)
     line = next((l for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)
@@ -72,7 +72,7 @@ def send(opentab, action='mode', close=False, settings=None, boards=None, script
     if boards: gm['kaleidoscope.boards'] = boards
     seed = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False); json.dump(gm, seed); seed.close()
     js = SEND.replace('ACTION', json.dumps(action)).replace('CLOSE', 'true' if close else 'false')
-    r = subprocess.run(['node', f'{HERE}/shot.js', script, ANILIST, '/dev/null', '--cmd', 'Open Kaleidoscope', '--clock', CLOCK,
+    r = subprocess.run(['node', f'{HERE}/lib/shot.js', script, ANILIST, '/dev/null', '--cmd', 'Open Kaleidoscope', '--clock', CLOCK,
                         '--seed', seed.name, '--opentab', opentab, '--eval', js, '--print'], capture_output=True, text=True, timeout=120)
     os.unlink(seed.name)
     line = next((l for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)
@@ -134,7 +134,7 @@ PAGE = "(async () => { await new Promise(r => setTimeout(r, 2500)); return { fra
 
 def shot(url, gm, js, extra=(), script=JS):
     seed = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False); json.dump(gm, seed); seed.close()
-    r = subprocess.run(['node', f'{HERE}/shot.js', script, url, '/dev/null', '--clock', CLOCK, '--seed', seed.name, '--eval', js, '--print', *extra],
+    r = subprocess.run(['node', f'{HERE}/lib/shot.js', script, url, '/dev/null', '--clock', CLOCK, '--seed', seed.name, '--eval', js, '--print', *extra],
                        capture_output=True, text=True, timeout=120)
     os.unlink(seed.name)
     line = next((l for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)

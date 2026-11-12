@@ -14,7 +14,7 @@ permissions:
 jobs:
   checks:
     # pinned, not ubuntu-latest: the test browsers draw with the exact fonts below (screenshots, issue #3)
-    # (tools/fonts.conf uses Ubuntu 24.04's fonts-inter, fonts-dejavu-core, fonts-dejavu-mono and fonts-noto-color-emoji, as locally)
+    # (tools/lib/fonts.conf uses Ubuntu 24.04's fonts-inter, fonts-dejavu-core, fonts-dejavu-mono and fonts-noto-color-emoji, as locally)
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     steps:
@@ -28,6 +28,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install the pinned tools
+        working-directory: tools   # the pins (package.json, requirements.txt) live with the tools
         run: |
           npm ci
           # GitHub's own package mirror sometimes can't be reached for hours; Ubuntu's main one is the same packages
@@ -55,8 +56,10 @@ jobs:
         with:
           python-version: '3.12'
       - name: npm audit
+        working-directory: tools
         run: npm audit --audit-level=low
       - name: pip-audit (itself locked with hashes, in its own environment)
+        working-directory: tools
         run: |
           python3 -m venv /tmp/audit
           /tmp/audit/bin/pip install --require-hashes -r requirements-audit.txt

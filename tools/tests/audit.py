@@ -1,7 +1,7 @@
 """Check every panel for small visual glitches at common screen sizes.
 
-    python3 tools/audit.py            # every script
-    python3 tools/audit.py prism      # just one (folder name)
+    python3 tools/tests/audit.py            # every script
+    python3 tools/tests/audit.py prism      # just one (folder name)
 
 Opens each panel the same way tools/screens.py does, then on every tab and every fold-out
 picker looks for text that spills out of its box or is cut short, things clipped by their
@@ -23,10 +23,10 @@ Phone sizes render in Roboto, Android's font (install it into ~/.fonts first), b
 text that fits in the desktop fonts can still spill out on a phone.
 """
 import json, os, subprocess, sys, tempfile
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import JOBS, CLOCK
-src = open(f'{HERE}/readmes.py', encoding='utf-8').read(); ns = {'__file__': f'{HERE}/readmes.py'}
+src = open(f'{HERE}/build/readmes.py', encoding='utf-8').read(); ns = {'__file__': f'{HERE}/build/readmes.py'}
 exec(src[:src.index('\nACCENT = {')], ns); RUNS = ns['RUNS']
 
 DESKTOP = [(1280, 720), (1366, 768), (1920, 1080)]
@@ -55,7 +55,7 @@ SURFACES = {
 
 def surface(p, label, url, cmd, flags, w, h, phone, theme):
     slug = p.split('/')[1]
-    args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--audit', '--vw', str(w), '--vh', str(h), '--theme', theme] + (['--mobile'] if phone else []) + flags
+    args = ['node', f'{HERE}/lib/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--audit', '--vw', str(w), '--vh', str(h), '--theme', theme] + (['--mobile'] if phone else []) + flags
     if '--clock' not in flags: args += ['--clock', CLOCK]
     r = subprocess.run(args, capture_output=True, text=True, timeout=180, env=dict(os.environ, FONTCONFIG_FILE=FONTS) if phone else None)
     line = next((l for l in r.stdout.splitlines() if l.startswith('AUDIT ')), None)
@@ -65,7 +65,7 @@ def surface(p, label, url, cmd, flags, w, h, phone, theme):
 def audit(p, w, h, phone, hostile=False, theme='dark'):
     url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]
     extra = [x for x in extra if x != '--mobile']
-    args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--audit', '--clock', CLOCK,
+    args = ['node', f'{HERE}/lib/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--audit', '--clock', CLOCK,
             '--vw', str(w), '--vh', str(h), '--theme', theme] + (['--mobile'] if phone else []) + (['--hostile'] if hostile else []) + extra + (['--tabs', ','.join(tabs)] if tabs else [])
     r = subprocess.run(args, capture_output=True, text=True, timeout=180, env=dict(os.environ, FONTCONFIG_FILE=FONTS) if phone else None)
     line = next((l for l in r.stdout.splitlines() if l.startswith('AUDIT ')), None)

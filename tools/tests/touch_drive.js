@@ -1,4 +1,4 @@
-// Works a phone sheet the way a thumb does, with real touch events (shot.js --drive; tools/touchtest.py).
+// Works a phone sheet the way a thumb does, with real touch events (shot.js --drive; tools/tests/touchtest.py).
 // Finds the sheet on its own: the fixed element that holds the grab handle (or Molten's #ytt-panel), the
 // part of it that scrolls, its first switch and its tabs. Each step reports what happened; the Python side
 // decides what counts as a problem. Steps run in this order: taps, a scroll inside, taps that mustn't

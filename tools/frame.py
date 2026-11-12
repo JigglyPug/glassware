@@ -53,7 +53,7 @@ FRAMES = {
 
 # ---------------------------------------------------------------- the frame (CLAUDE.md: control sizes)
 import json
-TOK = json.load(open(f'{HERE}/tokens.json', encoding='utf-8'))['controls']   # tools/tokens.json
+TOK = json.load(open(f'{HERE}/lib/tokens.json', encoding='utf-8'))['controls']   # tools/lib/tokens.json
 _t = TOK['toggle']
 SIZES = dict(desktop=dict(x=TOK['close']['desktop'], sw=(_t['desktop']['w'], _t['desktop']['h']), swk=_t['desktop']['knob']),
              phone=dict(x=TOK['close']['phone'], sw=(_t['phone']['w'], _t['phone']['h']), swk=_t['phone']['knob']))

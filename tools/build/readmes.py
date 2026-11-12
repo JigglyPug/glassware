@@ -3,7 +3,7 @@ import re, sys
 ONLY = [x for x in os.environ.get('ONLY', '').split(',') if x]
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from features import F
 OWNER = sys.argv[1] if len(sys.argv) > 1 else 'JigglyPug'
-REPO = 'glassware'; R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+REPO = 'glassware'; R = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RAW = f'https://raw.githubusercontent.com/{OWNER}/{REPO}/main'
 SITE = f'https://{OWNER.lower()}.github.io/{REPO}/'
 
@@ -169,7 +169,7 @@ def badge(label, msg, color, style='for-the-badge'):
     return f'https://img.shields.io/badge/{q(label)}-{q(msg)}-{color}?style={style}'
 
 # GitHub has no light/dark switch to show off, so the top screenshot and the front-page cards show
-# both themes at once: the prism cut (tools/prismcut.py), in the script's accent, lava for Molten.
+# both themes at once: the prism cut (tools/build/prismcut.py), in the script's accent, lava for Molten.
 def make_cut(p, name):
     import prismcut
     d, l = f'{R}/{p}/images/{name}.webp', f'{R}/{p}/images/{name}-light.webp'

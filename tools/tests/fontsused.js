@@ -1,4 +1,4 @@
-// Which font files a panel's text was really drawn with (shot.js --drive tools/fontsused.js): for each
+// Which font files a panel's text was really drawn with (shot.js --drive tools/tests/fontsused.js): for each
 // font, how many glyphs and a few of the texts. Two machines whose screenshots differ show it here.
 module.exports = async (page) => {
   const cdp = await page.context().newCDPSession(page);

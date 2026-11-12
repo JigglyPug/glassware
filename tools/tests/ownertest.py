@@ -1,6 +1,6 @@
 """Check that Prism stands by while another script holds the title bar, and keeps doing so.
 
-    python3 tools/ownertest.py
+    python3 tools/tests/ownertest.py
 
 Two ways another script takes the title bar: it claims it with <html data-titlebar-owner="Name"> and
 sets its own color, or it simply rewrites Prism's color (what the Molten scripts do). Prism must say it's standing by, and still say
@@ -9,7 +9,7 @@ so after you turn it off and back on, or turn it off and back on for the site (b
 Prints "== prism title bar hand-off: clean" (both ways) or the problems.
 """
 import json, os, subprocess, sys
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
 
 DRIVE = r"""(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
@@ -56,7 +56,7 @@ WANT = {
 
 bad = []
 for how, drive, who in (('claim', DRIVE, 'Molten for Reddit'), ('rewrite', REWRITE, 'Another script')):
-    r = subprocess.run(['node', f'{HERE}/shot.js', f'{R}/desktop/prism/prism.user.js', 'https://www.reddit.com/', '/dev/null',
+    r = subprocess.run(['node', f'{HERE}/lib/shot.js', f'{R}/desktop/prism/prism.user.js', 'https://www.reddit.com/', '/dev/null',
                         '--cmd', 'Open Prism', '--eval', drive, '--print'], capture_output=True, text=True)
     got = next((json.loads(l[5:]) for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)
     if not got:

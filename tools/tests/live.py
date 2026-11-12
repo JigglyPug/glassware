@@ -1,7 +1,7 @@
 """Check every panel updates on the spot: nothing should wait for a tab switch, a reopen or a refresh.
 
-    python3 tools/live.py              # every script
-    python3 tools/live.py kaleidoscope # just these (folder names)
+    python3 tools/tests/live.py              # every script
+    python3 tools/tests/live.py kaleidoscope # just these (folder names)
 
 For every tab, it changes each control twice (there and back), reads what every control and the
 panel's text show, then closes and reopens the panel and reads them again. Anything that differs
@@ -11,8 +11,8 @@ have appeared. Then the same again with the change made in one tab and read in a
 tab of the site (settings reach every open tab live). Prints one line per problem; "clean" otherwise.
 """
 import json, os, subprocess, sys
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import JOBS, CLOCK
 from carry import FIRST
 
@@ -24,7 +24,7 @@ def live(p, two=False, tabs=None, part=None):
     """One browser run: the tabs given (all of them by default), changed and checked one after another."""
     url, cmd, extra, _ = JOBS[p]; slug = p.split('/')[1]
     tabs = tabs or tabs_of(p)
-    args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--live', '--clock', CLOCK, '--vh', '1400',
+    args = ['node', f'{HERE}/lib/shot.js', f'{R}/{p}/{slug}.user.js', url, '/dev/null', '--cmd', cmd, '--live', '--clock', CLOCK, '--vh', '1400',
             '--tabs', ','.join(tabs)] + extra + (['--twotab'] if two else []) + (['--slice', f'{part}/{SLICES}'] if part is not None else [])
     r = subprocess.run(args, capture_output=True, text=True, timeout=1500)
     line = next((l for l in r.stdout.splitlines() if l.startswith('LIVE ')), None)

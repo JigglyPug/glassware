@@ -1,8 +1,8 @@
 """Put screenshots side by side, dark next to light, so a person can look at every one before a push.
 
-    python3 tools/sheet.py              # every screenshot that differs from GitHub
-    python3 tools/sheet.py prism        # every screenshot of these scripts
-    python3 tools/sheet.py --all        # every screenshot of every script
+    python3 tools/build/sheet.py              # every screenshot that differs from GitHub
+    python3 tools/build/sheet.py prism        # every screenshot of these scripts
+    python3 tools/build/sheet.py --all        # every screenshot of every script
 
 Writes one page per capture (dark on the left, light on the right) to a temporary folder and
 prints the paths. Tall captures are cut into parts, so every page can be looked at full size:
@@ -13,7 +13,7 @@ required step before every push that changes a panel (CLAUDE.md).
 import glob, os, subprocess, sys, tempfile
 from PIL import Image, ImageDraw
 
-HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
 W = 700      # width of each capture on a page
 PAGE = 1600  # tallest slice of a capture on one page: small enough that a viewer shows it at full size
 

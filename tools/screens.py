@@ -10,7 +10,7 @@ schedule, block screen, late-night nudge).
 Run tools/pages.py afterwards to copy the images into the site.
 """
 import os, subprocess, sys, tempfile
-
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib'))
 from par import pmap
 QUIET = False   # tools/check.py sets this: it captures several scripts at once and prints its own lines
 
@@ -59,14 +59,14 @@ def hourglass_phone(imgs=None):
     def one(ts):
         theme, sfx = ts
         tmp = tempfile.mkdtemp()
-        cap(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop', '--theme', theme,
+        cap(['node', f'{HERE}/lib/shot.js', js, 'https://www.youtube.com/', f'{tmp}/phone.png', '--cmd', 'Open', '--mobile', '--crop', '--theme', theme,
                         '--vh', '4800', '--clipsel', '.frame.m .panel', '--clock', CLOCK, '--tabs', 'Schedule'] + seed)
         # the block screen: a weekday morning, inside the demo lockdown
-        cap(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/block.png', '--cmd', 'none', '--mobile', '--theme', theme,
+        cap(['node', f'{HERE}/lib/shot.js', js, 'https://www.youtube.com/', f'{tmp}/block.png', '--cmd', 'none', '--mobile', '--theme', theme,
                         '--clock', '2026-11-03T11:48:00-05:00'] + seed)
         webp(f'{tmp}/phone.png', f'{imgs}/phone-dashboard{sfx}.webp'); webp(f'{tmp}/phone-schedule.png', f'{imgs}/phone-schedule{sfx}.webp')
         # the late-night nudge, from the Preview button in Settings, at 11:40 PM
-        cap(['node', f'{HERE}/shot.js', js, 'https://www.youtube.com/', f'{tmp}/nudge.png', '--cmd', 'Open', '--mobile', '--theme', theme,
+        cap(['node', f'{HERE}/lib/shot.js', js, 'https://www.youtube.com/', f'{tmp}/nudge.png', '--cmd', 'Open', '--mobile', '--theme', theme,
                         '--clock', '2026-11-03T23:40:00-05:00', '--eval', NUDGE] + seed)
         webp(f'{tmp}/block.png', f'{imgs}/phone-block{sfx}.webp'); webp(f'{tmp}/nudge.png', f'{imgs}/phone-nudge{sfx}.webp')
     pmap(one, THEMES)
@@ -80,7 +80,7 @@ def run(p, imgs=None):
     def one(ts):
         theme, sfx = ts
         tmp = tempfile.mkdtemp(); out = f'{tmp}/{slug}.png'
-        args = ['node', f'{HERE}/shot.js', f'{R}/{p}/{slug}.user.js', url, out, '--cmd', cmd, '--crop', '--clock', CLOCK, '--theme', theme,
+        args = ['node', f'{HERE}/lib/shot.js', f'{R}/{p}/{slug}.user.js', url, out, '--cmd', cmd, '--crop', '--clock', CLOCK, '--theme', theme,
                 '--vh', '2600' if mobile else '3000'] + extra + (['--tabs', ','.join(tabs)] if tabs else [])
         cap(args)
         webp(out, f'{imgs}/{lead}{sfx}.webp')

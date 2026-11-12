@@ -21,7 +21,7 @@ It checks, in order:
   theme      light and dark from CLAUDE.md: the sun/moon switch, Appearance and "Match my device",
              appearance defaults to auto and follows the device live, the glass recipe numbers, and
              a -light twin for every screenshot, selection and focus rings in the accent
-  tokens     CLAUDE.md's tables match tools/tokens.json, and no tool keeps its own copy of a token
+  tokens     CLAUDE.md's tables match tools/lib/tokens.json, and no tool keeps its own copy of a token
   tools      the development tools' pins agree (package.json, its lockfile, requirements.txt);
              warns when what's installed differs
   permissions  every @grant is used; @connect * scripts only request public addresses
@@ -33,27 +33,27 @@ It checks, in order:
   commits    commits not yet pushed are by JigglyPug and carry no chat or session links
   generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
   changes    each script's CHANGES.md starts at its @version, newest first, every entry with a line
-  touch      tools/touchtest.py: every phone sheet with real touches: taps work, a scroll stays in the
+  touch      tools/tests/touchtest.py: every phone sheet with real touches: taps work, a scroll stays in the
              sheet, nothing reaches the page, the handle swipes it closed (phone scripts changed)
-  settings   tools/carry.py: settings and saved data survive the update, from the live version and from
+  settings   tools/tests/carry.py: settings and saved data survive the update, from the live version and from
              several releases back (changed scripts)
-  glitches   tools/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
+  glitches   tools/tests/audit.py: no visual glitches at laptop, desktop and phone sizes, glass on the
              recipe, nothing faint or hard to see, in both themes (changed scripts)
-  network    tools/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope with requests that hang, fail,
+  network    tools/tests/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope with requests that hang, fail,
              return junk or drop (when one of them or the test changed)
-  hand-off   tools/ownertest.py: Prism keeps standing by for a script that holds the title bar, also
+  hand-off   tools/tests/ownertest.py: Prism keeps standing by for a script that holds the title bar, also
              after being switched off and on (when Prism or the test changed)
-  logging    tools/logtest.py: with logging on, Molten Tools never prints an account's name, handle,
+  logging    tools/tests/logtest.py: with logging on, Molten Tools never prints an account's name, handle,
              email or id (when Molten Tools changed)
-  kaleidoscope  tools/boardtest.py: a hostile board can't send anything out; tools/handofftest.py:
+  kaleidoscope  tools/tests/boardtest.py: a hostile board can't send anything out; tools/tests/handofftest.py:
              a prompt goes only to the claude.ai tab opened for it (when Kaleidoscope changed)
-  dashboard  the demo history matches its generator; tools/dash.py: every Hourglass card answers
+  dashboard  the demo history matches its generator; tools/tests/dash.py: every Hourglass card answers
              its question in a sentence that names the change, no figure on two cards, labelled
-             axes; tools/importtest.py: Import settings keeps any file it's given in range, skips what
+             axes; tools/tests/importtest.py: Import settings keeps any file it's given in range, skips what
              it can't read and won't read one over 1 MB (when Hourglass changed)
-  live       tools/live.py: every control updates the panel on the spot, in the same tab and in a
+  live       tools/tests/live.py: every control updates the panel on the spot, in the same tab and in a
              second open tab, with nothing waiting for a reopen (changed scripts)
-  performance  tools/perf.py: over a long session nothing a script leaves behind keeps growing
+  performance  tools/tests/perf.py: over a long session nothing a script leaves behind keeps growing
              (memory, elements, listeners, timers, page watchers) and it stays within its time
              budgets; the test proves itself on a deliberately bad script first (changed scripts,
              or when the test itself changed)
@@ -64,7 +64,7 @@ unevenly). It compares screenshots too; only Kaleidoscope's two panels are repor
 """
 import glob, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 args = sys.argv[1:]
 RAW = 'https://raw.githubusercontent.com/JigglyPug/glassware/main'
 HISTORY = re.compile(r'(?i)\b(before|from|since|until|earlier|older|used to|renamed|migrat\w*)\b')
@@ -111,7 +111,7 @@ for p, src in S.items():
     if old is not None and old != src:
         ov = hdr(old, 'version'); n += 1
         ok(vtuple(v) > vtuple(ov), f'{slug} changed but @version {v} is not higher than the live {ov}')
-    # settings under a switch fold away while it's off (data-fold), never just dimmed (tools/live.py checks the panels)
+    # settings under a switch fold away while it's off (data-fold), never just dimmed (tools/tests/live.py checks the panels)
     n += 1; ok(not re.search(r"\? '' : '[\w-]*off'\)|\? '[\w-]*off' : ''\)", src), f"{slug}: a group is dimmed with an 'off' class by its switch: fold it away instead (data-fold; CLAUDE.md, the panel frame)")
     # CHANGES.md: every release says what changed, in words a person reads; the newest is this @version
     cf = f'{R}/{plat}/{slug}/CHANGES.md'; n += 1
@@ -173,17 +173,17 @@ for p, src in {**S, **KIT}.items():
             ok(not m or HISTORY.search(line), f'{slug}: comment names version {m.group(0) if m else ""} as if current ("{line.strip()[:70]}"); describe it without a version' if m else '')
     if slug in STATIC: ok('const ICON_SRC = ' in src, f'{slug}: static header tile should embed the app icon (python3 tools/panel_icons.py)')
     if slug in LIVE: ok('ICON_SRC' not in src and 'function glassGlyph(' in src, f'{slug}: live header tile should draw glassGlyph(), never the static icon image')
-for f in ['CLAUDE.md', 'tools/readmes.py', 'tools/features.py', 'tools/site_themes.py']:
+for f in ['CLAUDE.md', 'tools/build/readmes.py', 'tools/build/features.py', 'tools/build/site_themes.py']:
     for i, line in enumerate(open(f'{R}/{f}', encoding='utf-8'), 1):
         m = re.search(r'\b\d+\.\d+\.\d+\b', re.sub(r'https?://\S+', '', line)); n += 1
         ok(not m or HISTORY.search(line), f'{f}:{i} names version {m.group(0) if m else ""}; pages take versions from @version, so write it without one' if m else '')
 done(n)
 
 # ------------------------------------------------------------------ theme
-# The glass recipe and light/dark rules in CLAUDE.md. tools/audit.py checks the same recipe on the
+# The glass recipe and light/dark rules in CLAUDE.md. tools/tests/audit.py checks the same recipe on the
 # rendered panels (opacity and blur of every frosted surface, faint text) in both themes.
 head('theme'); n = 0
-TOKENS = json.load(open(f'{HERE}/tokens.json', encoding='utf-8')); G = TOKENS['glass']   # tools/tokens.json
+TOKENS = json.load(open(f'{HERE}/lib/tokens.json', encoding='utf-8')); G = TOKENS['glass']   # tools/lib/tokens.json
 RECIPE = [(G['light']['edge'], 'light edge'), (G['dark']['edge'], 'dark edge'), (G['dark']['highlight'], 'dark top highlight'),
           (G['light']['drop'], 'light drop shadow'), (G['dark']['drop'], 'dark drop shadow')]
 TEXT = [(G['light']['text'], 'light text'), (G['dark']['text'], 'dark text'), (G['light']['sub'], 'light secondary text'), (G['dark']['sub'], 'dark secondary text')]
@@ -211,14 +211,14 @@ for p, src in {**S, **KIT}.items():
 done(n)
 
 # ------------------------------------------------------------------ tokens
-# tools/tokens.json is the one source of the design numbers: CLAUDE.md's tables must say the same, and
+# tools/lib/tokens.json is the one source of the design numbers: CLAUDE.md's tables must say the same, and
 # no tool may keep its own copy of a token value (it reads the file instead).
 head('tokens'); n = 0
 doc = open(f'{R}/CLAUDE.md', encoding='utf-8').read()
 ROWS = {'glass': 'glass', 'edge': 'edge', 'top highlight (inset)': 'highlight', 'drop shadow': 'drop', 'text': 'text', 'secondary text': 'sub'}
 for row, key in ROWS.items():
     n += 1; want = f"| {row} | `{G['light'][key]}` | `{G['dark'][key]}` |"
-    ok(want in doc, f'CLAUDE.md glass table: the "{row}" row should read {want} (tools/tokens.json)')
+    ok(want in doc, f'CLAUDE.md glass table: the "{row}" row should read {want} (tools/lib/tokens.json)')
 C = TOKENS['controls']; tg = C['toggle']; SH = TOKENS['shape']
 for want in [f"backdrop-filter: blur({G['blur']}px) saturate({G['saturate']}%)", f"{round(G['opacity']['light'] * 100)}% light, {round(G['opacity']['dark'] * 100)}% dark",
              f"| icon tile | {C['tile']['size']}×{C['tile']['size']}, {C['tile']['radius']}px corners |",
@@ -230,19 +230,19 @@ for want in [f"backdrop-filter: blur({G['blur']}px) saturate({G['saturate']}%)",
              f"| insets | icon tile and close button {SH['inset']['head']}px from the panel's edges; tab bar {SH['inset']['tabs']}px from each side |",
              "| corner scale | " + ' · '.join(f"{v} {k}" for k, v in SH['radius'].items()) + " |",
              f"text under {TOKENS['contrast']['text']}:1", f"marks under\n  {TOKENS['contrast']['mark']}:1".replace('\\n', '\n')]:
-    n += 1; ok(want.replace('\n  ', ' ') in doc.replace('\n  ', ' '), f'CLAUDE.md should say "{want.strip()}" (tools/tokens.json)')
+    n += 1; ok(want.replace('\n  ', ' ') in doc.replace('\n  ', ' '), f'CLAUDE.md should say "{want.strip()}" (tools/lib/tokens.json)')
 for m in ('light', 'dark'):   # the glass color and the opacity token must agree
     n += 1; a = re.search(r',\s*([\d.]+)\)$', G[m]['glass'])
-    ok(a and abs(float(a.group(1)) - G['opacity'][m]) < 1e-9, f"tools/tokens.json: {m} glass {G[m]['glass']} doesn't match its opacity {G['opacity'][m]}")
+    ok(a and abs(float(a.group(1)) - G['opacity'][m]) < 1e-9, f"tools/lib/tokens.json: {m} glass {G[m]['glass']} doesn't match its opacity {G['opacity'][m]}")
 tpl = open(f'{R}/tools/kit/template.js', encoding='utf-8').read()
 for ph in ('__W_PANEL__', '__R_PANEL__', '__R_SHEET__', '__R_CARD__', '__I_HEAD__', '__I_TABS__'):
     n += 1; ok(ph in tpl, f'tools/kit/template.js should take the panel shape from the tokens ({ph})')
 copies = [G[m][k] for m in ('light', 'dark') for k in ('glass', 'sub')] + [f"blur({G['blur']}px)"]
 # (the tools that build or test panels; the README banners have their own page palettes)
-for f in ['tools/frame.py', 'tools/shot.js', 'tools/prismcut.py', 'tools/new_script.py', 'tools/kit/template.js', 'tools/audit.py', 'tools/live.py']:
+for f in ['tools/frame.py', 'tools/lib/shot.js', 'tools/build/prismcut.py', 'tools/new_script.py', 'tools/kit/template.js', 'tools/tests/audit.py', 'tools/tests/live.py']:
     t = open(f'{R}/{f}', encoding='utf-8').read(); n += 1
     hit = [c for c in copies if c in t]
-    ok(not hit, f'{f} keeps its own copy of a design token ({hit[:1]}); read it from tools/tokens.json')
+    ok(not hit, f'{f} keeps its own copy of a design token ({hit[:1]}); read it from tools/lib/tokens.json')
 done(n)
 
 # ------------------------------------------------------------------ privacy
@@ -283,9 +283,9 @@ pin_re = _re.compile(r'^([A-Za-z0-9_.-]+)==([^\s\\;]+)')
 def locked(name, src):
     """The pins chosen in <src>; the lock <name> made from them, every package hashed."""
     global n
-    lock_txt = open(f'{R}/{name}').read()
+    lock_txt = open(f'{HERE}/{name}').read()
     pins = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, lock_txt.splitlines()) if m}
-    chosen = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, open(f'{R}/{src}').read().splitlines()) if m}
+    chosen = {m.group(1).lower(): m.group(2) for m in map(pin_re.match, open(f'{HERE}/{src}').read().splitlines()) if m}
     blocks = _re.split(r'\n(?=[A-Za-z0-9_.-]+==)', lock_txt)
     unhashed = [b.split('==')[0].split('\n')[-1] for b in blocks if '==' in b and '--hash=sha256:' not in b]
     n += 2
@@ -297,25 +297,25 @@ locked('requirements-audit.txt', 'requirements-audit.in')     # pip-audit, which
 # GitHub's "audit" job checks both locks and the Node lock for known vulnerabilities, weekly and on every push
 wf = open(f'{R}/.github/workflows/checks.yml').read()
 n += 1
-ok(all(x in wf for x in ('\n  audit:', 'npm audit', 'pip-audit -r requirements.txt --require-hashes', 'pip-audit -r requirements-audit.txt --require-hashes', 'schedule:')),
+ok(all(x in wf for x in ('\n  audit:', 'working-directory: tools', 'npm audit', 'pip-audit -r requirements.txt --require-hashes', 'pip-audit -r requirements-audit.txt --require-hashes', 'schedule:')),
    ".github/workflows/checks.yml has lost its audit job (npm audit and pip-audit on both locks, weekly too)")
 # a pin changed: look for known vulnerabilities here too, before it ships (fails closed if the checker is missing).
 # Not on GitHub (--ci): there the "audit" job does it, with pip-audit installed from its own lock.
-pinfiles = ['package-lock.json', 'requirements.txt', 'requirements-audit.txt']
+pinfiles = ['tools/package-lock.json', 'tools/requirements.txt', 'tools/requirements-audit.txt']
 if '--ci' not in args and ('--all' in args or git('diff', '--quiet', 'origin/main', '--', *pinfiles).returncode != 0):
     n += 2
-    r = subprocess.run(['npm', 'audit', '--audit-level=low'], cwd=R, capture_output=True, text=True)
+    r = subprocess.run(['npm', 'audit', '--audit-level=low'], cwd=HERE, capture_output=True, text=True)
     clean = r.returncode == 0
     ok(clean, 'npm audit: ' + ((r.stdout.strip().splitlines() or ['no output'])[-1]))
     try:
-        r = subprocess.run(['pip-audit', '-r', f'{R}/requirements.txt', '-r', f'{R}/requirements-audit.txt', '--require-hashes', '--disable-pip'],
+        r = subprocess.run(['pip-audit', '-r', f'{HERE}/requirements.txt', '-r', f'{HERE}/requirements-audit.txt', '--require-hashes', '--disable-pip'],
                            capture_output=True, text=True, timeout=600)
         clean &= r.returncode == 0
         ok(r.returncode == 0, 'pip-audit: ' + (((r.stdout.strip() or r.stderr.strip()).splitlines() or ['no output'])[-1]))
     except (FileNotFoundError, subprocess.TimeoutExpired) as e:
         clean = False; ok(False, f'a pin changed and pip-audit could not run ({type(e).__name__}; install it from requirements-audit.txt)')
     if clean: print('  ✓ the changed pins have no known vulnerabilities (npm audit, pip-audit)')
-pkg = json.load(open(f'{R}/package.json')); lock = json.load(open(f'{R}/package-lock.json'))
+pkg = json.load(open(f'{HERE}/package.json')); lock = json.load(open(f'{HERE}/package-lock.json'))
 npin = pkg['devDependencies']['playwright']
 n += 2
 ok(lock['packages'].get('node_modules/playwright', {}).get('version') == npin, 'package-lock.json is out of step with package.json (run npm install --package-lock-only)')
@@ -373,13 +373,13 @@ done(n)
 
 # ------------------------------------------------------------------ pages
 head('pages'); n = 0
-src = open(f'{HERE}/readmes.py', encoding='utf-8').read(); ns = {'__file__': f'{HERE}/readmes.py'}
+src = open(f'{HERE}/build/readmes.py', encoding='utf-8').read(); ns = {'__file__': f'{HERE}/build/readmes.py'}
 try: exec(src[:src.index('\nACCENT = {')], ns); RUNS = ns['RUNS']
 except AssertionError as e: RUNS = {}; ok(False, f'readmes.py: {e}')
 landing = open(f'{R}/docs/index.html', encoding='utf-8').read(); front = open(f'{R}/README.md', encoding='utf-8').read()
 for p, s in S.items():
     plat, slug = info(p); v = hdr(s, 'version'); n += 7
-    ok(f'{plat}/{slug}' in RUNS, f'{slug} needs a RUNS entry in tools/readmes.py')
+    ok(f'{plat}/{slug}' in RUNS, f'{slug} needs a RUNS entry in tools/build/readmes.py')
     ok(f'Install-v{v}' in open(f'{R}/{plat}/{slug}/README.md', encoding='utf-8').read(), f'{slug}: README shows an old version (run python3 tools/pages.py)')
     ok(f'>v{v}<' in open(f'{R}/docs/{plat}/{slug}/index.html', encoding='utf-8').read(), f'{slug}: site page shows an old version (run python3 tools/pages.py)')
     ok(f'>v{v}<' in landing, f'{slug}: landing card shows an old version (run python3 tools/pages.py)')
@@ -391,25 +391,25 @@ done(n)
 
 # ------------------------------------------------------------------ registry
 head('registry'); n = 0
-# every script that runs on a phone (and the kit) uses the stamped sheet handling, and is in tools/touchtest.py
+# every script that runs on a phone (and the kit) uses the stamped sheet handling, and is in tools/tests/touchtest.py
 import touchtest
 for p, src in {**S, **KIT}.items():
     plat, slug = info(p); key = f'{plat}/{slug}'
     if key in RUNS and RUNS[key] == 'desktop': continue
     n += 1; ok(src.count('gwSheetGestures(') >= 2, f'{slug} runs on phones: its sheet should call gwSheetGestures() (the stamped touch handling; tools/frame.py)')
-    if key in RUNS: n += 1; ok(key in touchtest.PHONE, f'{slug} runs on phones: add it to PHONE in tools/touchtest.py')
+    if key in RUNS: n += 1; ok(key in touchtest.PHONE, f'{slug} runs on phones: add it to PHONE in tools/tests/touchtest.py')
 from screens import JOBS
 from features import F
 from site_themes import THEME
 folders = {f'{info(p)[0]}/{info(p)[1]}' for p in paths}
-for name, reg in [('RUNS in tools/readmes.py', RUNS), ('S in tools/readmes.py', ns.get('S', {})), ('JOBS in tools/screens.py', JOBS),
-                  ('F in tools/features.py', F), ('THEME in tools/site_themes.py', THEME)]:
+for name, reg in [('RUNS in tools/build/readmes.py', RUNS), ('S in tools/build/readmes.py', ns.get('S', {})), ('JOBS in tools/screens.py', JOBS),
+                  ('F in tools/build/features.py', F), ('THEME in tools/build/site_themes.py', THEME)]:
     n += 2
     ok(not folders - set(reg), f'{name} is missing {sorted(folders - set(reg))}')
     ok(not set(reg) - folders, f'{name} lists scripts that don\'t exist: {sorted(set(reg) - folders)}')
 for p in JOBS:
     n += 1
-    if JOBS[p][3]: ok(p in carry.FIRST, f'{p} has tabs, so tools/carry.py FIRST needs its first tab\'s name')
+    if JOBS[p][3]: ok(p in carry.FIRST, f'{p} has tabs, so tools/tests/carry.py FIRST needs its first tab\'s name')
 import panel_icons
 icons_js = open(f'{HERE}/icons.js', encoding='utf-8').read()
 for p in folders:
@@ -460,7 +460,7 @@ if '--quick' not in args:
     head('glitches')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
-        r = subprocess.run([sys.executable, f'{HERE}/audit.py'] + [p.split('/')[1] for p in targets], capture_output=True, text=True)
+        r = subprocess.run([sys.executable, f'{HERE}/tests/audit.py'] + [p.split('/')[1] for p in targets], capture_output=True, text=True)
         ok(r.returncode == 0, f'the glitch check crashed (exit {r.returncode}): ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
         cur = ''; seen = set()
         for l in r.stdout.splitlines():
@@ -478,15 +478,15 @@ ok(json.load(open(f'{HERE}/seeds/hourglass.json')) == json.loads(json.dumps(hgse
    'tools/seeds/hourglass.json differs from what tools/seeds/hourglass.py writes (run python3 tools/seeds/hourglass.py)')
 if not any(f.startswith('dashboard:') for f in fails): print('  ✓ the demo history matches its generator')
 if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/hourglass' in changed)):
-    r = subprocess.run([sys.executable, f'{HERE}/dash.py'], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, f'{HERE}/tests/dash.py'], capture_output=True, text=True)
     runs = 0
     for l in r.stdout.splitlines():
         if l.startswith('== '): runs += 1; (print(f'  ✓ {l[3:].split(":")[0]}: every card answers its question') if l.endswith('clean') else None)
         elif l.strip(): ok(False, f'hourglass dashboard: {l.strip()}')
     want = 2 * len(hgseed.PLANTED)
     ok(runs == want, f'the dashboard test reported {runs} of {want} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
-    # tools/importtest.py: Import settings takes any file (damaged, from another app, huge) without harm
-    r = subprocess.run([sys.executable, f'{HERE}/importtest.py'], capture_output=True, text=True)
+    # tools/tests/importtest.py: Import settings takes any file (damaged, from another app, huge) without harm
+    r = subprocess.run([sys.executable, f'{HERE}/tests/importtest.py'], capture_output=True, text=True)
     runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]
     for l in runs:
         if not l.endswith('clean'): ok(False, l[3:])
@@ -494,15 +494,15 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/hou
     if len(runs) >= 9 and r.returncode == 0: print('  ✓ hourglass import: damaged, foreign, out-of-range and oversized files change nothing they shouldn\'t')
 
 # ------------------------------------------------------------------ kaleidoscope
-# a board is AI-written code: tools/boardtest.py proves a hostile one can't send anything out, and
-# tools/handofftest.py that a prompt only goes to the claude.ai tab Kaleidoscope opened for it
+# a board is AI-written code: tools/tests/boardtest.py proves a hostile one can't send anything out, and
+# tools/tests/handofftest.py that a prompt only goes to the claude.ai tab Kaleidoscope opened for it
 if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kaleidoscope' in changed)):
     head('kaleidoscope')
     for tool, goods in (('boardtest.py', ["a hostile board gets nothing out; covers, the API and AniList links still work"]),
                         ('handofftest.py', ["a prompt goes only to the claude.ai tab opened for it",
                                             "a blocked or closed Claude tab ends cleanly, with a message",
                                             "damaged hand-off storage is cleared or skipped, never breaks a page"])):
-        r = subprocess.run([sys.executable, f'{HERE}/{tool}'], capture_output=True, text=True)
+        r = subprocess.run([sys.executable, f'{HERE}/tests/{tool}'], capture_output=True, text=True)
         lines = [l for l in r.stdout.splitlines() if l.strip()]
         runs = [l for l in lines if l.startswith('== ')]
         ok(len(runs) >= len(goods), f'tools/{tool} reported {len(runs)} of {len(goods)} parts: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
@@ -511,23 +511,23 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kal
             elif not l.startswith('== '): ok(False, l[3:].split(':')[0] + ': ' + l.strip() if l.startswith('== ') else 'kaleidoscope: ' + l.strip())
 
 # ------------------------------------------------------------------ touch
-# tools/touchtest.py: every phone sheet with real touches (taps, a scroll inside, the handle), none reaching the page
+# tools/tests/touchtest.py: every phone sheet with real touches (taps, a scroll inside, the handle), none reaching the page
 TOUCHES = list(touchtest.PHONE)
-touch_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/touchtest.py', 'tools/touch_drive.js', 'tools/frame.py').returncode != 0
+touch_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/touchtest.py', 'tools/tests/touch_drive.js', 'tools/frame.py').returncode != 0
 if '--ci' in args or ('--quick' not in args and ('--all' in args or touch_tool or any(p in changed for p in TOUCHES))):
     head('touch')
-    r = subprocess.run([sys.executable, f'{HERE}/touchtest.py'], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, f'{HERE}/tests/touchtest.py'], capture_output=True, text=True)
     runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]
     for l in runs: ok(l.endswith('clean'), 'touch: ' + l[3:]) if not l.endswith('clean') else print('  ✓ ' + l[3:].replace(': clean', ': taps, scrolling, the handle; nothing reaches the page'))
     ok(len(runs) == len(TOUCHES), f'the touch test reported {len(runs)} of {len(TOUCHES)} sheets: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
 
 # ------------------------------------------------------------------ network
-# tools/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope when requests hang, fail, return junk or drop
+# tools/tests/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope when requests hang, fail, return junk or drop
 NETS = ['desktop/prism', 'desktop/looking-glass', 'desktop/kaleidoscope', 'mobile/kaleidoscope-mobile']
-net_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/nettest.py').returncode != 0
+net_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/nettest.py').returncode != 0
 if '--ci' in args or ('--quick' not in args and ('--all' in args or net_tool or any(p in changed for p in NETS))):
     head('network')
-    r = subprocess.run([sys.executable, f'{HERE}/nettest.py'], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, f'{HERE}/tests/nettest.py'], capture_output=True, text=True)
     seen = 0
     for l in r.stdout.splitlines():
         if not l.startswith('== '): continue
@@ -539,12 +539,12 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or net_tool or 
         print('  ✓ Prism and Looking-Glass: nothing used that came back from a private address after a redirect')
 
 # ------------------------------------------------------------------ hand-off
-# tools/ownertest.py: Prism stands by while another script holds the title bar, also after being
+# tools/tests/ownertest.py: Prism stands by while another script holds the title bar, also after being
 # switched off and back on (everywhere or for the site), and takes it back once the other lets go
-owner_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/ownertest.py').returncode != 0
+owner_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/ownertest.py').returncode != 0
 if '--ci' in args or ('--quick' not in args and ('--all' in args or owner_tool or 'desktop/prism' in changed)):
     head('hand-off')
-    r = subprocess.run([sys.executable, f'{HERE}/ownertest.py'], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, f'{HERE}/tests/ownertest.py'], capture_output=True, text=True)
     lines = [l for l in r.stdout.splitlines() if l.strip()]
     for l in lines:
         if not l.startswith('== '): ok(False, l.strip())
@@ -552,11 +552,11 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or owner_tool o
     if r.returncode == 0: print('  ✓ prism: stands by for another script, also after being switched off and on')
 
 # ------------------------------------------------------------------ logging
-# tools/logtest.py: with every logging switch on, Molten Tools' account paths never print an account's
+# tools/tests/logtest.py: with every logging switch on, Molten Tools' account paths never print an account's
 # name, handle, email or id (and giving up on a missing account doesn't bounce between pages)
 if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/molten-tools' in changed)):
     head('logging')
-    r = subprocess.run([sys.executable, f'{HERE}/logtest.py'], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, f'{HERE}/tests/logtest.py'], capture_output=True, text=True)
     seen = 0
     for l in r.stdout.splitlines():
         if l.startswith('== '): seen += 1; (print(f'  ✓ {l[3:].split(": ")[0]}: no account names in the console') if l.endswith('clean') else None)
@@ -568,7 +568,7 @@ if FULL:
     head('live')
     if not targets: print('  ✓ no script differs from GitHub')
     else:
-        r = subprocess.run([sys.executable, f'{HERE}/live.py'] + [p.split('/')[1] for p in targets], capture_output=True, text=True)
+        r = subprocess.run([sys.executable, f'{HERE}/tests/live.py'] + [p.split('/')[1] for p in targets], capture_output=True, text=True)
         cur = ''; seen = 0
         for l in r.stdout.splitlines():
             if l.startswith('== '): cur = l[3:].split(':')[0].split('/')[-1]; seen += 1; (print(f'  ✓ {cur}: updates live') if l.endswith('clean') else None)
@@ -576,19 +576,19 @@ if FULL:
         ok(seen == 2 * len(targets), f'the live-update test reported {seen} of {2 * len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
 if '--quick' not in args:
     head('performance')
-    # tools/perf.py: a long session on each changed script's site; nothing it leaves behind keeps
+    # tools/tests/perf.py: a long session on each changed script's site; nothing it leaves behind keeps
     # growing and it stays within its time budgets. The test proves itself on a deliberately bad
     # script first, so it also runs (that part alone) when only the test changed.
-    perf_tools = git('diff', '--quiet', 'origin/main', '--', 'tools/perf.py', 'tools/shot.js').returncode != 0
+    perf_tools = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/perf.py', 'tools/lib/shot.js').returncode != 0
     if not targets and not perf_tools: print('  ✓ no script differs from GitHub')
     else:
         names = [p.split('/')[1] for p in targets]
-        r = subprocess.run([sys.executable, f'{HERE}/perf.py'] + (names or ['--selftest']), capture_output=True, text=True)
+        r = subprocess.run([sys.executable, f'{HERE}/tests/perf.py'] + (names or ['--selftest']), capture_output=True, text=True)
         seen = 0
         for l in r.stdout.splitlines():
             if not l.startswith('== '): continue
             seen += 1; name, res = l[3:].split(': ', 1)
-            if name == 'selftest': (print('  ✓ the test catches a leaky, slow script') if res.startswith('every budget') else ok(False, f'tools/perf.py self-test: {res}'))
+            if name == 'selftest': (print('  ✓ the test catches a leaky, slow script') if res.startswith('every budget') else ok(False, f'tools/tests/perf.py self-test: {res}'))
             elif res == 'clean': print(f'  ✓ {name.split("/")[-1]}: no leaks, within its time budgets')
             else: ok(False, f'{name.split("/")[-1]}: {res}')
         ok(seen == 1 + len(targets), f'the performance test reported {seen} of {1 + len(targets)} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
@@ -603,7 +603,7 @@ if FULL:
     # exactly (fixed clock, demo data, animations stopped), so any difference means the panel changed
     # and its screenshots weren't recaptured (python3 tools/screens.py <script>). When what draws them
     # changes (the fonts, the capture tools), every script's screenshots are compared.
-    shot_tools = git('diff', '--quiet', 'origin/main', '--', 'tools/fonts.conf', 'tools/shot.js', 'tools/screens.py').returncode != 0
+    shot_tools = git('diff', '--quiet', 'origin/main', '--', 'tools/lib/fonts.conf', 'tools/lib/shot.js', 'tools/screens.py').returncode != 0
     targets = [p for p in (list(RUNS) if '--all' in args or shot_tools else changed)]
     if not targets: print('  ✓ no script differs from GitHub')
     else:
@@ -644,9 +644,9 @@ if FULL:
                     both = Image.new('RGB', (box[2] - box[0], 2 * (box[3] - box[1]) + 4), 'white'); both.paste(A.crop(box), (0, 0)); both.paste(B.crop(box), (0, box[3] - box[1] + 4))
                     buf = io.BytesIO(); both.save(buf, 'PNG', optimize=True); print(f'    CROP {p.split("/")[1]}/{f} ' + base64.b64encode(buf.getvalue()).decode())
                 except Exception as e: print(f'    (no crop: {e})')
-            if ON_GITHUB and p in SHOT_REPORT_ONLY and stale:   # and which fonts drew this panel there (tools/fontsused.js), to compare with here
+            if ON_GITHUB and p in SHOT_REPORT_ONLY and stale:   # and which fonts drew this panel there (tools/tests/fontsused.js), to compare with here
                 url, cmd, extra, _ = screens.JOBS[p]
-                r = subprocess.run(['node', f'{HERE}/shot.js', f'{R}/{p}/{p.split("/")[1]}.user.js', url, '/dev/null', '--cmd', cmd, *extra, '--drive', f'{HERE}/fontsused.js'], capture_output=True, text=True)
+                r = subprocess.run(['node', f'{HERE}/lib/shot.js', f'{R}/{p}/{p.split("/")[1]}.user.js', url, '/dev/null', '--cmd', cmd, *extra, '--drive', f'{HERE}/tests/fontsused.js'], capture_output=True, text=True)
                 print('    FONTS ' + next((l[5:] for l in r.stdout.splitlines() if l.startswith('EVAL ')), 'could not run'))
                 import hashlib   # and the files themselves, to tell a different file from a different machine
                 for ff in ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/opentype/inter/Inter-Regular.otf'):

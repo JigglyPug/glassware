@@ -27,7 +27,7 @@ import json, os, re, subprocess, sys
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
-sys.path.insert(0, HERE)
+sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 
 # ---------------------------------------------------------------- colors
 def rgb(hx): hx = hx.lstrip('#'); return [int(hx[i:i + 2], 16) for i in (0, 2, 4)]
@@ -92,11 +92,11 @@ def script(s):
            '__START__': indent(s.get('start')), '__APPLY__': indent(s.get('apply')),
            '__LAUNCHER__': f'{launcher} or the Tampermonkey menu' if launcher else 'the Tampermonkey menu',
            '__MASTER_MENU__': f"    GM_registerMenuCommand('Turn {s['name']} on/off', () => save({{ enabled: !loadSettings().enabled }}));\n" if app['master'] else ''}
-    G = json.load(open(f'{HERE}/tokens.json', encoding='utf-8'))['glass']   # the glass recipe, from the design tokens
+    G = json.load(open(f'{HERE}/lib/tokens.json', encoding='utf-8'))['glass']   # the glass recipe, from the design tokens
     for mode, P in (('light', 'L'), ('dark', 'D')):
         for k, v in G[mode].items(): rep[f'__{P}_{k.upper()}__'] = v
     rep['__BLUR__'] = f"blur({G['blur']}px) saturate({G['saturate']}%)"
-    SH = json.load(open(f'{HERE}/tokens.json', encoding='utf-8'))['shape']   # panel shape: width, insets, corners
+    SH = json.load(open(f'{HERE}/lib/tokens.json', encoding='utf-8'))['shape']   # panel shape: width, insets, corners
     rep.update({'__W_PANEL__': str(SH['panel']['width']), '__I_HEAD__': str(SH['inset']['head']), '__I_TABS__': str(SH['inset']['tabs'])})
     for k, v in SH['radius'].items(): rep[f'__R_{k.upper()}__'] = str(v)
     for k, v in rep.items(): t = t.replace(k, v)
@@ -123,14 +123,14 @@ def register(s):
              + f" intro={py(s['intro'])},\n features=[\n"
              + ''.join(f"  {py('**' + t + '**: ' + d)},\n" for t, d in s['features'])
              + f" ],\n shots={py(shots)})\n\n")
-    insert_before(f'{HERE}/readmes.py', '\n# Where each script runs.', '\n' + entry.rstrip('\n') + '\n')
-    insert_after(f'{HERE}/readmes.py', 'RUNS = {', f"{py(p)}: {py(s['runs'])}, ")
-    insert_after(f'{HERE}/readmes.py', 'ACCENT = {', f"{py(p)}:{py(s['accent'].lstrip('#').lower())}, ")
-    insert_after(f'{HERE}/features.py', 'F = {\n', f"{py(p)}: [\n" + ''.join(f" ({py(t)}, {py(d)}),\n" for t, d in s['features']) + "],\n")
-    insert_after(f'{HERE}/site_themes.py', 'THEME = {', f"\n {py(p)}: ({py(s['theme'])}, {py(s['accent'].lower())}),")
+    insert_before(f'{HERE}/build/readmes.py', '\n# Where each script runs.', '\n' + entry.rstrip('\n') + '\n')
+    insert_after(f'{HERE}/build/readmes.py', 'RUNS = {', f"{py(p)}: {py(s['runs'])}, ")
+    insert_after(f'{HERE}/build/readmes.py', 'ACCENT = {', f"{py(p)}:{py(s['accent'].lstrip('#').lower())}, ")
+    insert_after(f'{HERE}/build/features.py', 'F = {\n', f"{py(p)}: [\n" + ''.join(f" ({py(t)}, {py(d)}),\n" for t, d in s['features']) + "],\n")
+    insert_after(f'{HERE}/build/site_themes.py', 'THEME = {', f"\n {py(p)}: ({py(s['theme'])}, {py(s['accent'].lower())}),")
     extra_src = "['--seed', f'{HERE}/seeds/" + slug + ".json']" if s.get('seed') else '[]'
     insert_after(f'{HERE}/screens.py', 'JOBS = {\n', f"    {py(p)}: ({py(s.get('url', 'https://example.com/'))}, {py('Open ' + s['name'])}, {extra_src}, {py(s.get('tabs', [])[1:])}),\n")
-    if s.get('tabs'): insert_after(f'{HERE}/carry.py', 'FIRST = {', f"{py(p)}: {py(s['tabs'][0])}, ")
+    if s.get('tabs'): insert_after(f'{HERE}/tests/carry.py', 'FIRST = {', f"{py(p)}: {py(s['tabs'][0])}, ")
     insert_after(f'{HERE}/check.py', "STATIC = {", f"{py(slug)}, ")
     insert_after(f'{HERE}/frame.py', "    'tools/kit/template': KIT,\n", f"    {py(p)}: KIT,\n")   # its shared controls stay stamped
     insert_after(f'{HERE}/panel_icons.py', "SCRIPTS = {   # static header tiles only\n", f"    {py(p)}: {py(slug)},\n")
@@ -161,4 +161,4 @@ if __name__ == '__main__':
     run('node', '--check', f"{p}/{s['slug']}.user.js")
     run('python3', 'tools/screens.py', s['slug'])
     run('python3', 'tools/pages.py')
-    print(f"\n{s['name']} is in place at {p}. Next: python3 tools/audit.py {s['slug']}, then python3 tools/check.py.")
+    print(f"\n{s['name']} is in place at {p}. Next: python3 tools/tests/audit.py {s['slug']}, then python3 tools/check.py.")

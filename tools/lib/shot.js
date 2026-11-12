@@ -1,13 +1,13 @@
 // Render a userscript's own menu in a stubbed page and screenshot it.
 // usage: node shot.js <script.user.js> <url> <out.png> [--mobile] [--cmd "Open ..."] [--theme dark|light] [--wait ms] [--eval js] [--full]
-// --exercise / --state: settings carry-over test (tools/carry.py runs it): --exercise changes every
+// --exercise / --state: settings carry-over test (tools/tests/carry.py runs it): --exercise changes every
 // setting in the panel and prints the saved data; --state prints what every control shows.
 // --seedls <file>: start with this page localStorage (JSON). 
 // --audit: take no pictures; check the open panel (each tab, each fold-out picker) for text that
-// spills out of its box, things clipped or pushed off screen, and overlapping controls. tools/audit.py runs it.
+// spills out of its box, things clipped or pushed off screen, and overlapping controls. tools/tests/audit.py runs it.
 const { chromium, devices } = require('playwright');
 const fs = require('fs');
-// design tokens (tools/tokens.json): the audit measures against these, never its own copies
+// design tokens (tools/lib/tokens.json): the audit measures against these, never its own copies
 const TK = JSON.parse(fs.readFileSync(require('path').join(__dirname, 'tokens.json'), 'utf8'));
 const TC = TK.controls, TG = TK.glass, SH = TK.shape;
 
@@ -33,7 +33,7 @@ const src = fs.readFileSync(scriptPath, 'utf8');
 const host = new URL(url).hostname;
 
 // --net ok|hang|status|malformed|abort: how AniList, the page's manifest and icons, and Tampermonkey's requests answer
-// (tools/nettest.py): normally, never, with a server error, with a broken body, or by dropping the connection
+// (tools/tests/nettest.py): normally, never, with a server error, with a broken body, or by dropping the connection
 const NET = opt('--net', '');
 const MANIFEST = JSON.stringify({ name: 'Test app', theme_color: '#e05a8a', icons: [{ src: 'https://icons.example.net/app.png', sizes: '192x192', type: 'image/png' }] });
 function stubPage() {
@@ -71,8 +71,8 @@ function stubPage() {
 }
 
 (async () => {
-  // the same two fonts on every machine (tools/fonts.conf), so screenshots match on GitHub's too;
-  // a caller that sets its own FONTCONFIG_FILE (tools/audit.py's phone sizes, in Roboto) keeps it
+  // the same two fonts on every machine (tools/lib/fonts.conf), so screenshots match on GitHub's too;
+  // a caller that sets its own FONTCONFIG_FILE (tools/tests/audit.py's phone sizes, in Roboto) keeps it
   const env = { ...process.env, FONTCONFIG_FILE: process.env.FONTCONFIG_FILE || require('path').join(__dirname, 'fonts.conf') };
   const browser = await chromium.launch({ env, ...(has('--forcedark') ? { args: ['--blink-settings=forceDarkModeEnabled=true', '--enable-features=WebContentsForceDark'] } : {}) });   // --forcedark: a browser that darkens light pages itself
   const ctxOpts = mobile ? { ...devices['Pixel 7'], ...(opt('--vh', '') ? { viewport: { width: +opt('--vw', '412'), height: +opt('--vh', '839') } } : {}) } : { viewport: { width: +opt('--vw', '1280'), height: +opt('--vh', '820') }, deviceScaleFactor: 2 };
@@ -93,9 +93,9 @@ function stubPage() {
       if (NET === 'status') return route.fulfill({ status: 503, contentType: 'text/html', body: '<h1>Service Unavailable</h1>' });
       if (NET === 'malformed') return route.fulfill({ status: 200, contentType: u.endsWith('.png') ? 'image/png' : 'application/json', body: '{"oops": <html>' });
       if (u.endsWith('/app.webmanifest')) return route.fulfill({ status: 200, contentType: 'application/manifest+json', body: MANIFEST });
-      if (u.startsWith('https://icons.example.net/')) return route.fulfill({ status: 200, contentType: 'image/png', body: fs.readFileSync(__dirname + '/../assets/icons/prism.png') });
+      if (u.startsWith('https://icons.example.net/')) return route.fulfill({ status: 200, contentType: 'image/png', body: fs.readFileSync(__dirname + '/../../assets/icons/prism.png') });
     }
-    if (u.startsWith('https://graphql.anilist.co')) return route.fulfill({ status: 200, contentType: 'application/json', body: fs.readFileSync(__dirname + '/seeds/anilist.json', 'utf8') });
+    if (u.startsWith('https://graphql.anilist.co')) return route.fulfill({ status: 200, contentType: 'application/json', body: fs.readFileSync(__dirname + '/../seeds/anilist.json', 'utf8') });
     if (route.request().resourceType() === 'document' && u.startsWith(url.split('#')[0].replace(/\/$/, '')))
       return route.fulfill({ status: 200, contentType: 'text/html', body: stubPage() });
     return route.fulfill({ status: 404, body: '' });
@@ -140,7 +140,7 @@ function stubPage() {
       };
       W.GM_setClipboard = () => {};
       // --opentab fail|throw|watch: the browser blocks the new tab (GM_openInTab and window.open give nothing back, or
-      // throw), or it opens and the test can close it: window.__tabs holds each tab, __closeTab(i) closes one (tools/handofftest.py)
+      // throw), or it opens and the test can close it: window.__tabs holds each tab, __closeTab(i) closes one (tools/tests/handofftest.py)
       const OPENTAB = ${JSON.stringify(opt('--opentab', ''))};
       W.__tabs = [];
       W.GM_openInTab = u => {
@@ -157,7 +157,7 @@ function stubPage() {
       W.unsafeWindow = W;
       const _as = Element.prototype.attachShadow; Element.prototype.attachShadow = function (o) { return _as.call(this, Object.assign({}, o, { mode: 'open' })); };
     })();`;
-  // --perf: count the repeating timers and page watchers a script leaves running (tools/perf.py)
+  // --perf: count the repeating timers and page watchers a script leaves running (tools/tests/perf.py)
   if (has('--perf')) await ctx.addInitScript(`(() => {
     const W = window, si = W.setInterval, ci = W.clearInterval, live = new Set();
     W.setInterval = function (...a) { const id = si.apply(this, a); live.add(id); return id; };
@@ -172,12 +172,12 @@ function stubPage() {
     W.__perfObservers = () => [...watching.values()].filter(ts => ts.some(r => { const t = r.deref(); return t && t.isConnected; })).length;
   })();`);
   // --noscript: the same page without the script, for a baseline
-  // --init <file>: page script that runs before the userscript (a made-up page state, tools/logtest.py)
+  // --init <file>: page script that runs before the userscript (a made-up page state, tools/tests/logtest.py)
   if (opt('--init', '')) await ctx.addInitScript(fs.readFileSync(opt('--init', ''), 'utf8'));
   await ctx.addInitScript(shim + '\n;(function(){try{\n' + (has('--noscript') ? '' : src) + '\n}catch(e){console.error("SCRIPT ERR",e)}})();');
   const page = await ctx.newPage();
   page.on('console', m => { if (m.type() === 'error') console.log('[console]', m.text().slice(0, 200)); });
-  // --console: every console line, in full (tools/logtest.py)
+  // --console: every console line, in full (tools/tests/logtest.py)
   if (has('--console')) page.on('console', m => console.log('CONSOLE ' + m.type() + ' ' + JSON.stringify(m.text())));
   page.on('pageerror', e => console.log('[pageerror]', String(e).slice(0, 300)));
   // --commit: don't wait for the page's load event (a Kaleidoscope board stops the page and replaces it)
@@ -291,7 +291,7 @@ function stubPage() {
       const fixedAnc = e => { for (let x = e; x; x = x.parentElement || (x.getRootNode() && x.getRootNode().host)) { if (x.nodeType === 1 && getComputedStyle(x).position === 'fixed') return x; } return null; };
       const parentOf = x => x.parentElement || (x.getRootNode && x.getRootNode().host) || null;
       const els = __all().filter(e => e.nodeType === 1 && !/^(STYLE|SCRIPT|svg|path|defs|g|circle|rect|line|polyline|polygon|ellipse|stop|linearGradient|radialGradient|filter|feGaussianBlur|feMerge|feMergeNode|feColorMatrix|use|clipPath|mask)$/i.test(e.tagName) && !(e instanceof SVGElement) && fixedAnc(e) && vis(e));
-      // The glass recipe (tools/tokens.json): every frosted surface has the token blur and saturation,
+      // The glass recipe (tools/lib/tokens.json): every frosted surface has the token blur and saturation,
       // light and dark glass at their token opacities. Only big surfaces count (panel, menus, cards, toasts), not chips.
       // rgb()/rgba(), and color(srgb r g b / a) (what color-mix() computes to: channels 0-1)
       const rgba = c => { c = c || ''; const m = c.match(/[\\d.]+/g) || [0, 0, 0, 0];
@@ -381,7 +381,7 @@ function stubPage() {
           if (!sz(r, ${TC.mode.w}, ${TC.mode.h})) add('control size', e, 'sun/moon switch is ' + Math.round(r.width) + 'x' + Math.round(r.height) + ', should be ${TC.mode.w}x${TC.mode.h}');
           const k = [...e.querySelectorAll('*')].find(k => getComputedStyle(k).position === 'absolute');
           if (k && !sz(k.getBoundingClientRect(), ${TC.mode.knob}, ${TC.mode.knob})) add('control size', e, 'sun/moon knob should be ${TC.mode.knob}x${TC.mode.knob}');
-          // the header around it: icon tile, name and tagline sizes (tools/tokens.json)
+          // the header around it: icon tile, name and tagline sizes (tools/lib/tokens.json)
           const head = e.parentElement;
           if (head) {
             const tile = [...head.querySelectorAll('*')].find(x => { const q = x.getBoundingClientRect(); return q.width >= 24 && q.width <= 48 && Math.abs(q.width - q.height) < 1 && q.right < r.left - 60; });
@@ -455,7 +455,7 @@ function stubPage() {
         const bad = rows.find(r => r.length > 1 && (Math.abs(r[0].left - L) > 2 || Math.abs(r[r.length - 1].right - R) > 2 || r.some(q => Math.abs(q.width - r[0].width) > 2)));
         if (bad) add('uneven buttons', p, bad.length + ' buttons in a row ' + (Math.abs(bad[bad.length - 1].right - R) > 2 || Math.abs(bad[0].left - L) > 2 ? 'leave ' + Math.round((bad[0].left - L) + (R - bad[bad.length - 1].right)) + 'px of the row empty' : 'have different widths') + '; split the row evenly (equal columns, full width)');
       }
-      // shape (tools/tokens.json): the panel's width and corners, the header's and tab bar's insets from
+      // shape (tools/lib/tokens.json): the panel's width and corners, the header's and tab bar's insets from
       // the panel's edge, and every rounded corner inside the panel on the radius scale (or nested
       // inside its parent's corner: the parent's radius less its padding)
       const modeBtn = els.find(e => e.getAttribute('aria-label') === 'Dark mode');
@@ -491,7 +491,7 @@ function stubPage() {
   if (opt('--maxfrac', '')) await page.evaluate(f => { window.__maxFrac = f; }, +opt('--maxfrac', '0.92'));
   if (has('--sheet')) await page.evaluate(() => { window.__sheet = true; });
   // --drive <file.js>: a Node module (async (page, ctx) => result) that works the page from outside, the way a
-  // person does: real taps and swipes on a touchscreen (tools/touchtest.py). Its result prints as EVAL, like --eval.
+  // person does: real taps and swipes on a touchscreen (tools/tests/touchtest.py). Its result prints as EVAL, like --eval.
   if (opt('--drive', '')) { const v = await require(require('path').resolve(opt('--drive', '')))(page, ctx); console.log('EVAL ' + JSON.stringify(v)); await browser.close(); return; }
   if (evalJs) { const v = await page.evaluate(evalJs); if (has('--print')) console.log('EVAL ' + JSON.stringify(v)); if (!QUICK) await page.waitForTimeout(900); }   // --print: show what --eval returned
   // nothing to capture: a test that only wanted what --eval found (and the requests and console lines on the way)
@@ -617,7 +617,7 @@ function stubPage() {
       const n = await page.evaluate(() => __ctl().length);
       for (const x of await page.evaluate(() => __offSettings())) issues.push(`${t} | ${x}`);
       if (has('--verbose')) console.log('CTL ' + t + ' ' + JSON.stringify(await page.evaluate(() => __ctl().map(c => c.kind + ':' + c.label + '=' + c.value))));
-      // --slice k/n: only every n-th control, starting at the k-th (tools/live.py splits a tab over several browsers)
+      // --slice k/n: only every n-th control, starting at the k-th (tools/tests/live.py splits a tab over several browsers)
       const [sk, sn] = opt('--slice', '0/1').split('/').map(Number);
       for (let j = 0; j < 2 * n; j++) {   // each control twice: there and back, so both directions are seen
         const i = j >> 1;
