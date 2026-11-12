@@ -36,6 +36,12 @@ const host = new URL(url).hostname;
 // (tools/tests/nettest.py): normally, never, with a server error, with a broken body, or by dropping the connection
 const NET = opt('--net', '');
 const MANIFEST = JSON.stringify({ name: 'Test app', theme_color: '#e05a8a', icons: [{ src: 'https://icons.example.net/app.png', sizes: '192x192', type: 'image/png' }] });
+// --net private|private-icons: the page points at private addresses, written the ways that used to slip past the
+// check: the manifest itself (private) or only the icons it lists (private-icons), and the icon links. Any request
+// to one of them, by the browser or through Tampermonkey, prints PRIVATE <url> (tools/tests/nettest.py)
+const PRIVATE_HOSTS = ['192.168.1.1', '[::ffff:c0a8:101]', 'localhost.', '10.0.0.1', '[::ffff:7f00:1]', '100.64.0.1'];
+const isPrivate = u => { try { return PRIVATE_HOSTS.includes(new URL(u).host); } catch (e) { return false; } };
+const MANIFEST_PRIVATE_ICONS = JSON.stringify({ name: 'Test app', icons: [{ src: 'https://10.0.0.1/app.png', sizes: '512x512', type: 'image/png' }, { src: 'https://[::ffff:7f00:1]/app.png', sizes: '192x192', type: 'image/png' }] });
 function stubPage() {
   const dark = theme === 'dark';
   const bg = dark ? '#0f0f0f' : '#f4f5f7', fg = dark ? '#eee' : '#222';
@@ -45,7 +51,9 @@ function stubPage() {
       <div class="t1"></div><div class="t2"></div></div>`;
   }).join('');
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="${opt('--themecolor', '#3b6fd6')}"><title>${host}</title>${NET ? '<link rel="manifest" href="/app.webmanifest"><link rel="icon" href="https://icons.example.net/app.png">' : ''}
+  <meta name="theme-color" content="${opt('--themecolor', '#3b6fd6')}"><title>${host}</title>${NET === 'private' ? '<link rel="manifest" href="https://192.168.1.1/app.webmanifest"><link rel="icon" sizes="192x192" href="https://[::ffff:c0a8:101]/app.png"><link rel="apple-touch-icon" href="https://localhost./touch.png">'
+    : NET === 'private-icons' ? '<link rel="manifest" href="/app.webmanifest"><link rel="icon" sizes="192x192" href="https://100.64.0.1/app.png"><link rel="apple-touch-icon" href="https://[::ffff:c0a8:101]/touch.png">'
+    : NET ? '<link rel="manifest" href="/app.webmanifest"><link rel="icon" href="https://icons.example.net/app.png">' : ''}
   <style>body{margin:0;background:${bg};color:${fg};font:14px system-ui,sans-serif}
   header{height:56px;display:flex;align-items:center;gap:16px;padding:0 20px;position:sticky;top:0;background:${bg};z-index:5}
   .logo{width:110px;height:22px;border-radius:6px;background:${dark ? '#333' : '#ccd'}}
@@ -86,6 +94,11 @@ function stubPage() {
     if (has('--requests')) console.log('REQ ' + route.request().method() + ' ' + u + (route.request().postData() ? ' BODY ' + route.request().postData().slice(0, 200) : ''));
     // --net redirect|redirect-public: the page can't fetch the manifest or icons itself, and Tampermonkey's
     // answers come back after a redirect to a private address (or, for comparison, a public one)
+    if (/^private/.test(NET)) {
+      // answer as if it worked (a manifest, a bright icon), so using one would also show in the colour
+      if (isPrivate(u)) { console.log('PRIVATE ' + u); return route.fulfill({ status: 200, contentType: u.endsWith('.webmanifest') ? 'application/manifest+json' : 'image/png', body: u.endsWith('.webmanifest') ? MANIFEST_PRIVATE_ICONS : fs.readFileSync(__dirname + '/../../assets/icons/prism.png') }); }
+      if (u.endsWith('/app.webmanifest')) return route.fulfill({ status: 200, contentType: 'application/manifest+json', body: MANIFEST_PRIVATE_ICONS });
+    }
     if (/^redirect/.test(NET) && (u.endsWith('/app.webmanifest') || u.startsWith('https://icons.example.net/'))) return route.fulfill({ status: 404, body: '' });
     if (NET && (u.startsWith('https://graphql.anilist.co') || u.endsWith('/app.webmanifest') || u.startsWith('https://icons.example.net/'))) {
       if (NET === 'hang') return;                                                  // never answers
@@ -125,6 +138,15 @@ function stubPage() {
       W.__errs = []; addEventListener('error', e => W.__errs.push(String(e.message))); addEventListener('unhandledrejection', e => W.__errs.push('unhandled: ' + String(e.reason && e.reason.message || e.reason)));
       W.GM_xmlhttpRequest = o => {
         const later = (fn, arg) => setTimeout(() => o[fn] && o[fn](arg), 30);
+        if (/^private/.test(NET)) {
+          (W.__gmUrls = W.__gmUrls || []).push(String(o.url));
+          // public addresses fail here, so the colour has to come from the page; private ones answer, so using one shows
+          const host = (() => { try { return new URL(o.url, location.href).host; } catch (e) { return ''; } })();
+          if (!${JSON.stringify(PRIVATE_HOSTS)}.includes(host)) { later('onerror', { status: 0 }); return { abort() {} }; }
+          if (/\.webmanifest$/.test(o.url)) later('onload', { status: 200, finalUrl: o.url, responseText: ${JSON.stringify(MANIFEST_PRIVATE_ICONS)}, response: ${JSON.stringify(MANIFEST_PRIVATE_ICONS)} });
+          else { const c = document.createElement('canvas'); c.width = c.height = 32; const g = c.getContext('2d'); g.fillStyle = '#e05a8a'; g.fillRect(0, 0, 32, 32); c.toBlob(b => o.onload && o.onload({ status: 200, finalUrl: o.url, response: b }), 'image/png'); }
+          return { abort() {} };
+        }
         if (!NET || NET === 'abort') later('onerror', { status: 0 });
         else if (NET === 'hang') later('ontimeout', {});                          // Tampermonkey gives up at o.timeout
         else if (NET === 'status') later('onload', { status: 503, responseText: '<h1>Service Unavailable</h1>', response: null });

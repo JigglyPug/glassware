@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.8
+// @version      1.2.9
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.8';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.9';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -617,15 +617,23 @@
         let x;
         try { x = new URL(u, location.href); } catch (e) { return null; }
         if (!/^https?:$/.test(x.protocol)) return null;
-        const local = h => { h = h.replace(/^\[|\]$/g, '').toLowerCase();
-            return h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal') || /^0(\.0){3}$/.test(h) || h === '::' || h === '::1' ||
-                /^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) || /^169\.254\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
-                /^(fc|fd)[0-9a-f]{2}:/.test(h) || /^fe[89ab][0-9a-f]:/.test(h) || /^::ffff:(127|10|192\.168|169\.254)\./.test(h); };
+        const local = h => { h = h.replace(/^\[|\]$/g, '').replace(/\.+$/, '').toLowerCase();   // "localhost." is localhost too
+            // an IPv6 address carrying an IPv4 one (::ffff:a.b.c.d, ::a.b.c.d, 64:ff9b::a.b.c.d) reaches that IPv4 address;
+            // the browser writes the IPv4 part as hex (::ffff:c0a8:101), so read it back out and check it as IPv4
+            const v4 = h.match(/^(?:::ffff:|::|64:ff9b::)([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+            if (v4) { const a = parseInt(v4[1], 16), b = parseInt(v4[2], 16); h = [a >> 8, a & 255, b >> 8, b & 255].join('.'); }
+            return h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal') || h === '::' || h === '::1' ||
+                /^(0|127|10)\./.test(h) || /^192\.168\./.test(h) || /^169\.254\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) ||
+                /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h) ||   // shared address space (carrier NAT, Tailscale)
+                /^(fc|fd)[0-9a-f]{2}:/.test(h) || /^fe[89ab][0-9a-f]:/.test(h); };
         return local(x.hostname) && !local(location.hostname) ? null : x.href;
     }
     function blobOf(url) {
         return new Promise((res, rej) => {
-            const pub = gwPublicUrl(url);
+            // only public addresses, or one already in the page (data:, blob:); nothing else gets a request,
+            // not even from the browser
+            const pub = gwPublicUrl(url), inline = /^(data|blob):/i.test(String(url));
+            if (!pub && !inline) return rej(new Error('not a public address'));
             if (typeof GM_xmlhttpRequest === 'function' && pub) {
                 try {
                     // no cookies: an icon is public, and sending them would say who you are to that site
@@ -636,7 +644,7 @@
                     return;
                 } catch {}
             }
-            fetch(url).then(r => r.ok ? r.blob() : rej()).then(res, rej);
+            fetch(pub || url).then(r => r.ok ? r.blob() : rej()).then(res, rej);
         });
     }
     async function sampleIcon(url) {

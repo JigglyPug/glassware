@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.2.9 · 2026-11-11
+
+- Looking-Glass never asks your own computer or home network for a site's icon. Before, an icon Tampermonkey refused could still be fetched by the browser, and some addresses written another way ([::ffff:192.168.1.1], "localhost.", 100.64.x.x) got past the check entirely.
+
 ## 1.2.8 · 2026-11-11
 
 - With the main switch off, the rest of the settings fold away. Appearance and Troubleshooting stay, and turning it back on shows everything as you left it.

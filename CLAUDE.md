@@ -133,8 +133,15 @@ tools/seeds/, tools/kit/              demo data for screenshots and tests; the n
   computer or a private network unless the page itself is on one, and without cookies. Its answer is
   checked the same way: if a redirect took the request to a private address (`finalUrl`), nothing
   that came back is used. (Tampermonkey follows redirects itself and can't show where they lead
-  first, so the request may still have been made; it just gets no further.) `tools/tests/nettest.py`
-  checks it (`--net redirect`).
+  first, so the request may still have been made; it just gets no further.) The same check comes
+  before every request the script makes for a site's address, also the browser's own (`fetch`, an
+  `Image`): a refused address gets no request at all, never a browser-side fallback. `data:` and
+  `blob:` addresses are already in the page and pass. The helper reads an IPv4 address back out of an
+  IPv6 one (the browser writes an `[::ffff:…]` address with its IPv4 part in hex, `[::ffff:c0a8:101]`) and ignores a trailing
+  dot (`localhost.`); `tools/check.py` tests it on a table of addresses written every such way. A
+  site name that only resolves to a private address (DNS) can't be seen from a script; that's the
+  browser's to block. `tools/tests/nettest.py` checks the rest (`--net redirect`, and `--net private` /
+  `private-icons`: nothing at all is asked of a private address the page points at).
 - **Console logging is off by default** and never prints account or channel names, emails or ids,
   even when it's on: people share console captures. That includes messages built for failures ("could
   not find …"): say what was missing, never whose. `tools/tests/logtest.py` turns every logging switch in

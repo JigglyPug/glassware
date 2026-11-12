@@ -361,7 +361,20 @@ if helpers:
              ('http://[::1]/', 'https://pub.example/', False), ('file:///etc/passwd', 'https://pub.example/', False),
              ('http://10.0.0.5/i.png', 'http://10.0.0.2/', True), ('http://172.20.1.1/', 'https://pub.example/', False),
              ('http://169.254.169.254/latest/', 'https://pub.example/', False), ('http://router.local/', 'https://pub.example/', False),
-             ('http://0.0.0.0:8000/', 'https://pub.example/', False)]
+             ('http://0.0.0.0:8000/', 'https://pub.example/', False),
+             # written the ways that once slipped past: the browser turns [::ffff:192.168.1.1] into [::ffff:c0a8:101]
+             ('http://[::ffff:192.168.1.1]/', 'https://pub.example/', False), ('http://[::ffff:127.0.0.1]/', 'https://pub.example/', False),
+             ('http://[::ffff:10.0.0.1]/', 'https://pub.example/', False), ('http://[::ffff:172.16.0.1]/', 'https://pub.example/', False),
+             ('http://[::ffff:169.254.169.254]/', 'https://pub.example/', False), ('http://[::127.0.0.1]/', 'https://pub.example/', False),
+             ('http://[64:ff9b::192.168.1.1]/', 'https://pub.example/', False), ('http://localhost./', 'https://pub.example/', False),
+             ('http://a.localhost./', 'https://pub.example/', False), ('http://2130706433/', 'https://pub.example/', False),
+             ('http://0x7f.1/', 'https://pub.example/', False), ('http://0.1.2.3/', 'https://pub.example/', False),
+             ('http://100.64.0.1/', 'https://pub.example/', False), ('http://[fd00::1]/', 'https://pub.example/', False),
+             ('http://[fe80::1]/', 'https://pub.example/', False), ('data:image/png;base64,AA', 'https://pub.example/', False),
+             # and public ones next to them stay allowed
+             ('http://[::ffff:8.8.8.8]/', 'https://pub.example/', True), ('http://[2606:4700::1111]/', 'https://pub.example/', True),
+             ('http://172.32.0.1/', 'https://pub.example/', True), ('http://100.128.0.1/', 'https://pub.example/', True),
+             ('http://localhostish.com/', 'https://pub.example/', True), ('/icon.png', 'https://pub.example/', True)]
     js = next(iter(helpers.values())) + '\nconst out = []; for (const [u, page] of ' + json.dumps([c[:2] for c in CASES]) + \
          ') { global.location = new URL(page); out.push(!!gwPublicUrl(u)); } console.log(JSON.stringify(out));'
     r = subprocess.run(['node', '-e', js], capture_output=True, text=True)
@@ -533,10 +546,11 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or net_tool or 
         if not l.startswith('== '): continue
         seen += 1
         if not l.endswith('clean'): ok(False, 'network: ' + l[3:])
-    ok(seen == 24, f'the network test reported {seen} of 24 cases: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
-    if seen == 24 and r.returncode == 0:
+    ok(seen == 28, f'the network test reported {seen} of 28 cases: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+    if seen == 28 and r.returncode == 0:
         print('  ✓ 4 scripts × 5 ways the network fails: no errors, every one falls back')
         print('  ✓ Prism and Looking-Glass: nothing used that came back from a private address after a redirect')
+        print('  ✓ Prism and Looking-Glass: nothing asked of a private address the page points at, by the browser or Tampermonkey')
 
 # ------------------------------------------------------------------ hand-off
 # tools/tests/ownertest.py: Prism stands by while another script holds the title bar, also after being

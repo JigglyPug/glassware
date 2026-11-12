@@ -7,6 +7,10 @@ Every script that makes requests is opened with the network failing each way it 
 - status: a server error (503)
 - malformed: a 200 whose body is broken (bad JSON, an "image" that isn't one)
 - abort: the connection drops
+- private, private-icons: for Prism and Looking-Glass, the page points its manifest and icons (or only the
+  icons its manifest lists) at private addresses, written the ways that used to slip past the check
+  ([::ffff:c0a8:101], localhost., 100.64.0.1): nothing may be asked of them, by the browser or through
+  Tampermonkey, and the colour comes from the page
 - redirect: for Prism and Looking-Glass, the page can't fetch the manifest or icons itself and what
   Tampermonkey brings back came from a redirect to a private address: it must not be used (Prism takes
   the page's theme-color, Looking-Glass says "From the page color"); redirect-public, the same through a
@@ -25,7 +29,7 @@ sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests'
 from screens import JOBS
 
 MODES = ['ok', 'hang', 'status', 'malformed', 'abort']
-REDIRECTS = ['redirect', 'redirect-public']     # Prism and Looking-Glass only (the scripts that reach any site)
+REDIRECTS = ['redirect', 'redirect-public', 'private', 'private-icons']   # Prism and Looking-Glass only (the scripts that reach any site)
 PAGE_COLOR, ICON_COLOR = '#3b6fd6', '#e05a8a'   # shot.js: the stand-in page's theme-color, and the colour of what Tampermonkey brings back
 # what each failure must say on Kaleidoscope's status line
 KAL_SAYS = {'hang': 'took too long', 'status': 'having trouble', 'malformed': 'unreadable', 'abort': "Couldn't reach AniList"}
@@ -34,9 +38,9 @@ TEXT = """(() => { let s = ''; const walk = r => { for (const e of r.querySelect
 CHECKS = {
     'prism': ('desktop/prism', 9500, f"""(async () => {{ await new Promise(r => setTimeout(r, WAIT));
         const own = document.querySelector('meta[data-prism]');            // the tag Prism sets once it has a colour
-        return {{ errs: window.__errs, text: {TEXT}, color: own ? own.content : '' }}; }})()"""),
+        return {{ errs: window.__errs, text: {TEXT}, color: own ? own.content : '', gm: window.__gmUrls || [] }}; }})()"""),
     'looking-glass': ('desktop/looking-glass', 2500, f"""(async () => {{ await new Promise(r => setTimeout(r, WAIT));
-        return {{ errs: window.__errs, text: {TEXT} }}; }})()"""),
+        return {{ errs: window.__errs, text: {TEXT}, gm: window.__gmUrls || [] }}; }})()"""),
     'kaleidoscope': ('desktop/kaleidoscope', 1500, f"""(async () => {{
         const host = document.querySelector('kaleidoscope-root, kaleidoscope-mobile'), root = (host && host.shadowRoot) || document;
         // desktop: a mode button builds and sends the prompt; phone: a mode button picks, then Copy builds it
@@ -67,6 +71,13 @@ def run(name, mode):
     if mode == 'redirect':
         if name == 'prism' and v.get('color') != PAGE_COLOR: probs.append(f'used what came back from a private address (title bar {v.get("color")}, not the page colour {PAGE_COLOR})')
         if name == 'looking-glass' and 'From the page color' not in text: probs.append('used what came back from a private address (not "From the page color")')
+    if mode.startswith('private'):
+        # nothing may even be asked of a private address: not by the browser, not through Tampermonkey
+        sent = [l[8:] for l in r.stdout.splitlines() if l.startswith('PRIVATE ')]
+        sent += [u for u in v.get('gm', []) if any(h in u for h in ('192.168.1.1', '::ffff:', 'localhost.', '10.0.0.1', '100.64.0.1'))]
+        if sent: probs.append('asked a private address: ' + ', '.join(sorted(set(sent))[:4]))
+        if name == 'prism' and v.get('color') != PAGE_COLOR: probs.append(f'title bar {v.get("color")}, not the page colour {PAGE_COLOR}')
+        if name == 'looking-glass' and 'From the page color' not in text: probs.append('not "From the page color"')
     if mode == 'redirect-public':
         if name == 'prism' and v.get('color') != ICON_COLOR: probs.append(f'refused a public redirect (title bar {v.get("color")}, not {ICON_COLOR})')
         if name == 'looking-glass' and 'From the site icon' not in text: probs.append('refused a public redirect (not "From the site icon")')

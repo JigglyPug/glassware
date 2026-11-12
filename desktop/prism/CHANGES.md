@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.2.10 · 2026-11-11
+
+- Prism never asks your own computer or home network for a manifest or icon a site points at, also when the browser asks rather than Tampermonkey. Before, the browser could still be asked, and some addresses written another way ([::ffff:192.168.1.1], "localhost.", 100.64.x.x) got past the check entirely.
+
 ## 2.2.9 · 2026-11-11
 
 - Turning Prism off and back on while another script (like Molten) is coloring the title bar no longer leaves it stuck on "Prism is off". It says it's standing by again, with Take over, and colors the title bar itself once the other script lets go. The same for turning it off and back on for one site.

@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.5.10 · 2026-11-11
+
+- Resetting stats also restarts the listening and browsing clocks, so up to a minute of listening from before the reset (in a tab in the background) isn't added back afterwards.
+
 ## 1.5.9 · 2026-11-11
 
 - While Hourglass is paused, its settings fold away: Tracking, Lockdown and the late-night nudge in Settings, the Schedule and Sites tabs, Music mode, and adding sites from the Dashboard. General, Appearance and Your data stay, and turning it back on shows everything as you left it.
