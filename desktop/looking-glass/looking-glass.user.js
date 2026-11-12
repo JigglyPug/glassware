@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.9
+// @version      1.2.10
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.9';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.10';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -628,23 +628,32 @@
                 /^(fc|fd)[0-9a-f]{2}:/.test(h) || /^fe[89ab][0-9a-f]:/.test(h); };
         return local(x.hostname) && !local(location.hostname) ? null : x.href;
     }
-    function blobOf(url) {
+    function blobOf(url, hops = 0) {
         return new Promise((res, rej) => {
             // only public addresses, or one already in the page (data:, blob:); nothing else gets a request,
             // not even from the browser
             const pub = gwPublicUrl(url), inline = /^(data|blob):/i.test(String(url));
-            if (!pub && !inline) return rej(new Error('not a public address'));
+            if (!pub && !inline) return rej(new Error(hops ? 'redirected to a private address' : 'not a public address'));
             if (typeof GM_xmlhttpRequest === 'function' && pub) {
                 try {
                     // no cookies: an icon is public, and sending them would say who you are to that site
-                    GM_xmlhttpRequest({ method: 'GET', url: pub, anonymous: true, responseType: 'blob', timeout: 6000,
-                        // a public address can redirect to a private one: whatever comes back from there isn't used
-                        onload: r => r.finalUrl && !gwPublicUrl(r.finalUrl) ? rej(new Error('redirected to a private address'))
-                            : r.status >= 200 && r.status < 300 && r.response ? res(r.response) : rej(), onerror: rej, ontimeout: rej });
+                    // a redirect comes back here instead of being followed, so where it leads is checked before
+                    // anything is asked of it (a public address can point on to a private one)
+                    GM_xmlhttpRequest({ method: 'GET', url: pub, anonymous: true, redirect: 'manual', responseType: 'blob', timeout: 6000,
+                        onload: r => {
+                            if (r.status >= 300 && r.status < 400) {
+                                const to = /^location:\s*(\S+)/im.exec(r.responseHeaders || '');
+                                return !to || hops >= 5 ? rej(new Error('redirect not followed')) : blobOf(new URL(to[1], pub).href, hops + 1).then(res, rej);
+                            }
+                            // an older Tampermonkey follows redirects itself: then at least nothing from a private address is used
+                            if (r.finalUrl && !gwPublicUrl(r.finalUrl)) return rej(new Error('redirected to a private address'));
+                            r.status >= 200 && r.status < 300 && r.response ? res(r.response) : rej();
+                        }, onerror: rej, ontimeout: rej });
                     return;
                 } catch {}
             }
-            fetch(pub || url).then(r => r.ok ? r.blob() : rej()).then(res, rej);
+            // the browser can't show a redirect before following it, so here it may not follow one
+            fetch(pub || url, { redirect: 'error' }).then(r => r.ok ? r.blob() : rej()).then(res, rej);
         });
     }
     async function sampleIcon(url) {

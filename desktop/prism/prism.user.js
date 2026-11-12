@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.10
+// @version      2.2.11
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.10';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.11';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -193,16 +193,24 @@
                 /^(fc|fd)[0-9a-f]{2}:/.test(h) || /^fe[89ab][0-9a-f]:/.test(h); };
         return local(x.hostname) && !local(location.hostname) ? null : x.href;
     }
-    function gmGet(url, type) {
+    function gmGet(url, type, hops = 0) {
         return new Promise((res, rej) => {
             if (typeof GM_xmlhttpRequest !== 'function') return rej(new Error('no GM_xmlhttpRequest'));
             url = gwPublicUrl(url);
-            if (!url) return rej(new Error('not a public address'));
+            if (!url) return rej(new Error(hops ? 'redirected to a private address' : 'not a public address'));
             GM_xmlhttpRequest({
                 method: 'GET', url, anonymous: true, // no cookies: Prism only needs public icons
+                // a redirect comes back to Prism instead of being followed, so where it leads is checked
+                // before anything is asked of it (a public address can point on to a private one)
+                redirect: 'manual',
                 responseType: type === 'text' ? undefined : type, timeout: 10000,
                 onload: r => {
-                    // a public address can redirect to a private one: whatever comes back from there isn't used
+                    if (r.status >= 300 && r.status < 400) {
+                        const to = /^location:\s*(\S+)/im.exec(r.responseHeaders || '');
+                        if (!to || hops >= 5) return rej(new Error('redirect not followed'));
+                        return gmGet(new URL(to[1], url).href, type, hops + 1).then(res, rej);
+                    }
+                    // an older Tampermonkey follows redirects itself: then at least nothing from a private address is used
                     if (r.finalUrl && !gwPublicUrl(r.finalUrl)) return rej(new Error('redirected to a private address'));
                     (r.status >= 200 && r.status < 300) ? res(type === 'text' ? r.responseText : r.response) : rej(new Error('HTTP ' + r.status));
                 },
@@ -218,7 +226,8 @@
         const ctl = typeof AbortController === 'function' ? new AbortController() : null;
         const timer = ctl && setTimeout(() => ctl.abort(), 8000);   // a manifest that never arrives mustn't stop Prism trying the rest
         try {
-            const r = await fetch(url, { credentials: creds ? 'include' : 'same-origin', signal: ctl ? ctl.signal : undefined });
+            // the browser can't show Prism a redirect before following it, so it may not follow one: Tampermonkey checks each step
+            const r = await fetch(url, { credentials: creds ? 'include' : 'same-origin', redirect: 'error', signal: ctl ? ctl.signal : undefined });
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return await r.text();
         } catch (e) {
@@ -266,7 +275,16 @@
         if (!colorMemo.has(url)) colorMemo.set(url, (async () => {
             if (!reachable(url)) throw new Error('not a public address');
             const attempts = [
-                async () => loadImg(url, true),
+                // the browser first (an <img> would follow a redirect anywhere, so a fetch that refuses them)
+                async () => {
+                    const ctl = typeof AbortController === 'function' ? new AbortController() : null, t = ctl && setTimeout(() => ctl.abort(), 8000);
+                    try {
+                        const r = await fetch(url, { credentials: 'omit', redirect: 'error', signal: ctl ? ctl.signal : undefined });
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        const o = URL.createObjectURL(await r.blob());   // through an <img>, so SVG icons work too
+                        try { return await loadImg(o, false); } finally { setTimeout(() => URL.revokeObjectURL(o), 2000); }
+                    } finally { clearTimeout(t); }
+                },
                 async () => createImageBitmap(await gmGet(url, 'blob')),
                 async () => { const o = URL.createObjectURL(await gmGet(url, 'blob')); try { return await loadImg(o, false); } finally { setTimeout(() => URL.revokeObjectURL(o), 2000); } },
             ];

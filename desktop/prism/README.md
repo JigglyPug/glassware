@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Prism: Every app title bar, in its site's own color." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.2.10-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/prism/)
+[![Install](https://img.shields.io/badge/Install-v2.2.11-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/prism/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -26,8 +26,8 @@ Prism colors the title bar of installed web apps (PWAs) to match the site you ar
 
 ## What's new
 
+- **2.2.11** (2026-11-11): A redirect is checked before it's followed: a site's manifest or icon that redirects to your own computer or home network is now never asked for there. Before, the request was made and only its answer thrown away. Redirects to other public addresses still work.
 - **2.2.10** (2026-11-11): Prism never asks your own computer or home network for a manifest or icon a site points at, also when the browser asks rather than Tampermonkey. Before, the browser could still be asked, and some addresses written another way ([::ffff:192.168.1.1], "localhost.", 100.64.x.x) got past the check entirely.
 - **2.2.9** (2026-11-11): Turning Prism off and back on while another script (like Molten) is coloring the title bar no longer leaves it stuck on "Prism is off". It says it's standing by again, with Take over, and colors the title bar itself once the other script lets go. The same for turning it off and back on for one site.
-- **2.2.8** (2026-11-11): With the main switch off, Sources, Tone and This site fold away. Appearance and Troubleshooting stay, and turning it back on shows everything as you left it.
 
 [Every change](CHANGES.md)

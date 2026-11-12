@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.2.10 · 2026-11-11
+
+- A redirect is checked before it's followed: a site's icon that redirects to your own computer or home network is now never asked for there. Before, the request was made and only its answer thrown away. Redirects to other public addresses still work.
+
 ## 1.2.9 · 2026-11-11
 
 - Looking-Glass never asks your own computer or home network for a site's icon. Before, an icon Tampermonkey refused could still be fetched by the browser, and some addresses written another way ([::ffff:192.168.1.1], "localhost.", 100.64.x.x) got past the check entirely.

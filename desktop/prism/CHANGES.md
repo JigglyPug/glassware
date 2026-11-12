@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.2.11 · 2026-11-11
+
+- A redirect is checked before it's followed: a site's manifest or icon that redirects to your own computer or home network is now never asked for there. Before, the request was made and only its answer thrown away. Redirects to other public addresses still work.
+
 ## 2.2.10 · 2026-11-11
 
 - Prism never asks your own computer or home network for a manifest or icon a site points at, also when the browser asks rather than Tampermonkey. Before, the browser could still be asked, and some addresses written another way ([::ffff:192.168.1.1], "localhost.", 100.64.x.x) got past the check entirely.
