@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.2
+// @version      1.0.3
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.2';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.3';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -1092,7 +1092,10 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
     function remind(item, due) {
         due = Math.min(Date.now() + REMIND_MAX, Math.max(Date.now() + 60e3, due));
         D.reminders.push(Object.assign(cleanSaved(Object.assign({}, item, { at: item.at || Date.now() })), { id: newId('r').slice(0, 20), due, done: false, shown: 0 }));
-        D.reminders.sort((a, b) => a.due - b.due); D.reminders = D.reminders.slice(-REMIND_CAP); store.reminders(); refreshAll();
+        // over the limit, finished reminders go first (oldest first), then the one furthest away: never one that's due sooner
+        D.reminders.sort((a, b) => a.due - b.due);
+        while (D.reminders.length > REMIND_CAP) { const i = D.reminders.findIndex(r => r.done); D.reminders.splice(i >= 0 ? i : D.reminders.length - 1, 1); }
+        store.reminders(); refreshAll();
     }
     const at9 = d => { d.setHours(9, 0, 0, 0); return +d; };
     const PRESETS_T = [
@@ -1114,7 +1117,8 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
     function dueFor(unit, n, tod) {
         const u = UNITS[unit]; if (!u.at) return Date.now() + n * u.ms;
         const d = new Date();
-        if (unit === 'month') d.setMonth(d.getMonth() + n); else d.setDate(d.getDate() + n * (unit === 'week' ? 7 : 1));
+        if (unit === 'month') { const day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + n); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); }
+        else d.setDate(d.getDate() + n * (unit === 'week' ? 7 : 1));
         d.setHours(Math.floor(tod / 60), tod % 60, 0, 0);
         return +d;
     }
@@ -1289,16 +1293,27 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
                     p === 'home' ? 'Home' : m.n || 'Unknown (' + p.split('/')[1] + ')', Math.round(o.t[p] || 0), o.m[p] || 0]);
             }
         }
-        const cell = x => /[",\n]/.test(String(x)) || /^[=+\-@]/.test(String(x)) ? '"' + String(x).replace(/"/g, '""') + '"' : x;
+        // a name a spreadsheet would run as a formula (=, +, -, @, or a tab or return first) gets an apostrophe in front,
+        // which spreadsheets show as plain text; quotes only keep commas and line breaks inside one cell
+        const cell = x => { let t = String(x); if (typeof x === 'string' && /^[\s]*[=+\-@\t\r]/.test(t)) t = "'" + t; return /[",\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
         download('molten-for-discord-activity-' + DAY_KEY(new Date()) + '.csv', rows.map(r => r.map(cell).join(',')).join('\n'), 'text/csv');
     }
     // everything you made here except your activity (that's the CSV) and the names Screenshot safe hides:
     // they stay out, so a backup you pass around can't show what Screenshot safe is there to hide
     const PRIVATE_SETTINGS = ['shotName', 'shotExtra'];
+    // the names Screenshot safe hides (the ones it found for your account and the ones you added), wherever
+    // they turn up in what's exported: a saved message's author, its preview, a note
+    function scrubNames(v) {
+        const names = [...D.found, ...S.shotExtra.split(',')].map(x => x.trim()).filter(x => x.length >= 2);
+        if (!names.length) return v;
+        const re = new RegExp(names.map(x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi');
+        const walk = x => typeof x === 'string' ? x.replace(re, 'User') : Array.isArray(x) ? x.map(walk) : x && typeof x === 'object' ? Object.fromEntries(Object.entries(x).map(([k, y]) => [k, walk(y)])) : x;
+        return walk(v);
+    }
     function exportData() {
         const settings = Object.assign({}, S); for (const k of PRIVATE_SETTINGS) delete settings[k];
         download('molten-for-discord-data.json', JSON.stringify({ 'molten-for-discord': VERSION, exported: new Date().toISOString(), settings, lava: clone(LAVA),
-            favorites: D.favs, saved: D.saved, reminders: D.reminders, notes: D.notes, serverColors: D.colors, blurChannels: D.blurCh }, null, 2), 'application/json');
+            favorites: D.favs, saved: scrubNames(D.saved), reminders: scrubNames(D.reminders), notes: scrubNames(D.notes), serverColors: D.colors, blurChannels: D.blurCh }, null, 2), 'application/json');
     }
     // An imported file is read as untrusted: every part goes through the same checks as what's stored here,
     // nothing over IMPORT_MAX bytes is read at all, and the lists are added to what you have (nothing is
@@ -2741,7 +2756,7 @@ button{cursor:pointer}
                 h('div', { class: 'btns' }, h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: () => { this.eraseAsk = false; this.render(); } }),
                     h('button', { class: 'btn danger-fill', type: 'button', text: 'OK, erase', onclick: () => { ACT.clear(); this.eraseAsk = false; this.dataMsg = 'Your activity was erased.'; this.render(); } }))) : null;
             return this.sec('Your data',
-                h('div', { class: 'd', text: 'Saved only in Tampermonkey in this browser. Never message text: saved messages keep their title, author and link. Exports leave out the names Screenshot safe hides.' }),
+                h('div', { class: 'd', text: 'Saved only in Tampermonkey in this browser. A saved message keeps a short preview (its first 80 characters), its author and a link. Exports leave out the names Screenshot safe hides.' }),
                 h('div', { class: 'dbtns' },
                     btn('Export CSV', ICONS.down, () => exportActivity()),
                     btn('Export data', ICONS.down, () => exportData()),
@@ -3095,8 +3110,16 @@ button{cursor:pointer}
         if (key === 'appearance') LAYER.theme();
         if (key === 'trackDays') ACT.flush(true);
     }
+    // the page watcher only runs while Molten is on
+    let watching = false;
+    function watchPage(on) {
+        if (on === watching) return;
+        watching = on;
+        if (on) mo.observe(document.getElementById('app-mount') || document.body || root, { childList: true, subtree: true, characterData: true });
+        else { mo.disconnect(); pending = []; }
+    }
     function applyAll() {
-        stylesOn(S.enabled);
+        stylesOn(S.enabled); watchPage(S.enabled);
         applyRoot(); GLASS.write(); writeLavaVars(); applyMotion(); applyMentions(); applyBlur(); SHOT.apply(); TITLE.refresh(); LAYER.theme(); NOTE.place();
         if (!S.enabled) { GLASS.unclean(); TITLE.release(); FLY.close(true); DROPS.hide(); }
         ensureButton(); scheduleArt(0);
@@ -3164,24 +3187,28 @@ button{cursor:pointer}
     });
 
     // The loop: once a second normally, at the video's frame rate while one plays, every few seconds in the background.
-    let loopT = 0, beat = 0;
+    // Only the video drawing follows the frame rate: the upkeep below goes by the clock (every(), in ms), so a
+    // 60 fps video doesn't check reminders or clean the page 60 times a second.
+    let loopT = 0;
+    const lastRun = {};
+    const every = (k, ms, now) => { if (now - (lastRun[k] || 0) < ms) return false; lastRun[k] = now; return true; };
     function loop() {
         clearTimeout(loopT);
         let delay = 1000;
         try {
-            beat++;
-            if (document.hidden) { if (beat % 15 === 0) { checkReminders(); ACT.tick(); } loopT = setTimeout(loop, 2000); return; }
-            if (beat % 2 === 0 || !document.getElementById('mfd-lava')) ensureButton();
+            const now = Date.now();
+            if (document.hidden) { if (every('hidden', 30e3, now)) { checkReminders(); ACT.tick(); } loopT = setTimeout(loop, 2000); return; }
+            if (every('button', 2000, now) || !document.getElementById('mfd-lava')) ensureButton();
             if (!S.enabled) { loopT = setTimeout(loop, 2000); return; }
-            if (lavaActive() && beat % 2 === 0) ensureLayers();
+            if (lavaActive() && every('layers', 2000, now)) ensureLayers();
             if (location.pathname !== lastPath || document.title !== lastTitle) onFrame();
-            TITLE.tick(); ACT.tick();
-            if (beat % 3 === 0) { stillness(); NOTE.place(); if (S.voiceLava && DC.inVoice()) scheduleArt(0); }
-            if (beat % 5 === 0) { checkReminders(); if (FLY.isOpen()) FLY.repaint(); }
+            if (every('second', 1000, now)) { TITLE.tick(); ACT.tick(); }
+            if (every('still', 3000, now)) { stillness(); NOTE.place(); if (S.voiceLava && DC.inVoice()) scheduleArt(0); }
+            if (every('remind', 5000, now)) { checkReminders(); if (FLY.isOpen()) FLY.repaint(); }
             // the countdown chips in the open panel keep counting
-            if (beat % 10 === 0 && ui.panel) for (const c of ui.panel.querySelectorAll('.cd[data-due]')) c.textContent = countdown(+c.dataset.due);
-            if (S.cleanup && !scrolling && beat % 3 === 1) GLASS.clean();
-            if (beat % 4 === 0 && S.shotSafe) SHOT.learn();
+            if (ui.panel && every('countdown', 10e3, now)) for (const c of ui.panel.querySelectorAll('.cd[data-due]')) c.textContent = countdown(+c.dataset.due);
+            if (S.cleanup && !scrolling && every('clean', 3000, now)) GLASS.clean();
+            if (S.shotSafe && every('learn', 4000, now)) SHOT.learn();
             const still = root.hasAttribute('data-mfd-still');
             const v = lavaActive() ? (still ? (vs.on ? lastVideo : null) : findVideo()) : null;
             setVideoOn(!!v); lastVideo = v;
@@ -3214,8 +3241,7 @@ button{cursor:pointer}
     try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { ui.render(); LAYER.theme(); }); } catch {}
 
     log('v' + VERSION + ' started');
-    applyAll();
-    mo.observe(document.getElementById('app-mount') || document.body || root, { childList: true, subtree: true, characterData: true });
+    applyAll();   // starts the page watcher too (watchPage), if Molten is on
     visited();
     loop();
 })();

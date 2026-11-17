@@ -2,6 +2,14 @@
 
 Newest first.
 
+## 1.0.3 · 2026-11-17
+
+- Lighter while a video or stream plays: only the lava's video follows the frame rate now. Keeping the button in place, cleaning the page, checking reminders and counting activity stay on their own clock, instead of running up to 60 times a second.
+- Switched off, Molten stops watching the page entirely.
+- Reminders: at the limit of 100, a new one never pushes out one that's due sooner (a finished reminder goes first, then the one furthest away). "In 1 month" from the 31st stops at the end of next month instead of spilling into the one after.
+- Export CSV: a server or channel named like a spreadsheet formula starts with an apostrophe, so a spreadsheet shows it as text instead of running it.
+- Export data leaves out the names Screenshot safe hides inside saved messages, reminders and notes too (they read "User"). Your data now says what a saved message keeps: a short preview (its first 80 characters), its author and a link.
+
 ## 1.0.2 · 2026-11-17
 
 - **Your data** in General, laid out like Hourglass's: **Export CSV** (your activity, a row per day and channel), **Export data** (settings, lava looks, favorites, saved messages, reminders, notes, server colors), **Import data** (adds what's in a backup to what you have; nothing is removed) and **Erase activity**, which asks first and waits for OK. Exports leave out the names Screenshot safe hides. Erasing activity moved here from the Activity tab.
