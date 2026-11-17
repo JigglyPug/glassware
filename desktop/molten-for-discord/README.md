@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten for Discord: Molten glass for Discord" width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.0.1-5865f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-discord/molten-for-discord.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-discord/)
+[![Install](https://img.shields.io/badge/Install-v1.0.2-5865f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-discord/molten-for-discord.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-discord/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-discord.com-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -37,6 +37,7 @@ Molten for Discord puts a lava-lamp background made from what you're looking at 
 
 ## What's new
 
+- **1.0.2** (2026-11-17): The icon shows in Tampermonkey's list again: if it didn't download when you installed, this update fetches it.
 - **1.0.1** (2026-11-17): Channels opened while they had unread messages showed as "• Discord". Names now come from the channel list, and names saved that way fix themselves. Screenshot safe now blurs your hidden names inside Molten's own panel, favorites, popups and Activity tab too, word by word. Point at anything Screenshot safe blurred to see it. A screenshot can't point, so it stays hidden there. A blurred name no longer stays blurred after you switch servers: what Discord reuses for the next server's name comes out of the blur. Names are matched as whole words, so hiding "Sam" no longer blurs "Samsung". Mention blobs are round drops of a fixed size that rise and sink inside the glow, instead of blurred ovals stretched across the chat. Mentions in a row share one box with a straight bar down the left.
 - **1.0.0** (2026-11-17): First release: a lava-lamp background made from the image, video, stream or profile you're looking at, or the server's icon, with frosted glass over it. Favorite channels, threads and DMs drip down from the lava button when you point at it. Saved messages and reminders, each with an optional note so you remember why. An Activity tab shows where your Discord time goes as bubbles you can point at and click, with your daily time, messages and busiest hours. It stays in your browser. Messages that mention you glow, the title bar and seek bar match the lava, and Screenshot safe and privacy blur keep things private.
 

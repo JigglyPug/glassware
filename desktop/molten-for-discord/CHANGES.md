@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.0.2 · 2026-11-17
+
+- The icon shows in Tampermonkey's list again: if it didn't download when you installed, this update fetches it.
+
 ## 1.0.1 · 2026-11-17
 
 - Channels opened while they had unread messages showed as "• Discord". Names now come from the channel list, and names saved that way fix themselves.
