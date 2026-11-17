@@ -2,6 +2,15 @@
 
 Newest first.
 
+## 1.0.1 · 2026-11-17
+
+- Channels opened while they had unread messages showed as "• Discord". Names now come from the channel list, and names saved that way fix themselves.
+- Screenshot safe now blurs your hidden names inside Molten's own panel, favorites, popups and Activity tab too, word by word.
+- Point at anything Screenshot safe blurred to see it. A screenshot can't point, so it stays hidden there.
+- A blurred name no longer stays blurred after you switch servers: what Discord reuses for the next server's name comes out of the blur.
+- Names are matched as whole words, so hiding "Sam" no longer blurs "Samsung".
+- Mention blobs are round drops of a fixed size that rise and sink inside the glow, instead of blurred ovals stretched across the chat. Mentions in a row share one box with a straight bar down the left.
+
 ## 1.0.0 · 2026-11-17
 
 - First release: a lava-lamp background made from the image, video, stream or profile you're looking at, or the server's icon, with frosted glass over it.

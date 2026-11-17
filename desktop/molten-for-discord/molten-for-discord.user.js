@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.0
+// @version      1.0.1
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.0';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.1';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -135,11 +135,14 @@
 
     // Your own lists, each read back through a checker: a value of the wrong shape is skipped, never trusted.
     const ID = /^\d{15,22}$/, GID = /^(@me|\d{15,22})$/;
+    // what an older version saved as a name when a channel had unread messages ("• Discord"): not a name
+    const JUNK_NAME = /^[•·●]?\s*discord$/i;
     const str = (v, n) => typeof v === 'string' ? v.slice(0, n) : '';
     const HEX = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v) ? v.toLowerCase() : '';
     function cleanPlace(o) {
         if (!o || typeof o !== 'object' || !GID.test(o.gid) || !ID.test(o.cid)) return null;
-        return { gid: o.gid, cid: o.cid, name: str(o.name, 80) || 'Channel', server: str(o.server, 80), kind: ['channel', 'thread', 'dm', 'voice'].includes(o.kind) ? o.kind : 'channel',
+        const junk = JUNK_NAME.test(str(o.name, 80).trim());
+        return { gid: o.gid, cid: o.cid, name: junk ? 'Channel' : str(o.name, 80) || 'Channel', server: str(o.server, 80), kind: junk && o.kind === 'thread' ? 'channel' : ['channel', 'thread', 'dm', 'voice'].includes(o.kind) ? o.kind : 'channel',
             icon: /^https:\/\/cdn\.discordapp\.com\//.test(o.icon || '') ? str(o.icon, 300) : '', note: str(o.note, 200), named: o.named === true };
     }
     function readList(k, clean, cap) {
@@ -201,9 +204,10 @@
             const m = /^\/channels\/(@me|\d{15,22})(?:\/(\d{15,22}))?(?:\/(\d{15,22}))?/.exec(location.pathname);
             return m ? { gid: m[1], cid: m[2] || '', mid: m[3] || '' } : { gid: '', cid: '', mid: '' };
         },
-        // Discord titles its window "#channel | Server" (or "@friend", or a thread's own name)
+        // Discord titles its window "Discord | #channel | Server" (or "@friend", or a thread's own name), with
+        // "• " or "(3) " in front while something's unread: neither is a name
         title() {
-            const parts = document.title.split(' | ').map(s => s.trim()).filter(s => s && !/^discord$/i.test(s) && !/^\(\d+\)/.test(s));
+            const parts = document.title.split(' | ').map(s => s.trim().replace(/^\(\d+\)\s*/, '').replace(/^[•·●]\s*/, '').trim()).filter(s => s && !JUNK_NAME.test(s));
             const first = parts[0] || '', last = parts.length > 1 ? parts[parts.length - 1] : '';
             return { name: first.replace(/^[#@]/, ''), sigil: /^[#@]/.test(first) ? first[0] : '', server: last };
         },
@@ -238,9 +242,11 @@
         },
         here() {
             const r = this.route(); if (!r.cid) return null;
-            const t = this.title(), link = this.channelLink(r.cid);
-            const name = t.name || this.linkName(link) || 'Channel';
-            const kind = r.gid === '@me' ? 'dm' : t.sigil === '#' ? 'channel' : link && /voice/i.test(link.getAttribute('aria-label') || '') ? 'voice' : t.sigil ? 'channel' : 'thread';
+            // the channel list on the left says it best (name and kind); then the window title, then the header
+            const t = this.title(), link = this.channelLink(r.cid), lab = (link && link.getAttribute('aria-label')) || '';
+            const head = this.headerTitle(), hn = head ? (head.textContent || '').trim().slice(0, 80) : '';
+            const name = this.linkName(link) || t.name || hn || 'Channel';
+            const kind = r.gid === '@me' ? 'dm' : /voice|stage/i.test(lab) ? 'voice' : /thread|post/i.test(lab) ? 'thread' : 'channel';
             return { gid: r.gid, cid: r.cid, name, server: r.gid === '@me' ? 'Direct messages' : (t.server || this.guildName(r.gid)), kind, icon: this.guildIcon(r.gid), note: '', named: false };
         },
         go(path) {
@@ -823,14 +829,24 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
     /* ───────────────────────── mentions and keywords ───────────────────────── */
 
     const mentionStyle = style(`
-@keyframes mfd-mblob{0%{background-position:6% 40%,78% 70%,40% 10%}50%{background-position:30% 80%,55% 20%,85% 60%}100%{background-position:12% 10%,90% 45%,60% 90%}}
-html[data-mfd-mg] :is(${C('mentioned')},[data-mfd-kw]){background:linear-gradient(90deg,rgb(var(--mfd-glow) / calc(.32 * var(--mfd-ms))),rgb(var(--mfd-glow) / calc(.08 * var(--mfd-ms))) 55%,transparent)!important;
-  box-shadow:inset 3px 0 0 rgb(var(--mfd-glow)),0 0 18px -8px rgb(var(--mfd-glow) / var(--mfd-ms))!important;isolation:isolate}
-html[data-mfd-mg] ${C('mentioned')}::before{background:rgb(var(--mfd-glow))!important;box-shadow:0 0 10px 1px rgb(var(--mfd-glow) / .8)!important}
-html[data-mfd-mg][data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{content:"";position:absolute;inset:-4px 0;z-index:-1;pointer-events:none;border-radius:inherit;
-  background-image:radial-gradient(closest-side,rgb(var(--mfd-glow) / .7),transparent),radial-gradient(closest-side,rgb(255 255 255 / .35),transparent),radial-gradient(closest-side,rgb(var(--mfd-glow) / .55),transparent);
-  background-size:38% 160%,22% 120%,30% 150%;background-repeat:no-repeat;filter:blur(9px);opacity:var(--mfd-ms);animation:mfd-mblob 7s ease-in-out infinite alternate}
+@keyframes mfd-mblob{0%{background-position:6% 135%,24% -45%,52% 150%,74% -40%}50%{background-position:16% 30%,32% 85%,44% 15%,66% 70%}100%{background-position:10% -50%,28% 140%,58% -45%,80% 135%}}
+html[data-mfd-mg] :is(${C('mentioned')},[data-mfd-kw]){background:linear-gradient(90deg,rgb(var(--mfd-glow) / calc(.24 * var(--mfd-ms))),rgb(var(--mfd-glow) / calc(.1 * var(--mfd-ms))) 55%,rgb(var(--mfd-glow) / calc(.04 * var(--mfd-ms))))!important;
+  box-shadow:inset 3px 0 0 rgb(var(--mfd-glow))!important;border-radius:0 10px 10px 0;isolation:isolate}
+html[data-mfd-mg] ${C('mentioned')}::before{background:rgb(var(--mfd-glow))!important;box-shadow:none!important;border-radius:0!important}
+/* a mention right above or below joins the same box */
+html[data-mfd-mg] li[id^="chat-messages-"]:has(:is(${C('mentioned')},[data-mfd-kw])) + li[id^="chat-messages-"] :is(${C('mentioned')},[data-mfd-kw]){border-top-right-radius:0}
+html[data-mfd-mg] li[id^="chat-messages-"]:has(+ li[id^="chat-messages-"] :is(${C('mentioned')},[data-mfd-kw])) :is(${C('mentioned')},[data-mfd-kw]){border-bottom-right-radius:0}
+/* lava blobs: round drops of a fixed size rising and sinking inside the box, never stretched to the message's width */
+html[data-mfd-mg][data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background-image:radial-gradient(circle closest-side,rgb(var(--mfd-glow) / .8) 58%,transparent),radial-gradient(circle closest-side,rgb(var(--mfd-glow) / .6) 52%,transparent),
+    radial-gradient(circle closest-side,rgb(var(--mfd-glow) / .72) 56%,transparent),radial-gradient(circle closest-side,rgb(255 255 255 / .22) 40%,transparent);
+  background-size:58px 58px,38px 38px,48px 48px,30px 30px;background-repeat:no-repeat;filter:blur(3.5px);opacity:min(1,calc(.55 * var(--mfd-ms)));
+  clip-path:inset(0 round 0 10px 10px 0);animation:mfd-mblob 11s ease-in-out infinite alternate}
+/* neighbours drift out of step, so a run of mentions doesn't repeat the same blobs */
+html[data-mfd-mb] li[id^="chat-messages-"]:nth-child(3n+1) :is(${C('mentioned')},[data-mfd-kw])::after{animation-delay:-4s;animation-direction:alternate-reverse}
+html[data-mfd-mb] li[id^="chat-messages-"]:nth-child(3n+2) :is(${C('mentioned')},[data-mfd-kw])::after{animation-delay:-8s}
 html[data-mfd-still][data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){html[data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{animation:none;background-position:10% 40%,30% 80%,50% 20%,70% 60%}}
 `);
     let KW = null;
     function keywordRe() {
@@ -887,12 +903,14 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
         }
         function build() {
             const names = [...D.found, ...S.shotExtra.split(',').map(s => s.trim())].filter(s => s.length >= 2);
-            re = names.length ? new RegExp('(' + names.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi') : null;
+            // whole names only: "Sam" hides Sam and Sam's, never Samsung
+            re = names.length ? new RegExp('(?<![\\p{L}\\p{N}])(' + names.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?![\\p{L}\\p{N}])', 'giu') : null;
             privacyStyle.textContent = active() ? (
                 `${C('panels')} :is(${C('nameTag')},${C('avatarWrapper')},${C('panelTitleContainer')},${C('panelSubtextContainer')}){filter:blur(7px)}` +
                 `${C('panels')} :is(${C('nameTag')},${C('avatarWrapper')}):hover{filter:none}` +
-                '[data-mfd-priv]{filter:blur(6px)}' +
-                (S.shotAvatars && uid ? `img[src*="/avatars/${uid}/"],[style*="/avatars/${uid}/"]{filter:blur(8px)}` : '')) : '';
+                '[data-mfd-priv]{filter:blur(6px);transition:filter .15s}[data-mfd-priv]:hover{filter:none}' +
+                (S.shotAvatars && uid ? `img[src*="/avatars/${uid}/"],[style*="/avatars/${uid}/"]{filter:blur(8px);transition:filter .15s}img[src*="/avatars/${uid}/"]:hover,[style*="/avatars/${uid}/"]:hover{filter:none}` : '')) : '';
+            OWN.refresh();
         }
         function walk(scope) {
             if (!active() || !re) return;
@@ -918,9 +936,47 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
         function added(nodes) {
             if (!active() || !re) return;
             for (const n of nodes) { if (n.nodeType === 3) one(n); else if (n.nodeType === 1) walk(n); }
-            for (const x of marked) if (!x.isConnected) marked.delete(x);
+            // Discord reuses elements (the server name at the top, a channel header): one that no longer
+            // holds a hidden name comes out of the blur
+            for (const x of marked) {
+                if (!x.isConnected) { marked.delete(x); continue; }
+                if (x.nodeType === 1) { re.lastIndex = 0; if (!re.test(x.textContent || '')) { x.removeAttribute('data-mfd-priv'); marked.delete(x); } }
+            }
         }
-        return { apply, added, learn };
+        return { apply, added, learn, words: () => active() ? re : null };
+    })();
+
+    // Screenshot safe reaches Molten's own pieces too (this panel, the flyout, popups, the note chip): each
+    // hidden name is blurred word by word, and a box holding one is blurred, until you point at it.
+    const OWN = (() => {
+        const roots = new Map();
+        let frame = 0;
+        function mark(root) {
+            const re = SHOT.words();
+            if (!re) { for (const e of [...root.querySelectorAll('span.pv')]) e.replaceWith(e.textContent); for (const e of root.querySelectorAll('.pv')) e.classList.remove('pv'); return; }
+            const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), hits = [];
+            for (let n = tw.nextNode(); n; n = tw.nextNode()) {
+                const p = n.parentElement; if (!p || p.tagName === 'STYLE' || p.classList.contains('pv') || p.closest('svg')) continue;
+                re.lastIndex = 0; if (re.test(n.nodeValue)) hits.push(n);
+            }
+            for (const n of hits) {
+                const frag = document.createDocumentFragment();
+                n.nodeValue.split(re).forEach((t, i) => { if (t) frag.append(i % 2 ? Object.assign(document.createElement('span'), { className: 'pv', textContent: t }) : t); });
+                n.replaceWith(frag);
+            }
+            for (const i of root.querySelectorAll('input[type=text]')) { re.lastIndex = 0; i.classList.toggle('pv', !!i.value && re.test(i.value)); }
+        }
+        // each piece is watched only while Screenshot safe is on; otherwise nothing runs at all
+        function sync(r) {
+            let mo = roots.get(r);
+            if (!(r.host && r.host.isConnected)) { if (mo) mo.disconnect(); roots.delete(r); return; }
+            if (SHOT.words() && !mo) { mo = new MutationObserver(() => { if (!frame) frame = requestAnimationFrame(sweep); }); mo.observe(r, { childList: true, subtree: true, characterData: true }); roots.set(r, mo); }
+            else if (!SHOT.words() && mo) { mo.disconnect(); roots.set(r, null); }
+            mark(r);
+        }
+        function sweep() { frame = 0; for (const r of [...roots.keys()]) sync(r); }
+        function watch(root) { if (!roots.has(root)) { roots.set(root, null); sync(root); } }
+        return { watch, refresh: sweep };
     })();
 
     /* ───────────────────────── favorites, recent, saved, reminders ───────────────────────── */
@@ -950,12 +1006,18 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
     }
     // names follow Discord's as you visit (unless you renamed it yourself)
     function refreshNames(here) {
-        let ch = false;
-        for (const list of [D.favs, D.recent]) for (const f of list) if (keyOf(f) === keyOf(here)) {
-            for (const k of ['server', 'icon', 'kind']) if (here[k] && f[k] !== here[k]) { f[k] = here[k]; ch = true; }
-            if (!f.named && here.name && f.name !== here.name) { f.name = here.name; ch = true; }
+        const ch = new Set();
+        const lists = { favs: D.favs, recent: D.recent, saved: D.saved.items, reminders: D.reminders };
+        for (const [s, list] of Object.entries(lists)) for (const f of list) {
+            let p = keyOf(f) === keyOf(here) ? here : null;
+            // a channel in the list on the left gives its name even before you open it
+            if (!p && f.gid === here.gid && !f.named) { const a = DC.channelLink(f.cid), n = DC.linkName(a); if (n) p = { name: n, server: here.server, icon: here.icon, kind: /voice|stage/i.test(a.getAttribute('aria-label') || '') ? 'voice' : /thread|post/i.test(a.getAttribute('aria-label') || '') ? 'thread' : 'channel' }; }
+            if (!p) continue;
+            for (const k of ['server', 'icon', 'kind']) if (p[k] && f[k] !== p[k]) { f[k] = p[k]; ch.add(s); }
+            if (!f.named && p.name && p.name !== 'Channel' && f.name !== p.name) { f.name = p.name; ch.add(s); }
         }
-        if (ch) { store.favs(); }
+        for (const s of ch) store[s]();
+        if (ch.size) refreshAll();
     }
     let lastPlace = '', recentTimer = 0;
     function visited() {
@@ -1094,7 +1156,8 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
         const v = get('actPlaces', {}), out = {};
         if (v && typeof v === 'object' && !Array.isArray(v)) for (const [k, o] of Object.entries(v)) {
             if (!PLACE_KEY.test(k) || k === 'home' || !o || typeof o !== 'object') continue;
-            out[k] = { n: str(o.n, 80) || 'Channel', s: str(o.s, 80), k: ['channel', 'thread', 'dm', 'voice'].includes(o.k) ? o.k : 'channel',
+            const junk = JUNK_NAME.test(str(o.n, 80).trim());
+            out[k] = { n: junk ? '' : str(o.n, 80), s: str(o.s, 80), k: junk && o.k === 'thread' ? 'channel' : ['channel', 'thread', 'dm', 'voice'].includes(o.k) ? o.k : 'channel',
                 i: /^https:\/\/cdn\.discordapp\.com\//.test(o.i || '') ? str(o.i, 300) : '', at: +o.at || 0 };
         }
         return out;
@@ -1366,6 +1429,8 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
 .rp-set:focus-visible{outline:2px solid var(--a);outline-offset:2px}
 `;
     const LAYER_CSS = `
+.pv{display:inline-block;filter:blur(5px);transition:filter .15s}
+.pv:hover,input.pv:focus{filter:none}
 :host{all:initial}
 *{box-sizing:border-box;margin:0}
 [hidden]{display:none!important}
@@ -1481,6 +1546,7 @@ button{font:inherit;color:inherit;cursor:pointer}
             wrap = document.createElement('div'); wrap.className = 'v'; rootEl.append(wrap);
             for (const t of ['click', 'mousedown', 'pointerdown', 'keydown', 'keyup', 'keypress', 'wheel', 'paste', 'copy', 'cut', 'drop', 'beforeinput', 'input']) host.addEventListener(t, e => e.stopPropagation());
             document.documentElement.append(host);
+            OWN.watch(rootEl);
             theme();
             return wrap;
         }
@@ -2062,6 +2128,7 @@ button{cursor:pointer}
             this.esc = e => { if (e.key === 'Escape') this.close(); };
             document.addEventListener('keydown', this.esc, true);
             document.documentElement.append(this.host);
+            OWN.watch(this.root);
             this.render();
             this.panel.focus({ preventScroll: true });
             ensureButton();
@@ -2715,6 +2782,8 @@ button{cursor:pointer}
     // the panel's own pieces, on top of the kit's (same tokens: corners from the scale, colors from the theme)
     const CSS2 = `
 /* like the other Molten panels: no scale-in (it would wait on the lava's first frames) */
+.pv{display:inline-block;filter:blur(5px);transition:filter .15s}
+.pv:hover,input.pv:focus{filter:none}
 .panel{animation:none}
 .panel.peek{opacity:.18;transition:opacity .15s}
 .logo svg{position:relative;color:#fff}
