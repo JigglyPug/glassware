@@ -159,8 +159,9 @@ def pic(p, src, attrs, root=False):
     if not os.path.exists(f'{R}/{light}' if root else f'{R}/{p}/{light}'): return f'<img src="{src}" {attrs}>'
     return f'<picture><source media="(prefers-color-scheme: light)" srcset="{light}"><img src="{src}" {attrs}></picture>'
 
-ACCENT = {'desktop/prism':'3b6fd6','desktop/hourglass':'5b5bd6','desktop/looking-glass':'3b6fd6','desktop/molten-tools':'ff8a3d',
-          'desktop/molten-for-reddit':'ff8a3d','desktop/kaleidoscope':'3db4f2','mobile/kaleidoscope-mobile':'3db4f2','mobile/molten-for-reddit-mobile':'ff8a3d'}
+# the site-specific scripts take their site's colour (YouTube's red, Reddit's orange-red, AniList's blue), like their panels
+ACCENT = {'desktop/prism':'3b6fd6','desktop/hourglass':'5b5bd6','desktop/looking-glass':'3b6fd6','desktop/molten-tools':'ff0033',
+          'desktop/molten-for-reddit':'ff4500','desktop/kaleidoscope':'3db4f2','mobile/kaleidoscope-mobile':'3db4f2','mobile/molten-for-reddit-mobile':'ff4500'}
 HERO = {'desktop/molten-tools':'general','desktop/molten-for-reddit':'general','mobile/molten-for-reddit-mobile':'lava'}
 
 def badge(label, msg, color, style='for-the-badge'):

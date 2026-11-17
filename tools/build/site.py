@@ -344,4 +344,18 @@ for p, s in S.items():
 </main>"""
     os.makedirs(f'{D}/{p}', exist_ok=True)
     open(f'{D}/{p}/index.html', 'w', encoding='utf-8').write(page(f"{s['name']} — {s['tag']}", s['intro'], th, acc, body, 2, f'{p}/', f'img/{slug}/og.png', f'img/{slug}/icon.png'))
+# every picture, icon and video a page loads carries a fingerprint of the file (?v=), like the stylesheet:
+# a changed screenshot gets a new address, so a browser that kept the old one fetches it again
+def stamp_assets(path):
+    here = os.path.dirname(path)
+    def one(m):
+        url = m.group(2); f = os.path.normpath(os.path.join(here, url))
+        if not os.path.isfile(f): return m.group(0)
+        return f'{m.group(1)}="{url}?v={hashlib.md5(open(f, "rb").read()).hexdigest()[:8]}"'
+    s = open(path, encoding='utf-8').read()
+    t = re.sub(r'\b(src|srcset|poster|href)="((?!https?:|data:|//)[^"?#]+\.(?:webp|png|jpg|svg|mp4))"', one, s)
+    if t != s: open(path, 'w', encoding='utf-8').write(t)
+for root, _, files in os.walk(D):   # already-stamped addresses are left alone, so a partial build (ONLY) can run it too
+    for f in files:
+        if f == 'index.html': stamp_assets(os.path.join(root, f))
 print('site built:', sorted(os.listdir(D)))
