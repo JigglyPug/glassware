@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.3
+// @version      1.0.4
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.3';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.4';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -83,7 +83,7 @@
     const SPEC = {
         enabled: B(true), log: B(false), appearance: CH('auto', ['auto', 'light', 'dark']),
         titleColor: B(true), titleTone: CH('dark', ['dark', 'vivid', 'muted']), seekColor: B(true), seekTone: CH('bright', ['bright', 'title']),
-        lavaOn: B(true), followMedia: B(true), profileLava: B(true), videoLava: B(true), videoFps: N(15, 1, 60), videoWidth: N(128, 32, 512),
+        lavaOn: B(true), followMedia: B(true), profileLava: B(true), videoLava: B(true), clearMedia: B(true), videoFps: N(15, 1, 60), videoWidth: N(128, 32, 512),
         videoCropBars: B(true), voiceLava: B(true), voiceWhere: CH('call', ['call', 'any']), serverTint: B(true),
         frost: N(0.05, 0, 0.6), blur: N(0, 0, 30), chrome: N(0.45, 0, 1), radius: N(12, 0, 28), edges: B(true), textShadow: B(true),
         clearVideo: B(true), cleanup: B(true),
@@ -336,6 +336,10 @@ div.mfd-blobs{position:fixed;inset:-15%;height:140vh;z-index:-49;pointer-events:
   background-size:55% 55%,40% 40%,65% 65%,35% 35%;mix-blend-mode:soft-light;filter:blur(20px) brightness(50) saturate(150%);
   animation:mfd-blobs 90s steps(var(--mfd-steps,40)) alternate infinite;opacity:var(--mfd-fade,1);transition:opacity .35s ease}
 html:not([data-mfd-on]) :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){display:none!important}
+/* opened media: light glass instead of the dark backdrop, the app behind out of view, black boxes see-through */
+html[data-mfd-on][data-mfd-viewer] [data-mfd-vunder]{visibility:hidden!important}
+html[data-mfd-on][data-mfd-viewer] [data-mfd-vbd]{background:rgba(8,6,18,.2)!important;opacity:1!important;-webkit-backdrop-filter:blur(4px) saturate(1.3)!important;backdrop-filter:blur(4px) saturate(1.3)!important}
+html[data-mfd-on] :is([data-mfd-vclr],[data-mfd-fclr]){background:transparent!important;background-color:transparent!important}
 html[data-mfd-on] div.mfd-blobs{display:block}
 html[data-mfd-noblobs] div.mfd-blobs{display:none!important}
 html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-play-state:paused!important}
@@ -433,6 +437,7 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
     // A playing video or stream draws itself (below); otherwise the first of these that has something.
     function source() {
         const r = DC.route();
+        if (viewerNow && viewerNow.media.tagName === 'IMG' && S.followMedia) { const u = viewerNow.media.currentSrc || viewerNow.media.src; if (isHttp(u)) return { kind: 'media', url: u }; }
         if (S.voiceLava) {
             const sp = (S.voiceWhere === 'any' ? DC.inVoice() : DC.callScreen()) ? DC.speaker() : '';
             if (sp) { lastSpeaker = { url: sp, at: Date.now() }; return { kind: 'voice', url: sp }; }
@@ -470,9 +475,12 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
 
     /* ---------- art layers with crossfade ---------- */
     let artNow = '', artFlip = 0, artToken = 0, artKind = '';
+    let lavaIn = null;   // the fullscreen box the lava moved into, if any
+    const lavaHost = () => (lavaIn && lavaIn.isConnected && document.fullscreenElement === lavaIn ? lavaIn : document.body);
     function artLayers() {
-        const list = document.body ? [...document.body.querySelectorAll(':scope > div.mfd-art')] : [];
-        while (document.body && list.length < 2) { const d = document.createElement('div'); d.className = 'mfd-art'; d.setAttribute('aria-hidden', 'true'); document.body.prepend(d); list.push(d); }
+        const host = lavaHost();
+        const list = host ? [...host.querySelectorAll(':scope > div.mfd-art')] : [];
+        while (host && list.length < 2) { const d = document.createElement('div'); d.className = 'mfd-art'; d.setAttribute('aria-hidden', 'true'); host.prepend(d); list.push(d); }
         return list;
     }
     function setArt(src) {
@@ -525,15 +533,70 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
         return best;
     }
     function ensureLayers() {
-        if (!document.body) return;
+        const host = lavaHost(); if (!host) return;
         artLayers();
         if (!vCanvas || !vCanvas.isConnected) {
-            vCanvas = q(':scope > canvas.mfd-video', document.body) || document.createElement('canvas');
+            vCanvas = q(':scope > canvas.mfd-video', host) || document.createElement('canvas');
             vCanvas.className = 'mfd-video' + (vs.on ? ' on' : ''); vCanvas.width = 128; vCanvas.height = 72; vCanvas.setAttribute('aria-hidden', 'true');
-            document.body.prepend(vCanvas);
+            host.prepend(vCanvas);
         }
-        if (!q(':scope > div.mfd-blobs', document.body)) { const d = document.createElement('div'); d.className = 'mfd-blobs'; d.setAttribute('aria-hidden', 'true'); document.body.prepend(d); }
+        if (!q(':scope > div.mfd-blobs', host)) { const d = document.createElement('div'); d.className = 'mfd-blobs'; d.setAttribute('aria-hidden', 'true'); host.prepend(d); }
     }
+
+    /* ---------- opened media: lava around it, not black ---------- */
+    // Discord's media viewer (a picture or video opened full size) puts a dark backdrop over the whole app; a
+    // fullscreen video is drawn alone, on black. Both get the lava instead: in the viewer the backdrop turns to light
+    // glass and the app behind it steps out of view, so the lava (in the picture's colors) shows around it; in
+    // fullscreen the lava layers move into the fullscreen box and its black goes see-through.
+    const big = (el, frac) => { const r = el.getBoundingClientRect(); return r.width >= innerWidth * frac && r.height >= innerHeight * frac; };
+    const darkBox = el => { const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(el).backgroundColor); if (!m) return false; const a = m[1].split(',').map(Number); return (a.length < 4 || a[3] >= 0.4) && a[0] + a[1] + a[2] < 150; };
+    // the dark boxes between a picture or video and the layer it sits in, sized like the screen: made see-through
+    function clearAround(media, stop, attr) {
+        for (let n = media; n && n !== stop.parentElement; n = n.parentElement) if (n === media ? n.tagName === 'VIDEO' : big(n, 0.8) && darkBox(n)) n.setAttribute(attr, '');
+    }
+    let viewerNow = null;
+    function findViewer() {
+        for (const bd of qa('[class*="backdrop"]')) {
+            if (!big(bd, 0.9) || getComputedStyle(bd).visibility === 'hidden') continue;
+            let best = null, area = 0;
+            for (const m of qa('img,video', bd.parentElement)) {
+                if (bd.contains(m)) continue;
+                const r = m.getBoundingClientRect(), a = r.width * r.height;
+                if (a > area) { best = m; area = a; }
+            }
+            if (best && area >= innerWidth * innerHeight * 0.2) return { bd, media: best };   // a picture or video opened big, not a profile card
+        }
+        return null;
+    }
+    function checkViewer() {
+        const v = lavaActive() && S.clearMedia ? findViewer() : null;
+        if (v && viewerNow && v.bd === viewerNow.bd && v.media === viewerNow.media) return;
+        for (const n of qa('[data-mfd-vbd],[data-mfd-vunder],[data-mfd-vclr]')) { n.removeAttribute('data-mfd-vbd'); n.removeAttribute('data-mfd-vunder'); n.removeAttribute('data-mfd-vclr'); }
+        viewerNow = v;
+        document.documentElement.toggleAttribute('data-mfd-viewer', !!v);
+        if (v) {
+            v.bd.setAttribute('data-mfd-vbd', '');
+            // everything beside the viewer, on the way up to Discord's root, steps out of view (the app behind it)
+            const top = document.getElementById('app-mount');
+            for (let n = v.bd; n && n !== top && n.parentElement && n !== document.body; n = n.parentElement)
+                for (const sib of n.parentElement.children) if (sib !== n && !sib.contains(v.bd) && !sib.contains(v.media) && !/^(SCRIPT|STYLE|LINK)$/.test(sib.tagName)) sib.setAttribute('data-mfd-vunder', '');
+            clearAround(v.media, v.bd.parentElement, 'data-mfd-vclr');
+        }
+        scheduleArt(0);
+    }
+    function onFullscreen() {
+        const fe = document.fullscreenElement;
+        const want = fe && fe !== document.documentElement && fe !== document.body && lavaActive() && S.clearMedia && fe.querySelector('video') ? fe : null;
+        if (want === lavaIn) return;
+        const layers = qa('div.mfd-art,canvas.mfd-video,div.mfd-blobs');
+        if (lavaIn) for (const n of qa('[data-mfd-fclr]')) n.removeAttribute('data-mfd-fclr');
+        lavaIn = want;
+        const host = lavaHost();
+        for (const n of layers.reverse()) host.prepend(n);
+        if (want) { want.setAttribute('data-mfd-fclr', ''); const v = q('video', want); if (v) clearAround(v, want, 'data-mfd-fclr'); }
+        vs.drawn = false;
+    }
+    document.addEventListener('fullscreenchange', onFullscreen);
     function removeLayers() { for (const n of qa('div.mfd-art,canvas.mfd-video,div.mfd-blobs')) n.remove(); vCanvas = null; artNow = ''; vs.drawn = false; }
     function setVideoOn(on) { if (on === vs.on) return; vs.on = on; if (vCanvas) vCanvas.classList.toggle('on', on); if (!on) { vs.colorAt = 0; scheduleArt(0); } }
     function resetCrop() { vs.union = null; vs.samples = 0; vs.rect = null; vs.nextSample = 0; }
@@ -2387,6 +2450,7 @@ button{cursor:pointer}
                     this.sl('videoFps', 'Frame rate', 'Lower = cheaper; it is blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps' }),
                     this.sl('videoWidth', 'Frame copy width', 'Small is fine behind the blur', { min: 32, max: 512, step: 16, unit: 'px' }),
                     this.tgl('videoCropBars', 'Crop black bars', 'Leaves bars baked into a video out of the lava')),
+                this.tgl('clearMedia', 'Lava around opened media', 'A picture or video opened full size, or a video in fullscreen, sits in the glass and lava instead of black'),
                 this.tgl('voiceLava', 'Voice in the lava', 'In a call, the lava takes the avatar of whoever is talking'),
                 this.fold(S.voiceLava, 'on', this.ch('voiceWhere', 'Where', 'Anywhere = while you\'re connected, whatever you\'re looking at', [['call', 'Call screen'], ['any', 'Anywhere']])),
                 this.tgl('profileLava', 'Profiles in the lava', 'Opening someone\'s profile takes their banner or avatar'),
@@ -3179,9 +3243,11 @@ button{cursor:pointer}
         if (S.mentionGlow && S.mentionBlobs) for (const n of added) if (n.nodeType === 1 && (n.matches('li[id^="chat-messages-"]') || n.querySelector('li[id^="chat-messages-"]'))) seedBlobs(n);
         SHOT.added(added);
         if (S.profileLava || S.followMedia) for (const n of added) if (n.nodeType === 1 && (n.querySelector('img') || n.tagName === 'IMG')) { scheduleArt(300); break; }
+        if (S.clearMedia) for (const n of added) if (n.nodeType === 1 && (/^(IMG|VIDEO)$/.test(n.tagName) || n.querySelector('img,video'))) { checkViewer(); break; }
     }
     const mo = new MutationObserver(list => {
         for (const m of list) { if (m.type === 'characterData') pending.push(m.target); else for (const n of m.addedNodes) pending.push(n); if (m.removedNodes.length && !frame && S.profileLava) scheduleArt(400); }
+        if (viewerNow && !viewerNow.bd.isConnected) checkViewer();   // the viewer closed: the app comes straight back
         if (pending.length > 4000) pending = pending.slice(-4000);
         if (!frame) frame = requestAnimationFrame(onFrame);
     });
@@ -3202,7 +3268,7 @@ button{cursor:pointer}
             if (!S.enabled) { loopT = setTimeout(loop, 2000); return; }
             if (lavaActive() && every('layers', 2000, now)) ensureLayers();
             if (location.pathname !== lastPath || document.title !== lastTitle) onFrame();
-            if (every('second', 1000, now)) { TITLE.tick(); ACT.tick(); }
+            if (every('second', 1000, now)) { TITLE.tick(); ACT.tick(); if (S.clearMedia || viewerNow) checkViewer(); }
             if (every('still', 3000, now)) { stillness(); NOTE.place(); if (S.voiceLava && DC.inVoice()) scheduleArt(0); }
             if (every('remind', 5000, now)) { checkReminders(); if (FLY.isOpen()) FLY.repaint(); }
             // the countdown chips in the open panel keep counting

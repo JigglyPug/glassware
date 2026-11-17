@@ -43,6 +43,7 @@ It checks, in order:
              return junk or drop (when one of them or the test changed)
   hand-off   tools/tests/ownertest.py: Prism keeps standing by for a script that holds the title bar, also
              after being switched off and on (when Prism or the test changed)
+  opened media tools/tests/mediatest.py: Discord's lava around opened media, Looking-Glass's badge under viewers
   your data  tools/tests/discorddata.py: Molten for Discord's export, import and erase (when it changed)
   logging    tools/tests/logtest.py: with logging on, Molten Tools never prints an account's name, handle,
              email or id (when Molten Tools changed)
@@ -575,6 +576,18 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or owner_tool o
         if not l.startswith('== '): ok(False, l.strip())
     ok(r.returncode == 0 or any(not l.startswith('== ') for l in lines), 'the hand-off test failed: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
     if r.returncode == 0: print('  ✓ prism: stands by for another script, also after being switched off and on')
+
+# ------------------------------------------------------------------ opened media
+# tools/tests/mediatest.py: Molten for Discord's lava around opened media, Looking-Glass's badge under viewers
+mt_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/mediatest.py').returncode != 0
+if '--ci' in args or ('--quick' not in args and ('--all' in args or mt_tool or 'desktop/molten-for-discord' in changed or 'desktop/looking-glass' in changed)):
+    head('opened media')
+    r = subprocess.run([sys.executable, f'{HERE}/tests/mediatest.py'], capture_output=True, text=True)
+    lines = [l for l in r.stdout.splitlines() if l.strip()]
+    for l in lines:
+        if not l.startswith('== '): ok(False, l.strip())
+    ok(r.returncode == 0 or any(not l.startswith('== ') for l in lines), 'the opened-media test failed: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
+    if r.returncode == 0: print('  ✓ molten-for-discord: lava around opened media; looking-glass: no badge on top of a viewer or dialog')
 
 # ------------------------------------------------------------------ your data
 # tools/tests/discorddata.py: Molten for Discord's export, import (an untrusted file) and erase-with-OK

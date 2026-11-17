@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.0.4 · 2026-11-17
+
+- **Lava around opened media** (Lava tab, Colors; on by default): a picture or video opened full size sits in light glass over the lava, in the picture's own colors, instead of on a dark backdrop with the chat behind it. A video in fullscreen keeps the lava around it instead of black bars. Closing it brings the chat straight back.
+
 ## 1.0.3 · 2026-11-17
 
 - Lighter while a video or stream plays: only the lava's video follows the frame rate now. Keeping the button in place, cleaning the page, checking reminders and counting activity stay on their own clock, instead of running up to 60 times a second.

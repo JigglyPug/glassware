@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.10
+// @version      1.2.11
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.10';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.11';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1091,6 +1091,27 @@ button:disabled{cursor:not-allowed}
         }
         return box;
     }
+    // a sits around b, also across a player's own inner page (shadow DOM, like Reddit's)
+    const holds = (a, b) => { for (let n = b; n; n = n.parentNode || n.host) if (n === a) return true; return false; };
+    // Something laid over the whole page on top of this video: a picture viewer (Discord's, a site's lightbox),
+    // an open dialog. The badge belongs to the video under it, so it stays out of sight until that closes.
+    function blockedAt(x, y, el) {
+        let list; try { list = document.elementsFromPoint(x, y); } catch { return false; }
+        const box = playerBox(el);
+        for (const t of list) {
+            if (t === layer.host || t === ui.host) continue;
+            if (t === el || box.contains(t) || holds(t, el)) return false;
+            const m = t.closest('[aria-modal="true"],dialog[open]');
+            if (m && !holds(m, el)) return true;
+            for (let n = t; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+                if (holds(n, el)) break;
+                const r = n.getBoundingClientRect();
+                if (r.width >= innerWidth * 0.9 && r.height >= innerHeight * 0.9) return true;
+            }
+            return false;
+        }
+        return false;
+    }
     // something fixed (a site header, a nav bar) sitting on top of this spot?
     function coverAt(x, y, el) {
         let list; try { list = document.elementsFromPoint(x, y); } catch { return null; }
@@ -1143,6 +1164,7 @@ button:disabled{cursor:not-allowed}
                     if (coverAt(cx, top ? y + 2 : y + size - 2, it.el)) continue;
                 }
             }
+            if (blockedAt(x + size / 2, y + size / 2, it.el)) continue;
             layer.place(it, x, y, !right, res);
             shown.add(it);
             if (res.url) readyCount++;

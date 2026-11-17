@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.2.11 · 2026-11-17
+
+- The badge no longer sits on top of a picture viewer or a dialog opened over the page (Discord's viewer, a site's lightbox): it belongs to the video underneath, so it waits until that closes.
+
 ## 1.2.10 · 2026-11-11
 
 - A redirect is checked before it's followed: a site's icon that redirects to your own computer or home network is now never asked for there. Before, the request was made and only its answer thrown away. Redirects to other public addresses still work.
