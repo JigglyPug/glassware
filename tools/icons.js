@@ -91,8 +91,8 @@ const ICONS = {
   'hourglass':         icon({ a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') }),
   'kaleidoscope':      icon({ a: '#2f7dff', b: '#1a3a9c', deep: '#06112e', rimA: '#a9d1ff', rimB: '#7fd6ff', glow: '#5aa2ff', glyph: gem('#8ec8ff') }),
   'looking-glass':     icon({ a: '#3a8bff', b: '#1d3f9e', deep: '#07122f', rimA: '#b4d6ff', rimB: '#a3b8ff', glow: '#5c9dff', glyph: magnifier('#9ec7ff') }),
-  'molten-for-reddit': icon({ a: '#ff9a3d', b: '#a3249e', deep: '#2a0a1a', rimA: '#ffd08a', rimB: '#ff8ae6', glow: '#ff8a4a', glyph: bubble('#ffc27a') }),
-  'molten-tools':      icon({ a: '#ff7a2e', b: '#7a2cd6', deep: '#2a0a1a', rimA: '#ffc37a', rimB: '#c9a2ff', glow: '#ff6a4a', glyph: play('#ffb07a') }),
+  'molten-for-reddit': icon({ a: '#ff4500', b: '#c23500', deep: '#3a0f00', rimA: '#ffb48f', rimB: '#ff7a40', glow: '#ff4500', glyph: bubble('#ffc9b0') }),   // Reddit's orange-red, #FF4500
+  'molten-tools':      icon({ a: '#ff0033', b: '#c20027', deep: '#3a0010', rimA: '#ff9db0', rimB: '#ff4d6d', glow: '#ff0033', glyph: play('#ffc2cd') }),   // YouTube's red, #FF0033
   'prism':             icon({ a: '#8b5cf6', b: '#2b48b8', deep: '#0c0a2a', rimA: '#d6c6ff', rimB: '#9ec2ff', glow: '#9a7dff', glyph: prism('#c7b5ff') }),
   "molten-for-discord": icon({ a: '#5865f2', b: '#a3249e', deep: '#120a2e', rimA: '#c9ceff', rimB: '#ff8ae6', glow: '#7d88ff', glyph: glyph_molten_for_discord('#b4bbff') }),
 };

@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 3.8.3 · 2026-11-17
+
+- The icon matches the panel: YouTube's red (#FF0033), in Tampermonkey's list, the panel's header and on the website.
+
 ## 3.8.2 · 2026-11-17
 
 - The panel uses YouTube's red (#FF0033, the same on YouTube Music) instead of a general Molten orange: switches, buttons, tabs, headings and the glow. The lava itself is unchanged.

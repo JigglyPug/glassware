@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.4.11 · 2026-11-17
+
+- The icon matches the panel: Reddit's orange-red (#FF4500), in Tampermonkey's list, the panel's header and on the website.
+
 ## 2.4.10 · 2026-11-17
 
 - The panel uses Reddit's own orange-red (#FF4500) instead of a general Molten orange: switches, buttons, tabs, headings and the glow. The lava itself is unchanged.

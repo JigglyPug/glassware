@@ -74,4 +74,6 @@ def hourglass_block(path):
 
 if __name__ == '__main__':
     for p, icon in SCRIPTS.items(): patch(f"{R}/{p}/{p.split('/')[1]}.user.js", data_uri(icon))
-    hourglass_block(f'{R}/desktop/hourglass/hourglass.user.js')
+    hg = f'{R}/desktop/hourglass/hourglass.user.js'
+    if 'const ICON_SRC = ' in open(hg, encoding='utf-8').read(): hourglass_block(hg)
+    else: print('skipped', hg, '(its block screen draws its own hourglass, no embedded icon)')
