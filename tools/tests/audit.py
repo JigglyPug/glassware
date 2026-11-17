@@ -47,10 +47,14 @@ from screens import NUDGE
 LG_MENU = ("(async()=>{const b=__all().find(e=>e.classList&&e.classList.contains('b')&&e.tagName==='BUTTON');"
            "b.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,composed:true}));await new Promise(r=>setTimeout(r,200));"
            "if(!__all().some(e=>e.classList&&e.classList.contains('menu')))b.click();await new Promise(r=>setTimeout(r,500));})()")
+MFD_FLY = "(async()=>{const b=document.getElementById('mfd-lava');b.dispatchEvent(new MouseEvent('mouseenter'));await new Promise(r=>setTimeout(r,1500));})()"
 SURFACES = {
     'desktop/hourglass': [('block screen', 'https://www.youtube.com/', 'none', ['--seed', f'{HERE}/seeds/hourglass.json', '--clock', '2026-11-03T11:48:00-05:00']),
                           ('late-night nudge', 'https://www.youtube.com/', 'Open', ['--seed', f'{HERE}/seeds/hourglass.json', '--clock', '2026-11-03T23:40:00-05:00', '--eval', NUDGE])],
     'desktop/looking-glass': [('badge menu', 'https://example.com/', 'none', ['--video', '--wait', '2500', '--eval', LG_MENU])],
+    # the favorites that drip out of the lava button, and the popup for reminders that came due while Discord was closed
+    'desktop/molten-for-discord': [('favorites flyout', 'https://discord.com/channels/@me', 'none', ['--seed', f'{HERE}/seeds/molten-for-discord.json', '--eval', MFD_FLY]),
+                                   ('missed reminders', 'https://discord.com/channels/@me', 'none', ['--seed', f'{HERE}/seeds/molten-for-discord-reminders.json', '--wait', '6500'])],
 }
 
 def surface(p, label, url, cmd, flags, w, h, phone, theme):

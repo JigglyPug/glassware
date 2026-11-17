@@ -339,7 +339,7 @@ change a number: edit `tools/lib/tokens.json`, run `python3 tools/frame.py` and 
 update the scripts' own glass where the recipe changed, recapture, and ship. `tools/check.py`
 fails if CLAUDE.md's tables disagree with the file or a tool keeps its own copy of a token value.
 
-## Dashboards (Hourglass's, and any panel that shows your history)
+## Dashboards (Hourglass's, Molten for Discord's Activity tab, and any panel that shows your history)
 
 A dashboard is there to tell people something about their habits, not to show the same numbers
 in more shapes.
@@ -363,20 +363,30 @@ in more shapes.
   moved) and *What's changing* (when you drift, whether lockdown works, the goal streak). Each
   level has a small heading; a new card goes in the level its question belongs to.
 - **Week and Month are ranges, not extra cards.** One switch above the range cards picks the
-  range (last 7 days or last 4 weeks) and every card that covers a period uses it; the sentences
+  range (last 7 days or last 4 weeks; Molten for Discord's sits on the orbit around its bubbles, in
+  the first range card, with what the bubbles show) and every card that covers a period uses it; the sentences
   say which period they mean. Today's cards cover today, and the streak calendar always shows
   five whole weeks.
 - **Every chart has labelled axes**: what's along the bottom (hours, days) and what the height or
   shade means (time, a scale with units), so nobody has to guess what a bar is.
+  A chart without axes (Molten for Discord's bubbles, where area is time) says the same in a key
+  inside the chart: what each mark is (`data-axis=x`) and what its size means (`data-axis=y`).
+- **A mark that stands for a place** (a bubble) says what it is in a readout line under the chart
+  when you point at it or focus it (the same monospace line Hourglass shows on phones), and goes
+  there when clicked. On touch the first tap only shows the readout, the second goes.
 - Markup the checks read: each card is `[data-q]` (the question), its sentence is `.ans`, and
   axis labels are `[data-axis]` (left out of the repeated-figure check).
-- `python3 tools/tests/dash.py` runs the dashboard on several made-up histories (`tools/seeds/hourglass.py`:
-  a habit change, a good stretch, a new install, no data) and fails if a card has no sentence, a
+- `python3 tools/tests/dash.py` runs each dashboard on several made-up histories (`tools/seeds/hourglass.py`
+  and `tools/seeds/discord.py`: a habit change, a good stretch, a new install, no data) and fails if a card has no sentence, a
   figure shows on two cards, a chart has no axis labels, text says NaN or undefined, or a
-  sentence misses the change planted in that history. `tools/check.py` runs it when Hourglass
-  changes. A new dashboard card or scenario gets an entry there.
+  sentence misses the change planted in that history. `tools/check.py` runs it when either script
+  changes. A new dashboard card, scenario or dashboard gets an entry there (`SCRIPTS` in the file).
 - The demo history in `tools/seeds/hourglass.json` is written by `python3 tools/seeds/hourglass.py`
-  (six weeks with a clear change in the last one); edit the generator, not the JSON.
+  (six weeks with a clear change in the last one), and the activity in `tools/seeds/molten-for-discord.json`
+  by `python3 tools/seeds/discord.py`; edit the generators, not the JSON.
+- **History stays in the browser and is kept only as long as asked.** A dashboard's history is stored
+  one day per value, read back through a checker, never sent anywhere, and has a switch to stop
+  counting, a length to keep (older days are deleted, not hidden) and a button that clears it.
 
 ## Performance
 

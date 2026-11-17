@@ -1,0 +1,31 @@
+{
+ "reminders": [
+  {
+   "gid": "101010101010101010",
+   "cid": "111111111111111111",
+   "mid": "600000000000000004",
+   "name": "general",
+   "server": "Lava Lounge",
+   "kind": "channel",
+   "title": "are we still on for raid night?",
+   "author": "Sam",
+   "due": 1793748600000,
+   "id": "r1"
+  },
+  {
+   "gid": "202020202020202020",
+   "cid": "222222222222222222",
+   "mid": "600000000000000002",
+   "name": "weeknight-dinners",
+   "server": "Recipe Club",
+   "kind": "channel",
+   "title": "Sheet-pan gnocchi: 425°F, 20 min, toss halfway",
+   "author": "Jo",
+   "due": 1793743200000,
+   "id": "r2"
+  }
+ ],
+ "found": [
+  "LavaPug"
+ ]
+}

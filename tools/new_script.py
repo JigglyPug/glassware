@@ -151,6 +151,9 @@ if __name__ == '__main__':
     js = script(s)
     if '--dry' in sys.argv: print(js); sys.exit()
     os.makedirs(f'{R}/{p}/images', exist_ok=True)
+    if not os.path.exists(f'{R}/{p}/CHANGES.md'):
+        import datetime
+        open(f'{R}/{p}/CHANGES.md', 'w', encoding='utf-8').write(f"# {s['name']}: what changed\n\nNewest first.\n\n## 1.0.0 · {datetime.date.today().isoformat()}\n\n- First release.\n")
     open(f"{R}/{p}/{s['slug']}.user.js", 'w', encoding='utf-8').write(js)
     register(s)
     keep = f"{HERE}/specs/{s['slug']}.json"   # the record of how the script started

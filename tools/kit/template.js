@@ -324,7 +324,7 @@ button{cursor:pointer}
                 return row;
             }
             if (r.type === 'choice') {
-                const seg = (wide) => h('div', { class: 'seg' + (wide ? ' wide' : ''), role: 'radiogroup', 'aria-label': r.title, style: wide ? '--cols:' + (r.options.some(o => o[1].length > 9) ? 3 : 4) : null },
+                const seg = (wide) => h('div', { class: 'seg' + (wide ? ' wide' : ''), role: 'radiogroup', 'aria-label': r.title, style: wide ? '--cols:' + Math.min(r.options.length, r.options.some(o => o[1].length > 9) ? 3 : 4) : null },
                     r.options.map(([v, label]) => h('button', { class: v === s[r.key] ? 'on' : null, role: 'radio', 'aria-checked': String(v === s[r.key]), text: label,
                         onclick: () => { this.open_.delete(r.key); save({ [r.key]: v }); } })));
                 // 2–3 short options sit inline; longer sets fold into a pill that opens the buttons underneath

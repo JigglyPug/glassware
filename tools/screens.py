@@ -28,6 +28,7 @@ ANI = 'https://anilist.co/user/JigglyPug/animelist'
 
 # folder: (url, menu command prefix, extra flags, [tabs]); lead image is the first capture
 JOBS = {
+    'desktop/molten-for-discord': ('https://discord.com/channels/@me', 'Open Molten for Discord', ['--seed', f'{HERE}/seeds/molten-for-discord.json'], ['Lava', 'Favorites', 'Messages', 'Reminders', 'Activity', 'Privacy']),
     'desktop/prism':          ('https://example.com/', 'Open Prism', [], []),
     'desktop/hourglass':      ('https://www.youtube.com/', 'Open', ['--seed', f'{HERE}/seeds/hourglass.json'], ['Schedule', 'Sites', 'Settings']),
     'desktop/looking-glass':  ('https://example.com/', 'Open Looking', ['--video'], []),

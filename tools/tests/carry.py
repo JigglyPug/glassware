@@ -25,7 +25,7 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.
 sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 from screens import JOBS, CLOCK
 
-FIRST = {'desktop/hourglass': 'Dashboard', 'desktop/molten-tools': 'Lava', 'desktop/molten-for-reddit': 'Lava',
+FIRST = {'desktop/molten-for-discord': 'General', 'desktop/hourglass': 'Dashboard', 'desktop/molten-tools': 'Lava', 'desktop/molten-for-reddit': 'Lava',
          'mobile/molten-for-reddit-mobile': 'Lava', 'desktop/kaleidoscope': 'Recommend', 'mobile/kaleidoscope-mobile': 'Recommend'}
 OK_FILE = f'{HERE}/tests/settings_ok.txt'
 CARRY_BACK = 4   # tools/check.py also starts from this many releases before the live one

@@ -1,4 +1,5 @@
-THEME = {  # page theme + accent, modelled on each script's own panel
+THEME = {
+ 'desktop/molten-for-discord': ('molten', '#5865f2'),  # page theme + accent, modelled on each script's own panel
  'desktop/prism':            ('frost',    '#3b6fd6'),
  'desktop/hourglass':        ('frost',    '#5b5bd6'),
  'desktop/looking-glass':    ('frost',    '#3b6fd6'),

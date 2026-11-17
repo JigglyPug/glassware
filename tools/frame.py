@@ -41,6 +41,7 @@ KIT = dict(SHADOW, root='.panel', dark='.panel[data-theme=dark]', phone='@media 
            vars=dict(SHADOW_VARS, on='var(--a)'))
 FRAMES = {
     'tools/kit/template': KIT,
+    'desktop/molten-for-discord': KIT,
     'desktop/prism':          dict(SHADOW, root='.panel', dark='.panel[data-theme=dark]', vars=SHADOW_VARS, phone=None),
     'desktop/hourglass':      dict(SHADOW, root='.vars', dark='.vars[data-theme=dark]', vars=SHADOW_VARS, phone='.m'),
     'desktop/looking-glass':  dict(SHADOW, root='.vars', dark='.vars[data-theme=dark]', vars=SHADOW_VARS, phone='@media (max-width:620px)'),

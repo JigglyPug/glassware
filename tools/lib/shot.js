@@ -464,7 +464,8 @@ function stubPage() {
       // second line has to land as a grid, every line's buttons in the same columns; anything else (2 then 2
       // of different widths, a lone button pushed to the right) reads as a mistake. Lay them out on purpose.
       const groups = new Map();
-      for (const e of els) { if (e.tagName !== 'BUTTON') continue; const q = e.getBoundingClientRect(); if (q.height < 30 || !q.width) continue;
+      // (buttons placed one by one with position:absolute, like Molten for Discord's bubbles, aren't a row)
+      for (const e of els) { if (e.tagName !== 'BUTTON' || getComputedStyle(e).position === 'absolute') continue; const q = e.getBoundingClientRect(); if (q.height < 30 || !q.width) continue;
         const p = e.parentElement; if (!p) continue; (groups.get(p) || groups.set(p, []).get(p)).push(q); }
       for (const [p, qs] of groups) {
         if (qs.length < 2) continue;
@@ -485,6 +486,17 @@ function stubPage() {
         const rows = []; for (const q of [...qs].sort((a, b) => a.top - b.top || a.left - b.left)) { const r = rows.find(r => Math.abs(r[0].top - q.top) < 6); r ? r.push(q) : rows.push([q]); }
         const bad = rows.find(r => r.length > 1 && (Math.abs(r[0].left - L) > 2 || Math.abs(r[r.length - 1].right - R) > 2 || r.some(q => Math.abs(q.width - r[0].width) > 2)));
         if (bad) add('uneven buttons', p, bad.length + ' buttons in a row ' + (Math.abs(bad[bad.length - 1].right - R) > 2 || Math.abs(bad[0].left - L) > 2 ? 'leave ' + Math.round((bad[0].left - L) + (R - bad[bad.length - 1].right)) + 'px of the row empty' : 'have different widths') + '; split the row evenly (equal columns, full width)');
+      }
+      // segmented controls: a filled bar of choices that leaves an empty column at its end (two choices laid
+      // out in a grid made for three or four) reads as a missing button. A one-row bar holds as many columns
+      // as it has choices (CLAUDE.md: up to 4 per row), so the buttons fill it.
+      for (const p of new Set(els.filter(e => e.tagName === 'BUTTON').map(e => e.parentElement).filter(Boolean))) {
+        const kids = [...p.children].filter(k => k.getBoundingClientRect().width > 0);
+        if (kids.length < 2 || kids.some(k => k.tagName !== 'BUTTON')) continue;
+        const pc = getComputedStyle(p); if (pc.backgroundColor === 'rgba(0, 0, 0, 0)' || pc.backgroundColor === 'transparent') continue;
+        const qs = kids.map(k => k.getBoundingClientRect()); if (qs.some(q => Math.abs(q.top - qs[0].top) > 6)) continue;   // more than one row: the grid's own business
+        const pr = p.getBoundingClientRect(), R = pr.right - parseFloat(pc.paddingRight) - parseFloat(pc.borderRightWidth || 0), last = Math.max(...qs.map(q => q.right)), w = Math.min(...qs.map(q => q.width));
+        if (R - last >= w - 2) add('empty segment', p, kids.length + ' choices leave ' + Math.round(R - last) + 'px of the bar empty; give the bar as many columns as it has choices');
       }
       // shape (tools/lib/tokens.json): the panel's width and corners, the header's and tab bar's insets from
       // the panel's edge, and every rounded corner inside the panel on the radius scale (or nested

@@ -1,13 +1,14 @@
-"""Check Hourglass's dashboard says something true and useful about each made-up history.
+"""Check each dashboard says something true and useful about each made-up history.
 
-    python3 tools/tests/dash.py
+    python3 tools/tests/dash.py [hourglass] [molten-for-discord]
 
-Runs the dashboard on every scenario in tools/seeds/hourglass.py (a habit change, a good stretch,
-a new install, no data), on desktop and on a phone, for both ranges (7 days and 4 weeks), and
-prints one line per problem ("clean" otherwise):
+Runs Hourglass's dashboard on every scenario in tools/seeds/hourglass.py, and Molten for Discord's
+Activity tab on every scenario in tools/seeds/discord.py (a habit change, a good stretch, a new
+install, no data), on desktop and on a phone, for both ranges (7 days and 4 weeks), and prints one
+line per problem ("clean" otherwise):
 - every card is [data-q] with its question as its label and its answer in .ans: at most two
   sentences, each under 16 words with at most one comma
-- the answer names what that scenario planted (PLANTED in tools/seeds/hourglass.py, per range
+- the answer names what that scenario planted (PLANTED in the seed generator, per range
   where a change only shows in one)
 - cards that cover a period ([data-range]) say which one ("past 7 days", "past 4 weeks" or "28 days")
 - no figure (a time, a percentage, a count) shows on two cards; axis labels ([data-axis]) aside
@@ -18,19 +19,24 @@ import json, os, re, subprocess, sys, tempfile
 from concurrent.futures import ThreadPoolExecutor
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); R = os.path.dirname(HERE)   # HERE is the tools folder
 sys.path.insert(0, os.path.join(HERE, 'seeds')); sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
-import hourglass as SEEDS
+import hourglass, discord
 from screens import CLOCK
 
-JS = f'{R}/desktop/hourglass/hourglass.user.js'
+# each dashboard: its script, a page it runs on, the menu command that opens it, the tab it's on, its seeds
+SCRIPTS = {
+    'hourglass': (f'{R}/desktop/hourglass/hourglass.user.js', 'https://www.youtube.com/', 'Open', '', hourglass),
+    'molten-for-discord': (f'{R}/desktop/molten-for-discord/molten-for-discord.user.js', 'https://discord.com/channels/@me', 'Open Molten for Discord', 'Activity', discord),
+}
 # read every card, in the 7-day range and then the 4-week one
 READ = r"""(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
+  if (__TAB__) { __clickTab(__TAB__); await w(500); }
   // every piece of text on its own (textContent would glue "today" and "NaN" into "todayNaN")
   const texts = root => { const out = [], tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); while (tw.nextNode()) { const v = tw.currentNode.nodeValue.trim(); if (v) out.push(v); } return out.join(' | '); };
   const read = () => {
     const P = __all().find(e => e.classList && e.classList.contains('panel'));
     const cards = __all().filter(e => e.dataset && e.dataset.q !== undefined).map(c => {
-      const strip = c.cloneNode(true); strip.querySelectorAll('[data-axis]').forEach(x => x.remove());
+      const strip = c.cloneNode(true); strip.querySelectorAll('[data-axis], .rangebar').forEach(x => x.remove());   // labels and the range switch aren't figures
       strip.querySelectorAll('[title]').forEach(x => x.removeAttribute('title'));
       return {
         q: c.dataset.q, ranged: c.hasAttribute('data-range'),
@@ -50,7 +56,7 @@ READ = r"""(async () => {
   return out;
 })()"""
 
-UNIT = r'(?:tries|try|times|passes|pass|days?|nights?|visits?|sites?)'
+UNIT = r'(?:tries|try|times|passes|pass|days?|nights?|visits?|sites?|messages?|sessions?)'
 def figures(text):
     """The figures a card shows: times, percentages and counts. Clock times and dates aren't figures."""
     t = re.sub(r'\b\d{1,2}(:\d\d)?\s?(AM|PM)\b', ' ', text)
@@ -59,20 +65,21 @@ def figures(text):
     found = re.findall(r'(?<![\w:.])(\d+h \d+m|\d+h|\d+m|<1m|\d+%|\d+ of \d+|\d+ ' + UNIT + r')(?![\w])', t)
     return {f for f in found if not re.fullmatch(r'0(m|h|%| \D.*)', f)}   # zeros say nothing
 
-def run(scen, mobile):
+def run(name, scen, mobile):
+    JS, url, cmd, tab, SEEDS = SCRIPTS[name]
     store = SEEDS.make(scen)
     seed = tempfile.NamedTemporaryFile('w', suffix='.json', delete=False); json.dump(store, seed); seed.close()
-    args = ['node', f'{HERE}/lib/shot.js', JS, 'https://www.youtube.com/', '/dev/null', '--cmd', 'Open', '--clock', CLOCK,
-            '--seed', seed.name, '--eval', READ, '--print'] + (['--mobile', '--vh', '2600'] if mobile else ['--vh', '3000'])
+    args = ['node', f'{HERE}/lib/shot.js', JS, url, '/dev/null', '--cmd', cmd, '--clock', CLOCK,
+            '--seed', seed.name, '--eval', READ.replace('__TAB__', json.dumps(tab)), '--print'] + (['--mobile', '--vh', '2600'] if mobile else ['--vh', '3000'])
     r = subprocess.run(args, capture_output=True, text=True, timeout=300)
     os.unlink(seed.name)
     line = next((l for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)
-    where = f"{scen} on {'a phone' if mobile else 'desktop'}"
+    where = f"{name} {scen} on {'a phone' if mobile else 'desktop'}"
     if not line: return where, [f'could not run: {(r.stderr or r.stdout)[-300:]}']
     got = json.loads(line[5:]) or {}
-    return where, problems(scen, got)
+    return where, problems(SEEDS, scen, got)
 
-def problems(scen, got):
+def problems(SEEDS, scen, got):
     bad = []
     want = SEEDS.PLANTED[scen]
     if 'month' not in got: bad.append('no "4 weeks" button in the range switch (.rangebar)')
@@ -88,7 +95,7 @@ def problems(scen, got):
             if q not in qs: bad.append(f'{tag}no "{q}" card')
         for c in cards:
             q = c['q']
-            if q not in want: bad.append(f'{tag}"{q}" has no entry in PLANTED (tools/seeds/hourglass.py)'); continue
+            if q not in want: bad.append(f'{tag}"{q}" has no entry in PLANTED ({SEEDS.__name__}.py)'); continue
             if c['label'].strip().lower() != q.lower(): bad.append(f'{tag}"{q}": its label reads "{c["label"].strip()}", not the question')
             a = c['ans'].strip()
             if not a: bad.append(f'{tag}"{q}" has no answer sentence (.ans)'); continue
@@ -112,7 +119,8 @@ def problems(scen, got):
     return bad
 
 if __name__ == '__main__':
-    jobs = [(s, m) for s in SEEDS.PLANTED for m in (False, True)]
+    names = [a for a in sys.argv[1:] if a in SCRIPTS] or list(SCRIPTS)
+    jobs = [(n, s, m) for n in names for s in SCRIPTS[n][4].PLANTED for m in (False, True)]
     with ThreadPoolExecutor(4) as ex: res = list(ex.map(lambda j: run(*j), jobs))
     for where, bad in res:
         print(f'== {where}: ' + ('clean' if not bad else f'{len(bad)} problem' + 's' * (len(bad) > 1)))

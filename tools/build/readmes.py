@@ -133,10 +133,26 @@ S['mobile/molten-for-reddit-mobile'] = dict(name='Molten for Reddit Mobile', tag
 
 
 
+S['desktop/molten-for-discord'] = dict(name='Molten for Discord', tag='Molten glass for Discord', sites='discord.com',
+ intro="Molten for Discord puts a lava-lamp background made from what you're looking at behind frosted-glass panes, and keeps your favorite channels one point away on the lava button.",
+ features=[
+  "**Lava from what you're looking at**: The background comes from the image, video or stream in the middle of the chat, or the profile you open. With nothing on screen it takes the server's icon colors, or Discord purple.",
+  '**Glass over the lava**: The server list, channels, chat and member list turn to frosted glass, with Calm, User and Crazy profiles that each keep their own look.',
+  '**Favorites on the lava button**: Point at the lava button and your favorite channels, threads and DMs drip down from it. Reorder them, color them by server and see Recent in the panel.',
+  '**Saved messages and reminders**: Point at a message and click its lava drop to save it to a folder of your own, or to be reminded later, with a note saying why. Reminders you missed while Discord was closed show up when it opens.',
+  '**Your activity, at a glance**: Where your Discord time goes as a cluster of bubbles, one per server or DM: point at one and it swells, click it to go there. Daily time, messages and busy hours sit beside it, compared with your own history, and none of it leaves your browser.',
+  '**Voice in the lava**: In a call, the lava takes the avatar of whoever is talking.',
+  '**Mentions and keywords that glow**: Messages that mention you, or use words you pick, get a lava glow instead of a flat bar, with lava blobs around them if you like.',
+  '**Colors from the art**: The title bar and the video seek bar take their color from the lava. When nothing on screen gives a color, Prism takes the title bar back.',
+  '**Screenshot safe and privacy blur**: Hide your own name and avatar, and blur images, DMs, server icons or whole channels until you point at them.',
+  "**Easy on your GPU**: The lava pauses while you scroll and when Discord isn't the active window, and calms down during calls and streams.",
+ ],
+ shots=[('main', 'Settings panel'), ('lava', 'Lava'), ('favorites', 'Favorites'), ('messages', 'Saved messages'), ('reminders', 'Reminders'), ('activity', 'Activity'), ('privacy', 'Privacy')])
+
 # Where each script runs. This, not the folder, decides the platform labels, the landing filter,
 # the README sections, the "Also on" links and the "More for..." links. Folders only fix the
 # update URLs, so a script never moves folders. Every new script needs an entry here.
-RUNS = {'desktop/prism': 'desktop', 'desktop/hourglass': 'both', 'desktop/looking-glass': 'both',
+RUNS = {'desktop/molten-for-discord': 'desktop', 'desktop/prism': 'desktop', 'desktop/hourglass': 'both', 'desktop/looking-glass': 'both',
         'desktop/molten-tools': 'desktop', 'desktop/molten-for-reddit': 'desktop', 'desktop/kaleidoscope': 'desktop',
         'mobile/kaleidoscope-mobile': 'phone', 'mobile/molten-for-reddit-mobile': 'phone'}
 # Desktop and phone versions of the same app link to each other.
@@ -159,8 +175,8 @@ def pic(p, src, attrs, root=False):
     if not os.path.exists(f'{R}/{light}' if root else f'{R}/{p}/{light}'): return f'<img src="{src}" {attrs}>'
     return f'<picture><source media="(prefers-color-scheme: light)" srcset="{light}"><img src="{src}" {attrs}></picture>'
 
-# the site-specific scripts take their site's colour (YouTube's red, Reddit's orange-red, AniList's blue), like their panels
-ACCENT = {'desktop/prism':'3b6fd6','desktop/hourglass':'5b5bd6','desktop/looking-glass':'3b6fd6','desktop/molten-tools':'ff0033',
+# the site-specific scripts take their site's colour (YouTube's red, Reddit's orange-red, AniList's blue, Discord's blurple), like their panels
+ACCENT = {'desktop/molten-for-discord':'5865f2', 'desktop/prism':'3b6fd6','desktop/hourglass':'5b5bd6','desktop/looking-glass':'3b6fd6','desktop/molten-tools':'ff0033',
           'desktop/molten-for-reddit':'ff4500','desktop/kaleidoscope':'3db4f2','mobile/kaleidoscope-mobile':'3db4f2','mobile/molten-for-reddit-mobile':'ff4500'}
 HERO = {'desktop/molten-tools':'general','desktop/molten-for-reddit':'general','mobile/molten-for-reddit-mobile':'lava'}
 

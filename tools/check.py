@@ -47,7 +47,8 @@ It checks, in order:
              email or id (when Molten Tools changed)
   kaleidoscope  tools/tests/boardtest.py: a hostile board can't send anything out; tools/tests/handofftest.py:
              a prompt goes only to the claude.ai tab opened for it (when Kaleidoscope changed)
-  dashboard  the demo history matches its generator; tools/tests/dash.py: every Hourglass card answers
+  dashboard  the demo histories match their generators; tools/tests/dash.py: every Hourglass and
+             Molten for Discord Activity card answers
              its question in a sentence that names the change, no figure on two cards, labelled
              axes; tools/tests/importtest.py: Import settings keeps any file it's given in range, skips what
              it can't read and won't read one over 1 MB (when Hourglass changed)
@@ -68,7 +69,7 @@ sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests'
 args = sys.argv[1:]
 RAW = 'https://raw.githubusercontent.com/JigglyPug/glassware/main'
 HISTORY = re.compile(r'(?i)\b(before|from|since|until|earlier|older|used to|renamed|migrat\w*)\b')
-STATIC = {'molten-tools', 'molten-for-reddit', 'molten-for-reddit-mobile', 'kaleidoscope', 'kaleidoscope-mobile'}
+STATIC = {'molten-for-discord', 'molten-tools', 'molten-for-reddit', 'molten-for-reddit-mobile', 'kaleidoscope', 'kaleidoscope-mobile'}
 LIVE = {'prism', 'hourglass', 'looking-glass'}
 fails = []; section = ''
 import time as _time
@@ -332,8 +333,10 @@ for k, v in have.items():
 # main is protected against force pushes and deletion and takes only commits whose checks passed (a
 # ruleset, set by hand in the repo's settings; tools/push.py is how changes reach it)
 r = subprocess.run(['gh', 'api', 'repos/JigglyPug/glassware/rules/branches/main'], capture_output=True, text=True)
-try: kinds = {x.get('type') for x in json.loads(r.stdout)}
-except ValueError: kinds = None
+try: data = json.loads(r.stdout)
+except ValueError: data = None
+# signed out (or no access), GitHub answers with an error object instead of the list of rules
+kinds = {x.get('type') for x in data if isinstance(x, dict)} if isinstance(data, list) else None
 if kinds is None: print("  ⚠ couldn't read main's rules from GitHub")
 elif not {'non_fast_forward', 'deletion'} <= kinds: print('  ⚠ main has no ruleset blocking force pushes and deletion (repo Settings → Rules → Rulesets)')
 elif 'required_status_checks' not in kinds: print("  ⚠ main doesn't require the checks to pass before it moves (repo Settings → Rules → Rulesets)")
@@ -489,15 +492,22 @@ import importlib.util
 spec = importlib.util.spec_from_file_location('hgseed', f'{HERE}/seeds/hourglass.py'); hgseed = importlib.util.module_from_spec(spec); spec.loader.exec_module(hgseed)
 ok(json.load(open(f'{HERE}/seeds/hourglass.json')) == json.loads(json.dumps(hgseed.make('habit'))),
    'tools/seeds/hourglass.json differs from what tools/seeds/hourglass.py writes (run python3 tools/seeds/hourglass.py)')
-if not any(f.startswith('dashboard:') for f in fails): print('  ✓ the demo history matches its generator')
-if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/hourglass' in changed)):
-    r = subprocess.run([sys.executable, f'{HERE}/tests/dash.py'], capture_output=True, text=True)
+spec = importlib.util.spec_from_file_location('dcseed', f'{HERE}/seeds/discord.py'); dcseed = importlib.util.module_from_spec(spec); spec.loader.exec_module(dcseed)
+dcdemo = {k: v for k, v in json.load(open(f'{HERE}/seeds/molten-for-discord.json')).items() if k.startswith('act:') or k in ('actDays', 'actPlaces')}
+ok(dcdemo == json.loads(json.dumps(dcseed.make('habit'))),
+   'the activity in tools/seeds/molten-for-discord.json differs from what tools/seeds/discord.py writes (run python3 tools/seeds/discord.py)')
+if not any(f.startswith('dashboard:') for f in fails): print('  ✓ the demo histories match their generators')
+dash = [n for n, d in (('hourglass', 'desktop/hourglass'), ('molten-for-discord', 'desktop/molten-for-discord'))
+        if '--ci' in args or ('--quick' not in args and ('--all' in args or d in changed))]
+if dash:
+    r = subprocess.run([sys.executable, f'{HERE}/tests/dash.py', *dash], capture_output=True, text=True)
     runs = 0
     for l in r.stdout.splitlines():
         if l.startswith('== '): runs += 1; (print(f'  ✓ {l[3:].split(":")[0]}: every card answers its question') if l.endswith('clean') else None)
-        elif l.strip(): ok(False, f'hourglass dashboard: {l.strip()}')
-    want = 2 * len(hgseed.PLANTED)
+        elif l.strip(): ok(False, f'dashboard: {l.strip()}')
+    want = 2 * sum(len((hgseed if n == 'hourglass' else dcseed).PLANTED) for n in dash)
     ok(runs == want, f'the dashboard test reported {runs} of {want} runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+if 'hourglass' in dash:
     # tools/tests/importtest.py: Import settings takes any file (damaged, from another app, huge) without harm
     r = subprocess.run([sys.executable, f'{HERE}/tests/importtest.py'], capture_output=True, text=True)
     runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]

@@ -84,6 +84,8 @@ const prism = (g) => `
   ${tube('M24 59 L46 52.5', { glow: g, w: 2.6, core: 1.1 })}
   ${tube('M54 50 L77 43', { glow: g, w: 2.6, core: 1.1 })}`;
 
+const glyph_molten_for_discord = (g) => `${tube('M50 30 C61 30 69 38 69 49 C69 55 67 59 65 62 C63 65 63 68 63.5 71 C64 74 59.6 75 59.5 72 C59.3 69 57 67 53 67 L44 67 C38 67 31 63 31 52 C31 39 39 30 50 30 Z', { glow: g, w: 4, core: 1.5, fill: .08 }) + '<circle cx="37" cy="74" r="4.4" fill="' + g + '" fill-opacity=".5" filter="url(#bloom)"/><circle cx="37" cy="74" r="2.8" fill="#fff" fill-opacity=".95"/>' + '<circle cx="43.5" cy="48.5" r="4.6" fill="' + g + '" fill-opacity=".45" filter="url(#bloom)"/><circle cx="56.5" cy="48.5" r="4.6" fill="' + g + '" fill-opacity=".45" filter="url(#bloom)"/><ellipse cx="43.5" cy="48.5" rx="2.9" ry="3.6" fill="#fff"/><ellipse cx="56.5" cy="48.5" rx="2.9" ry="3.6" fill="#fff"/><circle cx="44.4" cy="47.3" r=".9" fill="' + g + '"/><circle cx="57.4" cy="47.3" r=".9" fill="' + g + '"/>'}`;
+
 const HG = { a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') };
 const ICONS = {
   'hourglass':         icon({ a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') }),
@@ -92,6 +94,7 @@ const ICONS = {
   'molten-for-reddit': icon({ a: '#ff9a3d', b: '#a3249e', deep: '#2a0a1a', rimA: '#ffd08a', rimB: '#ff8ae6', glow: '#ff8a4a', glyph: bubble('#ffc27a') }),
   'molten-tools':      icon({ a: '#ff7a2e', b: '#7a2cd6', deep: '#2a0a1a', rimA: '#ffc37a', rimB: '#c9a2ff', glow: '#ff6a4a', glyph: play('#ffb07a') }),
   'prism':             icon({ a: '#8b5cf6', b: '#2b48b8', deep: '#0c0a2a', rimA: '#d6c6ff', rimB: '#9ec2ff', glow: '#9a7dff', glyph: prism('#c7b5ff') }),
+  "molten-for-discord": icon({ a: '#5865f2', b: '#a3249e', deep: '#120a2e', rimA: '#c9ceff', rimB: '#ff8ae6', glow: '#7d88ff', glyph: glyph_molten_for_discord('#b4bbff') }),
 };
 ICONS['molten-for-reddit-mobile'] = ICONS['molten-for-reddit'];
 ICONS['kaleidoscope-mobile'] = ICONS['kaleidoscope'];

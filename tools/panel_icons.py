@@ -13,6 +13,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
 SCRIPTS = {   # static header tiles only
+    'desktop/molten-for-discord': 'molten-for-discord',
     'desktop/molten-tools': 'molten-tools', 'desktop/molten-for-reddit': 'molten-for-reddit',
     'mobile/molten-for-reddit-mobile': 'molten-for-reddit', 'desktop/kaleidoscope': 'kaleidoscope',
     'mobile/kaleidoscope-mobile': 'kaleidoscope',

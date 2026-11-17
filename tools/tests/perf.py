@@ -46,6 +46,7 @@ BUDGET = {
 TAGS = {
     'youtube.com': ['ytd-rich-item-renderer', 'ytd-video-renderer', 'ytd-compact-video-renderer', 'ytd-comment-thread-renderer'],
     'reddit.com': ['shreddit-post', 'shreddit-comment', 'article', 'faceplate-partial'],
+    'discord.com': ['li', 'div', 'article'],
 }
 ROUNDS, QUIET = 40, 8
 
