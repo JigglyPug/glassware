@@ -43,6 +43,7 @@ It checks, in order:
              return junk or drop (when one of them or the test changed)
   hand-off   tools/tests/ownertest.py: Prism keeps standing by for a script that holds the title bar, also
              after being switched off and on (when Prism or the test changed)
+  your data  tools/tests/discorddata.py: Molten for Discord's export, import and erase (when it changed)
   logging    tools/tests/logtest.py: with logging on, Molten Tools never prints an account's name, handle,
              email or id (when Molten Tools changed)
   kaleidoscope  tools/tests/boardtest.py: a hostile board can't send anything out; tools/tests/handofftest.py:
@@ -574,6 +575,18 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or owner_tool o
         if not l.startswith('== '): ok(False, l.strip())
     ok(r.returncode == 0 or any(not l.startswith('== ') for l in lines), 'the hand-off test failed: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
     if r.returncode == 0: print('  ✓ prism: stands by for another script, also after being switched off and on')
+
+# ------------------------------------------------------------------ your data
+# tools/tests/discorddata.py: Molten for Discord's export, import (an untrusted file) and erase-with-OK
+dd_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/discorddata.py').returncode != 0
+if '--ci' in args or ('--quick' not in args and ('--all' in args or dd_tool or 'desktop/molten-for-discord' in changed)):
+    head('your data')
+    r = subprocess.run([sys.executable, f'{HERE}/tests/discorddata.py'], capture_output=True, text=True)
+    lines = [l for l in r.stdout.splitlines() if l.strip()]
+    for l in lines:
+        if not l.startswith('== '): ok(False, l.strip())
+    ok(r.returncode == 0 or any(not l.startswith('== ') for l in lines), 'the your-data test failed: ' + ((r.stderr.strip().splitlines() or ['no output'])[-1]))
+    if r.returncode == 0: print('  ✓ molten-for-discord: exports, an untrusted import and erase (asks, then OK)')
 
 # ------------------------------------------------------------------ logging
 # tools/tests/logtest.py: with every logging switch on, Molten Tools' account paths never print an account's

@@ -4,6 +4,8 @@ Newest first.
 
 ## 1.0.2 · 2026-11-17
 
+- **Your data** in General, laid out like Hourglass's: **Export CSV** (your activity, a row per day and channel), **Export data** (settings, lava looks, favorites, saved messages, reminders, notes, server colors), **Import data** (adds what's in a backup to what you have; nothing is removed) and **Erase activity**, which asks first and waits for OK. Exports leave out the names Screenshot safe hides. Erasing activity moved here from the Activity tab.
+- Mention blobs: every message gets its own blobs, in their own places, at their own speed, instead of a run of mentions playing the same animation side by side.
 - The icon shows in Tampermonkey's list again: if it didn't download when you installed, this update fetches it.
 
 ## 1.0.1 · 2026-11-17

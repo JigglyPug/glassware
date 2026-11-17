@@ -177,6 +177,14 @@ tools/seeds/, tools/kit/              demo data for screenshots and tests; the n
   can't hand out 1000 passes), checks the schedule and site lists entry by entry, skips a part it
   can't read, and says in the panel what happened. `tools/tests/importtest.py` hands it damaged, foreign,
   out-of-range and oversized files and its own export. A new import gets the same treatment and a case there.
+  Molten for Discord's Import data runs every part through the same checkers as its own storage, adds
+  to your lists rather than replacing them, and skips a wrong-kind setting (yours stays);
+  `tools/tests/discorddata.py` covers it.
+- **Your data looks like Hourglass's.** A "Your data" section near the end of the settings, after
+  Appearance and before Troubleshooting, still shown with the main switch off: a line on where it's
+  kept and what never is, then buttons with icons: Export CSV (only for activity worth a spreadsheet:
+  Hourglass, Molten for Discord), Export, Import, and an erase that asks first in words and waits for
+  OK (not just a second click). Exports leave out the names Screenshot safe hides.
 
 ## The panel frame (every script's settings panel)
 

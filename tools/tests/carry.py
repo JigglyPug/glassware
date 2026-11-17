@@ -132,6 +132,9 @@ def check(p, back=0):
         elif not y or y['key'] in a: probs.append(f'can\'t find "{k}" in the new version (renamed or moved? check it by hand)')
     saved = {'gm:' + k for k in used['gm']} | {'ls:' + k for k in used['ls']}
     for k in sorted((set(before['reads']) & saved) - set(after['reads'])):
+        # some values are read only at the right moment (Discord's shared session, while the tab is in front
+        # and in use), so a run can miss them: one the new code still reads by name hasn't been dropped
+        if k.startswith('gm:') and re.search(r'\b(get|GM_getValue)\(\s*[\'"]' + re.escape(k[3:]) + r'[\'"]', new_src): continue
         probs.append(f'saved data "{k[3:]}" is no longer read by the new version')
     ok = set()
     if os.path.exists(OK_FILE):

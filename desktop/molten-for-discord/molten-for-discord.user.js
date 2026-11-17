@@ -145,20 +145,20 @@
         return { gid: o.gid, cid: o.cid, name: junk ? 'Channel' : str(o.name, 80) || 'Channel', server: str(o.server, 80), kind: junk && o.kind === 'thread' ? 'channel' : ['channel', 'thread', 'dm', 'voice'].includes(o.kind) ? o.kind : 'channel',
             icon: /^https:\/\/cdn\.discordapp\.com\//.test(o.icon || '') ? str(o.icon, 300) : '', note: str(o.note, 200), named: o.named === true };
     }
-    function readList(k, clean, cap) {
-        const v = get(k, []); const out = [], seen = new Set();
+    function readList(k, clean, cap, src = get) {
+        const v = src(k, []); const out = [], seen = new Set();
         for (const x of Array.isArray(v) ? v : []) { const c = clean(x); if (c && !seen.has(c.gid + '/' + c.cid + '/' + (c.mid || ''))) { seen.add(c.gid + '/' + c.cid + '/' + (c.mid || '')); out.push(c); } if (out.length >= cap) break; }
         return out;
     }
     const FAV_CAP = 100, RECENT_CAP = 8, SAVED_CAP = 500, REMIND_CAP = 100;
-    const readFavs = () => readList('favorites', cleanPlace, FAV_CAP);
+    const readFavs = (src = get) => readList('favorites', cleanPlace, FAV_CAP, src);
     const readRecent = () => readList('recent', o => { const c = cleanPlace(o); if (c) c.at = +o.at || 0; return c; }, RECENT_CAP);
     function cleanSaved(o) {
         const c = cleanPlace(o); if (!c || !ID.test(o.mid)) return null;
         return Object.assign(c, { mid: o.mid, title: str(o.title, 120) || 'Message', author: str(o.author, 60), folder: str(o.folder, 20), at: +o.at || 0 });
     }
-    function readSaved() {
-        const v = get('saved', {}); const folders = [];
+    function readSaved(src = get) {
+        const v = src('saved', {}); const folders = [];
         for (const f of (v && Array.isArray(v.folders) ? v.folders : [])) if (f && /^[a-z0-9]{1,20}$/.test(f.id) && typeof f.name === 'string' && f.name.trim() && folders.length < 30) folders.push({ id: f.id, name: f.name.trim().slice(0, 30)});
         const items = []; const seen = new Set();
         for (const x of (v && Array.isArray(v.items) ? v.items : [])) { const c = cleanSaved(x); if (c && !seen.has(c.mid)) { seen.add(c.mid); if (!folders.some(f => f.id === c.folder)) c.folder = ''; items.push(c); } if (items.length >= SAVED_CAP) break; }
@@ -169,15 +169,15 @@
         const due = +o.due; if (!isFinite(due) || due <= 0) return null;
         return Object.assign(c, { id: /^[a-z0-9]{1,20}$/.test(o.id) ? o.id : 'r' + due.toString(36), due, done: o.done === true, shown: +o.shown || 0 });
     }
-    const readReminders = () => { const v = get('reminders', []); const out = []; for (const x of Array.isArray(v) ? v : []) { const c = cleanReminder(x); if (c) out.push(c); if (out.length >= REMIND_CAP) break; } return out; };
-    function readMap(k, cleanVal, cap) {
-        const v = get(k, {}), out = {}; let n = 0;
+    const readReminders = (src = get) => { const v = src('reminders', []); const out = []; for (const x of Array.isArray(v) ? v : []) { const c = cleanReminder(x); if (c) out.push(c); if (out.length >= REMIND_CAP) break; } return out; };
+    function readMap(k, cleanVal, cap, src = get) {
+        const v = src(k, {}), out = {}; let n = 0;
         if (v && typeof v === 'object' && !Array.isArray(v)) for (const [id, x] of Object.entries(v)) { const c = cleanVal(x); if (GID.test(id) && c && n++ < cap) out[id] = c; }
         return out;
     }
-    const readColors = () => readMap('serverColors', HEX, 200);
-    const readNotes = () => readMap('notes', x => str(x, 200).trim(), 300);
-    const readBlurChannels = () => { const v = get('blurChannels', []); return (Array.isArray(v) ? v : []).filter(x => ID.test(x)).slice(0, 300); };
+    const readColors = (src = get) => readMap('serverColors', HEX, 200, src);
+    const readNotes = (src = get) => readMap('notes', x => str(x, 200).trim(), 300, src);
+    const readBlurChannels = (src = get) => { const v = src('blurChannels', []); return (Array.isArray(v) ? v : []).filter(x => ID.test(x)).slice(0, 300); };
     // names Screenshot safe found for your account (never printed or sent anywhere)
     const readFound = () => { const v = get('found', []); return (Array.isArray(v) ? v : []).filter(x => typeof x === 'string' && x.trim().length >= 2).map(x => x.slice(0, 40)).slice(0, 8); };
 
@@ -829,7 +829,11 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
     /* ───────────────────────── mentions and keywords ───────────────────────── */
 
     const mentionStyle = style(`
-@keyframes mfd-mblob{0%{background-position:6% 135%,24% -45%,52% 150%,74% -40%}50%{background-position:16% 30%,32% 85%,44% 15%,66% 70%}100%{background-position:10% -50%,28% 140%,58% -45%,80% 135%}}
+/* each mention gets its own blobs (seedBlobs): where across the box each one sits (--mbx1..4), whether it rises or sinks
+   (--mby1..4 at the start, --mbz1..4 at the end, --mbm1..4 halfway), its speed and its starting point */
+@keyframes mfd-mblob{0%{background-position:var(--mbx1,6%) var(--mby1,135%),var(--mbx2,24%) var(--mby2,-45%),var(--mbx3,52%) var(--mby3,150%),var(--mbx4,74%) var(--mby4,-40%)}
+  50%{background-position:calc(var(--mbx1,6%) + 9%) var(--mbm1,30%),calc(var(--mbx2,24%) + 7%) var(--mbm2,85%),calc(var(--mbx3,52%) - 7%) var(--mbm3,15%),calc(var(--mbx4,74%) - 8%) var(--mbm4,70%)}
+  100%{background-position:calc(var(--mbx1,6%) + 4%) var(--mbz1,-50%),calc(var(--mbx2,24%) + 4%) var(--mbz2,140%),calc(var(--mbx3,52%) + 5%) var(--mbz3,-45%),calc(var(--mbx4,74%) + 6%) var(--mbz4,135%)}}
 html[data-mfd-mg] :is(${C('mentioned')},[data-mfd-kw]){background:linear-gradient(90deg,rgb(var(--mfd-glow) / calc(.24 * var(--mfd-ms))),rgb(var(--mfd-glow) / calc(.1 * var(--mfd-ms))) 55%,rgb(var(--mfd-glow) / calc(.04 * var(--mfd-ms))))!important;
   box-shadow:inset 3px 0 0 rgb(var(--mfd-glow))!important;border-radius:0 10px 10px 0;isolation:isolate}
 html[data-mfd-mg] ${C('mentioned')}::before{background:rgb(var(--mfd-glow))!important;box-shadow:none!important;border-radius:0!important}
@@ -841,12 +845,11 @@ html[data-mfd-mg][data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{conte
   background-image:radial-gradient(circle closest-side,rgb(var(--mfd-glow) / .8) 58%,transparent),radial-gradient(circle closest-side,rgb(var(--mfd-glow) / .6) 52%,transparent),
     radial-gradient(circle closest-side,rgb(var(--mfd-glow) / .72) 56%,transparent),radial-gradient(circle closest-side,rgb(255 255 255 / .22) 40%,transparent);
   background-size:58px 58px,38px 38px,48px 48px,30px 30px;background-repeat:no-repeat;filter:blur(3.5px);opacity:min(1,calc(.55 * var(--mfd-ms)));
-  clip-path:inset(0 round 0 10px 10px 0);animation:mfd-mblob 11s ease-in-out infinite alternate}
-/* neighbours drift out of step, so a run of mentions doesn't repeat the same blobs */
-html[data-mfd-mb] li[id^="chat-messages-"]:nth-child(3n+1) :is(${C('mentioned')},[data-mfd-kw])::after{animation-delay:-4s;animation-direction:alternate-reverse}
-html[data-mfd-mb] li[id^="chat-messages-"]:nth-child(3n+2) :is(${C('mentioned')},[data-mfd-kw])::after{animation-delay:-8s}
+  clip-path:inset(0 round 0 10px 10px 0);animation:mfd-mblob var(--mbd,11s) ease-in-out var(--mbo,0s) infinite alternate;
+  /* at rest (reduced motion, or paused) each message's blobs sit halfway along their own paths, not all in one corner */
+  background-position:calc(var(--mbx1,6%) + 9%) var(--mbm1,30%),calc(var(--mbx2,24%) + 7%) var(--mbm2,85%),calc(var(--mbx3,52%) - 7%) var(--mbm3,15%),calc(var(--mbx4,74%) - 8%) var(--mbm4,70%)}
 html[data-mfd-still][data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{animation-play-state:paused}
-@media (prefers-reduced-motion:reduce){html[data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{animation:none;background-position:10% 40%,30% 80%,50% 20%,70% 60%}}
+@media (prefers-reduced-motion:reduce){html[data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{animation:none}}
 `);
     let KW = null;
     function keywordRe() {
@@ -860,11 +863,32 @@ html[data-mfd-still][data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{an
             art.toggleAttribute('data-mfd-kw', !!(on && KW.test(c.textContent || '')));
         }
     }
+    // Each message's own blobs, picked from its id: different from its neighbours, the same every time Discord
+    // redraws it (so they don't jump). Set as custom properties on the message row; the CSS above reads them.
+    function seedBlobs(scope) {
+        for (const li of (scope && scope.matches && scope.matches('li[id^="chat-messages-"]') ? [scope] : qa('li[id^="chat-messages-"]', scope))) {
+            if (li.dataset.mfdSeed === li.id) continue;
+            let n = 2166136261;   // FNV-1a of the id, then a small generator from it
+            for (let i = 0; i < li.id.length; i++) n = Math.imul(n ^ li.id.charCodeAt(i), 16777619);
+            const rnd = () => { n = Math.imul(n ^ (n >>> 15), 2246822507); n = Math.imul(n ^ (n >>> 13), 3266489909); return ((n ^= n >>> 16) >>> 0) / 4294967296; };
+            const lane = [[1, 20], [20, 42], [40, 64], [60, 88]], st = li.style;
+            for (const [i, [a, b]] of lane.sort(() => rnd() - 0.5).entries()) {
+                const up = rnd() < 0.5;
+                st.setProperty('--mbx' + (i + 1), Math.round(a + rnd() * (b - a)) + '%');
+                st.setProperty('--mby' + (i + 1), (up ? 130 + rnd() * 25 : -35 - rnd() * 20).toFixed(0) + '%');
+                st.setProperty('--mbm' + (i + 1), (10 + rnd() * 80).toFixed(0) + '%');
+                st.setProperty('--mbz' + (i + 1), (up ? -35 - rnd() * 20 : 130 + rnd() * 25).toFixed(0) + '%');
+            }
+            st.setProperty('--mbd', (8 + rnd() * 7).toFixed(1) + 's');
+            st.setProperty('--mbo', (-rnd() * 15).toFixed(1) + 's');
+            li.dataset.mfdSeed = li.id;
+        }
+    }
     function applyMentions() {
         attr('data-mfd-mg', S.enabled && S.mentionGlow);
         attr('data-mfd-mb', S.enabled && S.mentionGlow && S.mentionBlobs);
         root.style.setProperty('--mfd-ms', { soft: 0.55, medium: 1, bright: 1.6 }[S.mentionStrength]);
-        keywordRe(); markKeywords(document);
+        keywordRe(); markKeywords(document); if (S.enabled && S.mentionGlow && S.mentionBlobs) seedBlobs(document);
     }
 
     /* ───────────────────────── privacy ───────────────────────── */
@@ -1244,6 +1268,73 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
         document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
         return { tick, flush, seen, clear, days };
     })();
+
+    /* ───────────────────────── your data: export and import ───────────────────────── */
+
+    function download(name, text, type) {
+        const url = URL.createObjectURL(new Blob([text], { type }));
+        const a = document.createElement('a'); a.href = url; a.download = name; a.style.display = 'none';
+        (document.body || document.documentElement).append(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+    // your activity, one row per day and place: what the Activity tab shows, for a spreadsheet
+    function exportActivity() {
+        ACT.flush();
+        const places = readActPlaces(), rows = [['date', 'type', 'server', 'channel', 'seconds', 'messages_sent']];
+        for (const k of readActDays()) {
+            const o = cleanDay(get(AKEY(k), null)); if (!o) continue;
+            for (const p of [...new Set([...Object.keys(o.t), ...Object.keys(o.m)])].sort()) {
+                const m = places[p] || {}, dm = p.startsWith('@me/');
+                rows.push([k, p === 'home' ? 'home' : dm ? 'dm' : m.k || 'channel', p === 'home' ? '' : dm ? 'Direct messages' : m.s || '',
+                    p === 'home' ? 'Home' : m.n || 'Unknown (' + p.split('/')[1] + ')', Math.round(o.t[p] || 0), o.m[p] || 0]);
+            }
+        }
+        const cell = x => /[",\n]/.test(String(x)) || /^[=+\-@]/.test(String(x)) ? '"' + String(x).replace(/"/g, '""') + '"' : x;
+        download('molten-for-discord-activity-' + DAY_KEY(new Date()) + '.csv', rows.map(r => r.map(cell).join(',')).join('\n'), 'text/csv');
+    }
+    // everything you made here except your activity (that's the CSV) and the names Screenshot safe hides:
+    // they stay out, so a backup you pass around can't show what Screenshot safe is there to hide
+    const PRIVATE_SETTINGS = ['shotName', 'shotExtra'];
+    function exportData() {
+        const settings = Object.assign({}, S); for (const k of PRIVATE_SETTINGS) delete settings[k];
+        download('molten-for-discord-data.json', JSON.stringify({ 'molten-for-discord': VERSION, exported: new Date().toISOString(), settings, lava: clone(LAVA),
+            favorites: D.favs, saved: D.saved, reminders: D.reminders, notes: D.notes, serverColors: D.colors, blurChannels: D.blurCh }, null, 2), 'application/json');
+    }
+    // An imported file is read as untrusted: every part goes through the same checks as what's stored here,
+    // nothing over IMPORT_MAX bytes is read at all, and the lists are added to what you have (nothing is
+    // removed): favorites, saved messages and reminders you already have stay as they are.
+    const IMPORT_MAX = 1024 * 1024;
+    function importData(done) {
+        const pick = document.createElement('input'); pick.type = 'file'; pick.accept = '.json,application/json'; pick.style.display = 'none';
+        pick.onchange = () => {
+            const f = pick.files && pick.files[0]; pick.remove(); if (!f) return;
+            if (f.size > IMPORT_MAX) return done('That file is too big to be a Molten for Discord backup.');
+            f.text().then(text => {
+                let o; try { o = JSON.parse(text); } catch (e) { return done('That file isn\'t a Molten for Discord backup.'); }
+                if (!o || typeof o !== 'object' || Array.isArray(o) || !('molten-for-discord' in o)) return done('That file isn\'t a Molten for Discord backup.');
+                const src = (k, d) => (k in o ? o[k] : d), got = [];
+                // settings: only the ones Molten has, each the right kind and in range; never the hidden names
+                if (o.settings && typeof o.settings === 'object' && !Array.isArray(o.settings)) {
+                    const patch = {};   // a value of the wrong kind is skipped, so yours stays (a number out of range is pulled into range)
+                    for (const k of Object.keys(SPEC)) { const v = o.settings[k]; if (k in o.settings && !PRIVATE_SETTINGS.includes(k) && (valid(k, v) === v || (SPEC[k].t === 'num' && typeof v === 'number' && isFinite(v)))) patch[k] = v; }
+                    if (Object.keys(patch).length) { save(patch); got.push('settings'); }
+                }
+                if (o.lava && typeof o.lava === 'object' && !Array.isArray(o.lava)) { set('lava', o.lava); LAVA = loadLava(); set('lava', clone(LAVA)); lavaLive('profile'); got.push('lava looks'); }   // loadLava checks every value
+                const add = (have, more, key, cap) => { const ids = new Set(have.map(key)); let n = 0; for (const x of more) if (!ids.has(key(x)) && have.length < cap) { have.push(x); ids.add(key(x)); n++; } return n; };
+                const nf = add(D.favs, readFavs(src), x => x.gid + '/' + x.cid, FAV_CAP);
+                const sv = readSaved(src);
+                for (const fo of sv.folders) if (!D.saved.folders.some(x => x.id === fo.id) && D.saved.folders.length < 30) D.saved.folders.push(fo);
+                const ns = add(D.saved.items, sv.items, x => x.mid, SAVED_CAP);
+                const nr = add(D.reminders, readReminders(src), x => x.id, REMIND_CAP);
+                for (const [m, more] of [[D.notes, readNotes(src)], [D.colors, readColors(src)]]) for (const [k, v] of Object.entries(more)) if (!(k in m)) m[k] = v;
+                for (const c of readBlurChannels(src)) if (!D.blurCh.includes(c) && D.blurCh.length < 300) D.blurCh.push(c);
+                store.favs(); store.saved(); store.reminders(); store.notes(); store.colors(); store.blurCh(); refreshAll();
+                const n = (x, one, many) => x + ' ' + (x === 1 ? one : many);
+                done('Imported ' + [...got, n(nf, 'favorite', 'favorites'), n(ns, 'saved message', 'saved messages'), n(nr, 'reminder', 'reminders')].join(', ') + '. What you already had is kept.');
+            }, () => done('Couldn\'t read that file.'));
+        };
+        (document.body || document.documentElement).append(pick); pick.click();
+    }
 
     // Pack circles (biggest first) as tightly as they go around the first: each next one takes the spot
     // nearest the middle where it touches two that are already placed. Wider than tall, to fit the card.
@@ -1969,6 +2060,9 @@ button{font:inherit;color:inherit;cursor:pointer}
         folder: ['M3.5 7.5a2 2 0 0 1 2-2h3.6l2 2h7.4a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z'],
         inbox: ['M3.5 13h4.5l1.2 2.5h5.6l1.2-2.5h4.5', 'M6 5.5h12l2.5 7.5v4.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V13z'],
         grip: ['M9 6h.01', 'M15 6h.01', 'M9 12h.01', 'M15 12h.01', 'M9 18h.01', 'M15 18h.01'],
+        down: ['M12 3v12', 'm7 10 5 5 5-5', 'M5 21h14'],
+        up: ['M12 21V9', 'm7 14 5-5 5 5', 'M5 3h14'],
+        trash: ['M4 7h16', 'M10 11v6', 'M14 11v6', 'M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12', 'M9 7V4h6v3'],
     };
     function icon(paths, size = 14, sw = 2) {
         const s = document.createElementNS(SVGNS, 'svg');
@@ -2020,7 +2114,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .panel{
   --a:${APP.accent};--a-rgb:${APP.rgb};--on:${APP.on};--ink:${APP.ink};
   --glass:rgba(255,255,255,.84);--solid:rgb(250,250,252);--text:#1d1d1f;--sub:rgba(29,29,31,.64);--line:rgba(0,0,0,.07);
-  --edge:rgba(255,255,255,.8);--hl:#fff;--drop:rgba(0,0,0,.34);--ctl:rgba(0,0,0,.055);--ctl-hi:rgba(0,0,0,.1);--sw-off:rgba(0,0,0,.13);
+  --danger:#d22d39;--edge:rgba(255,255,255,.8);--hl:#fff;--drop:rgba(0,0,0,.34);--ctl:rgba(0,0,0,.055);--ctl-hi:rgba(0,0,0,.1);--sw-off:rgba(0,0,0,.13);
   --field:rgba(255,255,255,.6);--field-hi:#fff;--knob:#fff;
   --mono:"SF Mono",ui-monospace,"Cascadia Code","JetBrains Mono",Consolas,monospace;
   position:fixed;top:16px;right:16px;z-index:2147483647;width:400px;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);
@@ -2033,7 +2127,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   box-shadow:0 0 0 .5px rgba(var(--a-rgb),.4),0 28px 64px -18px var(--drop),inset 0 1px 0 var(--hl);
   animation:in .18s cubic-bezier(.2,.8,.2,1)}
 .panel[data-theme=dark]{--glass:rgba(22,22,28,.8);--solid:rgb(28,28,34);--text:#f2f2f5;--sub:rgba(235,235,245,.62);--line:rgba(255,255,255,.09);
-  --edge:rgba(255,255,255,.12);--hl:rgba(255,255,255,.1);--drop:rgba(0,0,0,.6);--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);
+  --danger:#f2575f;--edge:rgba(255,255,255,.12);--hl:rgba(255,255,255,.1);--drop:rgba(0,0,0,.6);--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);
   --sw-off:rgba(255,255,255,.2);--field:rgba(255,255,255,.06);--field-hi:rgba(255,255,255,.12);--knob:#55555f;--ink:${APP.inkDark};color-scheme:dark}
 @keyframes in{from{opacity:0;transform:translateY(-6px) scale(.98)}}
 @media (prefers-reduced-motion:reduce){.panel,.panel *{animation:none!important;transition:none!important}}
@@ -2237,6 +2331,7 @@ button{cursor:pointer}
                         this.swatch('Current color', () => TITLE.seek())))));
             out.push(this.sec('Appearance', this.row('Match my device', 'Light or dark follows your device until you flip the switch up top',
                 toggle(S.appearance === 'auto', () => save({ appearance: S.appearance === 'auto' ? (dark() ? 'dark' : 'light') : 'auto' }), 'Match my device'))));
+            out.push(this.yourData());
             const status = h('div', { class: 'd status' });
             out.push(this.sec('Troubleshooting', this.tgl('log', 'Log to the console', 'Lines start with [molten] (F12)'),
                 this.btns(['Copy layout report', async () => {
@@ -2632,9 +2727,27 @@ button{cursor:pointer}
             out.push(this.fold(S.enabled, 'far', this.sec('Activity',
                 this.tgl('track', 'Count my activity', 'Time while Discord is in front and you\'re using it, and messages you send. Stays in this browser.'),
                 this.fold(S.track, 'on', this.ch('trackDays', 'Keep', 'Older days are deleted', [['30', '30 days'], ['90', '90 days'], ['365', '1 year']])),
-                this.confirmBtn('Clear my activity', 'Clear every day? Click again', () => { ACT.clear(); this.render(); }))));
+                this.note('Export or erase it in General, under Your data.'))));
             if (matchMedia('(pointer: coarse)').matches) for (const c of out) if (c.dataset && c.dataset.q !== undefined && !c.querySelector('.orb') && c.querySelector('[data-tip]')) this.tapTips(c);
             return out;
+        },
+        // Your data, laid out like Hourglass's: where it's kept, then export, import and erase. Erasing asks
+        // first, in words, and waits for OK.
+        yourData() {
+            const btn = (text, ic, fn, cls) => h('button', { class: 'btn' + (cls ? ' ' + cls : ''), type: 'button', onclick: fn }, icon(ic, 13, 2.2), text);
+            const ask = this.eraseAsk ? h('div', { class: 'ask', role: 'alertdialog', 'aria-label': 'Erase your activity' },
+                h('div', { class: 't', text: 'Erase all your activity?' }),
+                h('div', { class: 'd', text: 'Every day of time and messages counted here is deleted. Favorites, saved messages and reminders stay. This can\'t be undone.' }),
+                h('div', { class: 'btns' }, h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: () => { this.eraseAsk = false; this.render(); } }),
+                    h('button', { class: 'btn danger-fill', type: 'button', text: 'OK, erase', onclick: () => { ACT.clear(); this.eraseAsk = false; this.dataMsg = 'Your activity was erased.'; this.render(); } }))) : null;
+            return this.sec('Your data',
+                h('div', { class: 'd', text: 'Saved only in Tampermonkey in this browser. Never message text: saved messages keep their title, author and link. Exports leave out the names Screenshot safe hides.' }),
+                h('div', { class: 'dbtns' },
+                    btn('Export CSV', ICONS.down, () => exportActivity()),
+                    btn('Export data', ICONS.down, () => exportData()),
+                    btn('Import data', ICONS.up, () => importData(m => { this.dataMsg = m; this.render(); })),
+                    btn('Erase activity', ICONS.trash, () => { this.eraseAsk = true; this.dataMsg = ''; this.render(); }, 'danger')),
+                ask, this.dataMsg ? h('div', { class: 'd imp', role: 'status', text: this.dataMsg }) : null);
         },
         // a button that asks once more before it does something you can't undo
         confirmBtn(text, again, fn) {
@@ -2956,6 +3069,13 @@ button{cursor:pointer}
 .body.bs .bf.srv img{filter:blur(6px)}
 @media (prefers-reduced-motion:reduce){.bb{transition:none}}
 .btn.warn{background:var(--a);color:#fff}
+.dbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.dbtns .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.danger{color:var(--danger)}
+.btn.danger-fill{background:#d22d39;color:#fff;font-weight:600}   /* the deeper red in both themes, so white text reads */
+.ask{margin-top:12px;padding:12px;border-radius:10px;background:var(--ctl);box-shadow:inset 0 0 0 1px var(--danger)}
+.ask .d{margin-top:4px}
+.imp{margin-top:10px}
 `;
 
     /* ───────────────────────── keeping everything in step ───────────────────────── */
@@ -3033,6 +3153,7 @@ button{cursor:pointer}
         for (const n of nodes) if (n.isConnected) added.push(n);
         if (!added.length) return;
         if (KW) for (const n of added) if (n.nodeType === 1 && (n.matches('li[id^="chat-messages-"]') || n.querySelector('[id^="message-content-"]'))) markKeywords(n);
+        if (S.mentionGlow && S.mentionBlobs) for (const n of added) if (n.nodeType === 1 && (n.matches('li[id^="chat-messages-"]') || n.querySelector('li[id^="chat-messages-"]'))) seedBlobs(n);
         SHOT.added(added);
         if (S.profileLava || S.followMedia) for (const n of added) if (n.nodeType === 1 && (n.querySelector('img') || n.tagName === 'IMG')) { scheduleArt(300); break; }
     }
