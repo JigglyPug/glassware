@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 3.8.2 · 2026-11-17
+
+- The panel uses YouTube's red (#FF0033, the same on YouTube Music) instead of a general Molten orange: switches, buttons, tabs, headings and the glow. The lava itself is unchanged.
+
 ## 3.8.1 · 2026-11-11
 
 - Settings that belong to a switch now fold away while it's off (quality, player size, lava, random motion, title bar and seek bar colors) instead of sitting there dimmed. Turn the switch on and they're back as you left them.

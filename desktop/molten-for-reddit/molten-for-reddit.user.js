@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.4.9
+// @version      2.4.10
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -1867,9 +1867,9 @@ div.lava-blobs {
     '#ytt-toggle{width:40px;height:40px;margin:0 4px;padding:0;border:0;border-radius:50%;background:transparent;' +
     'color:inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;opacity:.65;flex:none}' +
     '#ytt-toggle:hover,#ytt-toggle.open{background:rgba(128,128,128,.18);opacity:1}' +
-    '#ytt-toggle.lava-on{opacity:1;color:#ff9a3d}' +
+    '#ytt-toggle.lava-on{opacity:1;color:#ff4500}' +
     '#ytt-toggle.mt-off{opacity:.35}' +
-    '#ytt-toggle.lava-float{position:fixed;right:16px;bottom:16px;z-index:2147483000;background:rgba(0,0,0,.55);color:#ff9a3d}'
+    '#ytt-toggle.lava-float{position:fixed;right:16px;bottom:16px;z-index:2147483000;background:rgba(0,0,0,.55);color:#ff4500}'
   );
 
   // =====================================================================
@@ -1909,16 +1909,16 @@ div.lava-blobs {
   // =====================================================================
   const UI = (() => {
     const TAB_KEY = 'ytt.tab';
-    const ACCENT = '#ff9a3d';
+    const ACCENT = '#ff4500';   // the panel's accent: Reddit's OrangeRed
 
     coreStyle(
       // Light and dark glass (the Glassware recipe): only these neutrals swap; the orange stays.
       '#ytt-panel{--mt-glass:rgba(22,22,28,.8);--mt-solid:#1c1c22;--mt-text:#f2f2f5;--mt-sub:rgba(235,235,245,.62);--mt-line:rgba(255,255,255,.09);--mt-edge:rgba(255,255,255,.12);' +
       '--mt-hl:rgba(255,255,255,.1);--mt-drop:rgba(0,0,0,.6);--mt-ctl:rgba(255,255,255,.06);--mt-ctl-hi:rgba(255,255,255,.08);--mt-btn:rgba(255,255,255,.1);--mt-btn-hi:rgba(255,255,255,.18);' +
-      '--mt-sw-off:rgba(255,255,255,.22);--mt-input:rgba(0,0,0,.4);--mt-input-edge:rgba(255,255,255,.16);--mt-ink:#ffb470;--mt-good:#9be29b;--mt-bad:#ff8a8a;--mt-knob:#55555f;color-scheme:dark}' +
+      '--mt-sw-off:rgba(255,255,255,.22);--mt-input:rgba(0,0,0,.4);--mt-input-edge:rgba(255,255,255,.16);--mt-ink:#ff936b;--mt-good:#9be29b;--mt-bad:#ff8a8a;--mt-knob:#55555f;color-scheme:dark}' +
       '#ytt-panel[data-theme=light]{--mt-glass:rgba(255,255,255,.84);--mt-solid:#fafafc;--mt-text:#1d1d1f;--mt-sub:rgba(29,29,31,.64);--mt-line:rgba(0,0,0,.07);--mt-edge:rgba(255,255,255,.8);' +
       '--mt-hl:#fff;--mt-drop:rgba(0,0,0,.34);--mt-ctl:rgba(0,0,0,.055);--mt-ctl-hi:rgba(0,0,0,.07);--mt-btn:rgba(0,0,0,.06);--mt-btn-hi:rgba(0,0,0,.11);' +
-      '--mt-sw-off:rgba(0,0,0,.16);--mt-input:rgba(255,255,255,.75);--mt-input-edge:rgba(0,0,0,.12);--mt-ink:#a8550a;--mt-good:#1f7a3a;--mt-bad:#b4271b;--mt-knob:#fff;color-scheme:light}' +
+      '--mt-sw-off:rgba(0,0,0,.16);--mt-input:rgba(255,255,255,.75);--mt-input-edge:rgba(0,0,0,.12);--mt-ink:#c73600;--mt-good:#1f7a3a;--mt-bad:#b4271b;--mt-knob:#fff;color-scheme:light}' +
       // sun/moon switch: light or dark glass (the device's choice until it's flipped)
       // glassware:frame start: shared controls, stamped by tools/frame.py; edit them there
       '#ytt-panel button{display:inline-block;height:auto;min-height:0;align-items:center;line-height:inherit;vertical-align:middle}' +
@@ -1937,9 +1937,9 @@ div.lava-blobs {
       '#ytt-panel .ytt-mode:focus-visible,#ytt-panel .ytt-x:focus-visible,#ytt-panel input.ytt-switch:focus-visible{outline:2px solid ' + ACCENT + '!important;outline-offset:2px!important}' +
       // glassware:frame end
       '#ytt-panel{position:fixed;top:16px;right:16px;width:400px;box-sizing:border-box;max-width:calc(100vw - 32px);max-height:calc(100vh - 32px);' +
-      'display:flex;flex-direction:column;z-index:2147483647;background:radial-gradient(120% 40% at 0% 0%,rgba(255,154,61,.16),transparent 64%),var(--mt-glass);' +
+      'display:flex;flex-direction:column;z-index:2147483647;background:radial-gradient(120% 40% at 0% 0%,rgba(255,69,0,.16),transparent 64%),var(--mt-glass);' +
       '-webkit-backdrop-filter:blur(28px) saturate(170%);backdrop-filter:blur(28px) saturate(170%);color:var(--mt-text);' +
-      'border:1px solid var(--mt-edge);border-radius:22px;box-shadow:0 0 0 .5px rgba(255,154,61,.35),0 0 40px -12px rgba(255,154,61,.45),0 14px 44px var(--mt-drop),inset 0 1px 0 var(--mt-hl);' +
+      'border:1px solid var(--mt-edge);border-radius:22px;box-shadow:0 0 0 .5px rgba(255,69,0,.35),0 0 40px -12px rgba(255,69,0,.45),0 14px 44px var(--mt-drop),inset 0 1px 0 var(--mt-hl);' +
       'font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;transition:opacity .15s ease;text-align:left}' +
       '#ytt-panel.ytt-peek{opacity:.18}' +
       '#ytt-panel *{box-sizing:border-box;font-family:inherit !important;letter-spacing:normal}' +
@@ -1951,7 +1951,9 @@ div.lava-blobs {
       '#ytt-panel .ytt-tab{flex:1;padding:7px 4px;border:0;border-radius:9px;background:transparent;color:var(--mt-text);' +
       'cursor:pointer;font-size:12.5px;font-weight:550;opacity:.65}' +
       '#ytt-panel .ytt-tab:hover{opacity:1}' +
-      '#ytt-panel .ytt-tab.on{background:rgba(255,154,61,.2);color:var(--mt-ink);opacity:1}' +
+      '#ytt-panel .ytt-tab.on{background:rgba(255,69,0,.2);color:var(--mt-ink);opacity:1}' +
+      // on light glass over Reddit's own orange, the orange-red tint darkens the tab: a lighter tint and deeper text keep it readable
+      '#ytt-panel[data-theme=light] .ytt-tab.on{background:rgba(255,69,0,.1);color:#a82e00}' +
       '#ytt-panel .ytt-body{overflow-y:auto;padding:2px 16px 16px;scrollbar-width:thin !important}' +
       '#ytt-panel .ytt-sec{margin:18px 0 4px;display:flex;align-items:center;gap:7px;color:var(--mt-ink);font:700 10.5px/1.2 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;letter-spacing:.16em;text-transform:uppercase}' +
       '#ytt-panel .ytt-sec::before{content:"";width:6px;height:6px;border-radius:1px;background:var(--mt-ink);transform:rotate(45deg);flex:none}' +
@@ -1965,7 +1967,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-ctx{display:flex;align-items:center;gap:8px;margin:0 16px 10px;min-width:0}' +
       '#ytt-panel .ytt-host{font:12.5px ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '#ytt-panel .ytt-chip{font:700 10px/1 ui-monospace,"SF Mono","Cascadia Mono",Menlo,monospace !important;letter-spacing:.12em;text-transform:uppercase;' +
-      'padding:5px 8px;border-radius:6px;background:rgba(255,154,61,.16);color:var(--mt-ink);flex:none}' +
+      'padding:5px 8px;border-radius:6px;background:rgba(255,69,0,.16);color:var(--mt-ink);flex:none}' +
       '#ytt-panel .ytt-chip.off{background:var(--mt-ctl-hi);color:var(--mt-sub)}' +
       '#ytt-panel .ytt-foot{padding:9px 16px 12px;font-size:11.5px;opacity:.55;border-top:1px solid var(--mt-line)}' +
       '#ytt-panel .ytt-seg.inline{margin-top:0;flex:none}' +
@@ -1974,7 +1976,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-pickrow{padding:0}' +
       '#ytt-panel .ytt-pick{display:inline-flex;align-items:center;gap:7px;flex:none;max-width:180px;padding:6px 10px 6px 12px;border:0;border-radius:9px;' +
       'background:var(--mt-ctl-hi);color:var(--mt-ink);font-size:12.5px;font-weight:650;cursor:pointer}' +
-      '#ytt-panel .ytt-pick:hover,#ytt-panel .ytt-pick.open{background:rgba(255,154,61,.18)}' +
+      '#ytt-panel .ytt-pick:hover,#ytt-panel .ytt-pick.open{background:rgba(255,69,0,.18)}' +
       '#ytt-panel .ytt-pick span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '#ytt-panel .ytt-chev{width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .15s;flex:none}' +
       '#ytt-panel .ytt-pick.open .ytt-chev{transform:translateY(1px) rotate(-135deg)}' +
@@ -2006,7 +2008,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-btn{padding:7px 11px;border:0;border-radius:8px;background:var(--mt-btn);color:var(--mt-text);cursor:pointer;font-size:12.5px}' +
       '#ytt-panel .ytt-btn:hover{background:var(--mt-btn-hi)}' +
       '#ytt-panel .ytt-btn.primary{background:' + ACCENT + ';color:#1a1a1a;font-weight:650}' +
-      '#ytt-panel .ytt-btn.primary:hover{background:#ffad5c}' +
+      '#ytt-panel .ytt-btn.primary:hover{background:#ff662e}' +
       '#ytt-panel .ytt-status{min-height:16px;font-size:12px;color:var(--mt-good);margin-top:8px}' +
       '#ytt-panel .ytt-status.err{color:var(--mt-bad)}' +
       '#ytt-panel .ytt-info{background:var(--mt-ctl);border-radius:10px;padding:9px 11px;margin:8px 0 4px;font-size:12px}' +
@@ -2015,7 +2017,7 @@ div.lava-blobs {
       '#ytt-panel .ytt-off{opacity:.4;pointer-events:none}' +
       '#ytt-panel [data-fold][hidden]{display:none!important}' +
       '#ytt-panel details{margin-top:10px}' +
-      '#ytt-panel .ytt-master{margin:10px 0 2px;padding:4px 12px;border-radius:12px;background:rgba(255,154,61,.1);border:1px solid rgba(255,154,61,.25)}' +
+      '#ytt-panel .ytt-master{margin:10px 0 2px;padding:4px 12px;border-radius:12px;background:rgba(255,69,0,.1);border:1px solid rgba(255,69,0,.25)}' +
       '#ytt-panel .ytt-master .ytt-label{font-weight:650;font-size:14px}' +
       '#ytt-panel .ytt-master .ytt-hint{font-weight:400;font-size:11.5px}' +
       '#ytt-panel .ytt-seg{display:flex;gap:4px;padding:4px;margin-top:6px;background:var(--mt-ctl);border-radius:12px}' +

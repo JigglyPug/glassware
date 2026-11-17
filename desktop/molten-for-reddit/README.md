@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten for Reddit: Molten glass for new Reddit." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.4.9-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)
+[![Install](https://img.shields.io/badge/Install-v2.4.10-ff8a3d?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com%20%28new%20Reddit%29-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -33,8 +33,8 @@ Molten for Reddit puts a lava-lamp background made from the image or video you a
 
 ## What's new
 
+- **2.4.10** (2026-11-17): The panel uses Reddit's own orange-red (#FF4500) instead of a general Molten orange: switches, buttons, tabs, headings and the glow. The lava itself is unchanged.
 - **2.4.9** (2026-11-11): Opening reply threads on its own now stops at exactly 150 per page (it allowed 151). If the browser blocks the page's storage, the comment-sort step is skipped instead of stopping the script from starting.
 - **2.4.8** (2026-11-11): Settings that belong to a switch now fold away while it's off (lava, random motion, videos in the lava, title bar and seek bar colors, the sidebar, the profile 🔍) instead of sitting there dimmed. Turn the switch on and they're back as you left them.
-- **2.4.7** (2026-11-07): Security fixes.
 
 [Every change](CHANGES.md)

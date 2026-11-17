@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.4.11 · 2026-11-17
+
+- The panel uses Reddit's own orange-red (#FF4500) instead of a general Molten orange: switches, buttons, tabs, headings and the glow. The lava itself is unchanged.
+
 ## 1.4.10 · 2026-11-11
 
 - Opening reply threads on its own now stops at exactly 150 per page (it allowed 151).
