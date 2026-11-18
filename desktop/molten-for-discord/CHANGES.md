@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.0.8 · 2026-11-17
+
+- The save menu waits for you. Picking a folder or a reminder time used to save the message on the spot and close the menu; now they're just picks, and the button at the bottom is Save. Fill in any of the note, the folder and the reminder, change your mind as often as you like, and Save does all of it at once. A line above the button says what it will do. Pick only a reminder and you get just the reminder; pick nothing and the message goes to Unsorted. "No reminder" undoes a time you picked.
+
 ## 1.0.7 · 2026-11-17
 
 - GIFs opened full size get the lava around them too. A GIF opens at its own small size, which Molten took for too small to be the viewer; inside Discord's viewer, anything from 96px now counts (a profile card's dialog still doesn't).

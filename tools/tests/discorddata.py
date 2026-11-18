@@ -9,7 +9,9 @@ first, Cancel keeps everything, OK erases. The demo data gets a server named lik
 (the CSV must start it with an apostrophe) and a saved message by a name Screenshot safe hides (the
 export must say "User"). Two pieces are also run on their own: a month later from Jan 31 stops at the
 end of February, and a new reminder over the limit never pushes out one that's due sooner. And with a
-video playing, reminders are still checked every 5 seconds, not at the video's frame rate.
+video playing, reminders are still checked every 5 seconds, not at the video's frame rate. And the message
+menu is a form: picking a folder or a reminder time saves nothing and leaves it open; Save does what was picked
+(note, folder and reminder together; only a reminder; or nothing picked, which saves to Unsorted).
 Prints "== molten-for-discord your data: clean" or the problems.
 """
 import json, os, re, subprocess, sys, tempfile
@@ -134,6 +136,63 @@ r = subprocess.run(['node', f'{HERE}/lib/shot.js', SCRIPT, 'https://discord.com/
 lv = next((json.loads(l[5:]) for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)
 if not isinstance(lv, dict) or not lv.get('playing'): bad.append('the video loop check didn\'t run (no playing video)')
 else: want(lv['remindersReadsIn5s'] <= 2, f'with a video playing, reminders were checked {lv["remindersReadsIn5s"]} times in 5 seconds (upkeep is following the frame rate)')
+# the message menu: picks change nothing until Save, then Save does what was picked
+MENU = r"""(async () => {
+  const w = ms => new Promise(r => setTimeout(r, ms));
+  const out = {};
+  const get = k => { const v = window.GM_getValue(k, null); return typeof v === 'string' ? JSON.parse(v) : v; };
+  const savedOf = mid => ((get('saved') || {}).items || []).find(x => x.mid === mid) || null;
+  const remsOf = mid => (get('reminders') || []).filter(x => x.mid === mid);
+  const menu = () => __all().find(e => e.getAttribute && e.getAttribute('role') === 'dialog' && e.getAttribute('aria-label') === 'Save or remind me' && document.contains(e.getRootNode().host || e));
+  const inMenu = t => __all(menu()).find(e => e.tagName === 'BUTTON' && e.textContent.trim() === t);
+  const open = async mid => {
+    const li = document.createElement('li'); li.id = 'chat-messages-111111111111111111-' + mid;
+    li.innerHTML = '<div><h3><span>Lava</span> <time>Today at 9:00</time></h3><div id="message-content-' + mid + '">the lava is up ' + mid + '</div></div>';
+    li.style.cssText = 'position:fixed;left:400px;top:300px;width:600px;height:60px;z-index:4;background:#333;color:#fff;list-style:none';
+    document.body.append(li); await w(100);
+    li.querySelector('[id^=message-content]').dispatchEvent(new MouseEvent('mouseover', { bubbles: true, clientX: 500, clientY: 330 })); await w(300);
+    const b = __all().find(e => e.tagName === 'BUTTON' && e.getAttribute('aria-label') === 'Save or remind me' && !e.hidden);
+    if (!b) return false; b.click(); await w(500); return !!menu();
+  };
+  // 1: a note, a folder and a reminder, then Save
+  out.opened = await open('888888888888888888');
+  if (!out.opened) return out;
+  const note = __all(menu()).find(e => e.tagName === 'INPUT' && e.getAttribute('aria-label') === 'Note');
+  note.value = 'Test'; note.dispatchEvent(new Event('input', { bubbles: true })); note.dispatchEvent(new Event('change', { bubbles: true }));
+  inMenu('Recipes').click(); await w(300);
+  out.afterFolder = { open: !!menu(), saved: !!savedOf('888888888888888888'), pressed: inMenu('Recipes') && inMenu('Recipes').getAttribute('aria-pressed') };
+  inMenu('1 hour').click(); await w(300);
+  out.afterRemind = { open: !!menu(), saved: !!savedOf('888888888888888888'), rems: remsOf('888888888888888888').length, pressed: inMenu('1 hour').getAttribute('aria-pressed') };
+  out.sum = (__all(menu()).find(e => e.classList && e.classList.contains('sum')) || {}).textContent || '';
+  out.hasRemindBtn = !!inMenu('Remind me');
+  const t0 = Date.now(); inMenu('Save').click(); await w(600);
+  const s1 = savedOf('888888888888888888'), r1 = remsOf('888888888888888888');
+  out.one = { closed: !menu(), folder: s1 && s1.folder, note: s1 && s1.note, rems: r1.length, remNote: r1[0] && r1[0].note, inMin: r1[0] && Math.round((r1[0].due - t0) / 60e3) };
+  // 2: only a reminder: not saved
+  await open('777777777777777777'); inMenu('1 hour').click(); await w(200); inMenu('Save').click(); await w(500);
+  out.two = { saved: !!savedOf('777777777777777777'), rems: remsOf('777777777777777777').length };
+  // 3: nothing picked: saved to Unsorted, no reminder
+  await open('666666666666666666'); inMenu('Save').click(); await w(500);
+  const s3 = savedOf('666666666666666666'); out.three = { folder: s3 && s3.folder, rems: remsOf('666666666666666666').length };
+  // 4: a reminder picked, then "No reminder": back to just saving
+  await open('555555555555555555'); inMenu('1 hour').click(); await w(200); inMenu('No reminder').click(); await w(200); inMenu('Save').click(); await w(500);
+  out.four = { saved: !!savedOf('555555555555555555'), rems: remsOf('555555555555555555').length };
+  return out;
+})()
+"""
+r = subprocess.run(['node', f'{HERE}/lib/shot.js', SCRIPT, 'https://discord.com/channels/101010101010101010/111111111111111111', '/dev/null',
+                    '--seed', f'{HERE}/seeds/molten-for-discord.json', '--eval', MENU, '--print'], capture_output=True, text=True)
+mv = next((json.loads(l[5:]) for l in r.stdout.splitlines() if l.startswith('EVAL ')), None)
+if not isinstance(mv, dict) or not mv.get('opened'): bad.append('the message menu didn\'t open in the test page: ' + (json.dumps(mv) if mv else ((r.stderr.strip().splitlines() or ['no output'])[-1])))
+else:
+    want(mv['afterFolder'] == {'open': True, 'saved': False, 'pressed': 'true'}, f'picking a folder saved or closed the menu: {mv["afterFolder"]}')
+    want(mv['afterRemind'] == {'open': True, 'saved': False, 'rems': 0, 'pressed': 'true'}, f'picking a reminder time set it or closed the menu: {mv["afterRemind"]}')
+    want(not mv['hasRemindBtn'], 'the menu still has a "Remind me" button (it should be "Save")')
+    want(mv['sum'].startswith('Saves to Recipes') and 'reminds you' in mv['sum'], f'the line above Save says {mv["sum"]!r}')
+    o = mv['one']; want(o['closed'] and o['folder'] == 'frecipes' and o['note'] == 'Test' and o['rems'] == 1 and o['remNote'] == 'Test' and o['inMin'] in (59, 60, 61), f'Save didn\'t do all three: {o}')
+    want(mv['two'] == {'saved': False, 'rems': 1}, f'Save with only a reminder picked: {mv["two"]}')
+    want(mv['three'] == {'folder': '', 'rems': 0}, f'Save with nothing picked: {mv["three"]}')
+    want(mv['four'] == {'saved': True, 'rems': 0}, f'"No reminder" after a time: {mv["four"]}')
 for b in bad: print('molten-for-discord your data: ' + b)
 if not bad: print('== molten-for-discord your data: clean')
 sys.exit(1 if bad else 0)

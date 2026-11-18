@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.8.3
+// @version      3.8.4
 // @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
@@ -3875,7 +3875,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       'html[data-lava-on] ytd-engagement-panel-title-header-renderer,html[data-lava-on] ytd-comments-header-renderer,' +
       'html[data-lava-on] ytd-comment-simplebox-renderer{background:transparent!important}' +
       'html[data-lava-on] #cinematics,html[data-lava-on] #cinematics-container,html[data-lava-on] #cinematic-container,' +
-      'html[data-lava-on] #shorts-cinematic-container{display:none!important}' +
+      'html[data-lava-on] #shorts-cinematic-container,html[data-lava-on] #cinematic-shorts-scrim{display:none!important}' +
       'html[data-lava-on] ytd-masthead,html[data-lava-on] #masthead-container{box-shadow:none!important}' +
       'html[data-lava-on] #masthead-container::before,html[data-lava-on] #masthead-container::after,' +
       'html[data-lava-on] ytd-masthead::before,html[data-lava-on] ytd-masthead::after{box-shadow:none!important;background:none!important}' +
@@ -3955,8 +3955,10 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       }
     }
     if (!why) return;
-    el.setAttribute(o.attr || 'data-lava-clear', '');
-    log(o.attr ? 'glassed' : 'cleared', why, nameOf(el));
+    // a scrim is a shade over the page (Shorts has one under the top bar): it goes, it never becomes glass
+    const scrim = /scrim/i.test(el.id + ' ' + (typeof el.className === 'string' ? el.className : ''));
+    el.setAttribute(scrim ? 'data-lava-clear' : o.attr || 'data-lava-clear', '');
+    log(el.hasAttribute('data-lava-glass') ? 'glassed' : 'cleared', why, nameOf(el));
   }
   function scanPoints(xs, ys, o) {
     const seen = new Set();

@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 3.8.4 · 2026-11-17
+
+- No dark band under the top bar on Shorts in a browser tab. YouTube puts a shade there, and Molten turned it into frosted glass instead of clearing it (it only showed in a tab, where the page is shorter than in the app window). Shades are always cleared now.
+
 ## 3.8.3 · 2026-11-17
 
 - The icon matches the panel: YouTube's red (#FF0033), in Tampermonkey's list, the panel's header and on the website.

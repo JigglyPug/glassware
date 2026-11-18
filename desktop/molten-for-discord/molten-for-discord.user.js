@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.7
+// @version      1.0.8
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.7';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.8';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -1712,6 +1712,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .pin.msg:hover,.pin.msg:focus-visible{opacity:1;filter:drop-shadow(0 0 4px rgba(88,101,242,.95)) drop-shadow(0 1px 1px rgba(0,0,0,.6))}
 /* the save / remind menu */
 .menu{width:300px;max-height:calc(100vh - 16px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:12px;display:grid;gap:10px}
+.menu .sum{font-size:11.5px;opacity:.75;text-align:center;margin-top:2px}
+.menu > .rp-set{position:sticky;bottom:0}
 .menu .tiles{display:flex;flex-wrap:wrap;gap:6px}
 .menu input[type=text]{width:100%;height:30px;padding:0 9px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--text);font:inherit;font-size:12px}
 .menu input[type=text]:focus{outline:2px solid var(--a);outline-offset:1px}
@@ -1821,8 +1823,11 @@ button{font:inherit;color:inherit;cursor:pointer}
        the inner ring (Days and longer) is the time of day, like a 24-hour clock. The date at the bottom follows
        as you turn. The browser's own calendar covers an exact day and time. onSet(due) gets the time. */
     let dialN = 0;
-    function remindPicker(onSet) {
-        let unit = 'hour', n = UNITS.hour.d, tod = 9 * 60, exact = 0;
+    // onSet(due) sets the reminder right away (the panel's editors). With onPick, it's a choice in a form instead
+    // (the message menu, which saves with one button): presets and the dial only pick a time, onPick(due) reports it,
+    // "No reminder" (picked to begin with) reports 0, and there's no button of its own.
+    function remindPicker(onSet, onPick) {
+        let unit = 'hour', n = UNITS.hour.d, tod = 9 * 60, exact = 0, chosen = !onPick, preset = -1;
         const id = 'mfd-dial-' + (++dialN), R1 = 74, R2 = 54, C = 90;
         const NS = SVGNS, mk = (t, a) => { const e = document.createElementNS(NS, t); for (const [k, v] of Object.entries(a)) e.setAttribute(k, v); return e; };
         const svg = mk('svg', { viewBox: '0 0 180 180', class: 'dial-svg' });
@@ -1880,11 +1885,16 @@ button{font:inherit;color:inherit;cursor:pointer}
             big.textContent = n + ' ' + u.word + (n === 1 ? '' : 's');
             small.textContent = u.at ? 'at ' + clock(tod) : 'from now';
             cal.min = local(Date.now() + 60e3); cal.max = local(Date.now() + REMIND_MAX);
-            out.textContent = exact ? fmtTime(exact) + ' · ' + countdown(exact) : fmtTime(due()) + ' · ' + countdown(due());
-            for (const b of units.children) { const on = !exact && b.dataset.u === unit; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
+            out.textContent = !chosen ? 'No reminder' : exact ? fmtTime(exact) + ' · ' + countdown(exact) : fmtTime(due()) + ' · ' + countdown(due());
+            for (const b of units.children) { const on = chosen && !exact && b.dataset.u === unit; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
             box.classList.toggle('exact', !!exact);
+            if (onPick) {
+                pres.forEach((b, i) => { const on = i === preset && chosen; b.classList.toggle('saved', on); b.setAttribute('aria-pressed', String(on)); });
+                noneBtn.classList.toggle('saved', !chosen); noneBtn.setAttribute('aria-pressed', String(!chosen));
+                onPick(chosen ? due() : 0);
+            }
         };
-        const touch = () => { exact = 0; cal.value = ''; };
+        const touch = () => { exact = 0; cal.value = ''; chosen = true; preset = -1; };
         const setN = v => { n = Math.min(top(UNITS[unit]), Math.max(1, Math.round(v))); };
         // turning winds: the angle moved since the last step adds up, so going past the top keeps counting
         const angleAt = e => { const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 180 - C, y = (e.clientY - r.top) / r.height * 180 - C; return { f: ((Math.atan2(x, -y) + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI), d: Math.hypot(x, y) }; };
@@ -1910,14 +1920,17 @@ button{font:inherit;color:inherit;cursor:pointer}
         // keys: arrows one step, Page Up / Page Down a whole turn
         outer.g.addEventListener('keydown', e => { const u = UNITS[unit], s = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: u.turn, PageDown: -u.turn }[e.key]; if (!s) return; e.preventDefault(); touch(); setN(n + s); show(); });
         inner.g.addEventListener('keydown', e => { const s = { ArrowUp: 15, ArrowRight: 15, ArrowDown: -15, ArrowLeft: -15, PageUp: 180, PageDown: -180 }[e.key]; if (!s) return; e.preventDefault(); touch(); tod = (tod + s + 1440) % 1440; show(); });
-        cal.addEventListener('change', () => { const t = cal.value ? +new Date(cal.value) : 0; exact = t > Date.now() ? Math.min(t, Date.now() + REMIND_MAX) : 0; show(); });
+        cal.addEventListener('change', () => { const t = cal.value ? +new Date(cal.value) : 0; exact = t > Date.now() ? Math.min(t, Date.now() + REMIND_MAX) : 0; if (exact) { chosen = true; preset = -1; } show(); });
         const units = el('div', { class: 'rp-units', role: 'radiogroup', 'aria-label': 'Unit' }, Object.entries(UNITS).map(([k, u]) =>
             el('button', { type: 'button', role: 'radio', 'data-u': k, text: u.label, onclick: () => { unit = k; n = u.d; touch(); show(); } })));
+        const noneBtn = el('button', { class: 'lp', type: 'button', text: 'No reminder', onclick: () => { chosen = false; preset = -1; exact = 0; cal.value = ''; show(); } });
+        const pres = PRESETS_T.map(([t, f], i) => el('button', { class: 'lp', type: 'button', text: t,
+            onclick: () => { if (!onPick) return onSet(f()); exact = Math.min(Date.now() + REMIND_MAX, f()); cal.value = ''; chosen = true; preset = i; show(); } }));
         const box = el('div', { class: 'rp' },
-            el('div', { class: 'rp-pre' }, PRESETS_T.map(([t, f]) => el('button', { class: 'lp', type: 'button', text: t, onclick: () => onSet(f()) }))),
+            el('div', { class: 'rp-pre' }, onPick ? noneBtn : null, pres),
             el('div', { class: 'rp-fine' }, units, dial, out,
                 el('label', { class: 'rp-cal' }, el('span', { text: 'Or pick an exact day and time' }), cal),
-                el('button', { class: 'rp-set', type: 'button', text: 'Remind me', onclick: () => onSet(due()) })));
+                onPick ? null : el('button', { class: 'rp-set', type: 'button', text: 'Remind me', onclick: () => onSet(due()) })));
         show();
         return box;
     }
@@ -2068,25 +2081,47 @@ button{font:inherit;color:inherit;cursor:pointer}
             const r = msgBtn.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
             const savedNow = () => D.saved.items.find(x => x.mid === item.mid);
             const s = savedNow();
-            // a note goes with the save and with the reminder, so later you know why
+            // A form: a note, a folder and a reminder, each optional and changeable, and nothing happens until Save.
+            // Save puts the message in the folder picked (Unsorted if nothing at all was picked) and sets the reminder
+            // if one was; the note goes with both, so later you know why.
+            let folder = s ? s.folder : null, due = 0;
             const noteIn = el('input', { type: 'text', placeholder: 'What\'s this for? (optional)', 'aria-label': 'Note', maxlength: '200', value: s ? s.note : '',
-                onkeydown: e => { if (e.key === 'Enter') e.target.blur(); },
-                onchange: () => { const x = savedNow(); if (x) { x.note = noteIn.value.trim().slice(0, 200); store.saved(); refreshAll(); } } });
+                onkeydown: e => { if (e.key === 'Enter') e.target.blur(); } });
             const withNote = () => Object.assign({}, item, { note: noteIn.value.trim().slice(0, 200) });
-            const pick = id => { saveMessage(withNote(), id); closeMenu(true); };
+            const sum = el('div', { class: 'sum', 'aria-live': 'polite' });
+            // where Save puts it: the folder picked; a saved message stays where it is; a new one goes to Unsorted,
+            // unless only a reminder was picked (then it's just the reminder)
+            const target = () => folder !== null ? folder : s ? s.folder : due ? null : '';
+            const summary = () => {
+                const f = target();
+                sum.textContent = [f !== null ? (s && f === s.folder ? 'Stays in ' : 'Saves to ') + folderOf(f).name : 'Not saved', due ? 'reminds you ' + fmtTime(due) : 'no reminder'].join(' · ');
+            };
+            const pills = el('div', { class: 'tiles' });
+            const drawPills = () => {
+                pills.replaceChildren(...folderPills(folder, id => { folder = folder === id && !s ? null : id; drawPills(); summary(); }),
+                    el('button', { class: 'lp', type: 'button', text: '+ New folder', onclick: e => { e.currentTarget.hidden = true; newIn.hidden = false; newIn.focus(); } }));
+            };
             const newIn = el('input', { type: 'text', placeholder: 'Name a new folder, then Enter', 'aria-label': 'New folder', maxlength: '30', hidden: true,
-                onkeydown: e => { if (e.key === 'Enter' && newIn.value.trim()) pick(addFolder(newIn.value)); } });
+                onkeydown: e => { if (e.key === 'Enter' && newIn.value.trim()) { folder = addFolder(newIn.value); newIn.value = ''; newIn.hidden = true; drawPills(); summary(); } } });
+            const commit = () => {
+                const f = target();
+                if (f !== null) saveMessage(withNote(), f);
+                const x = s && savedNow(); if (x) { x.note = withNote().note; store.saved(); refreshAll(); }   // a cleared note clears
+                if (due) remind(withNote(), due);
+                closeMenu(true);
+            };
+            drawPills();
             const left = Math.max(8, Math.min(innerWidth - 308, x - 264)), top = Math.max(8, Math.min(innerHeight - 470, y + 16));
             menu = el('div', { class: 'glass menu', role: 'dialog', 'aria-label': 'Save or remind me', style: `left:${left}px;top:${top}px` },
                 el('div', { class: 'blobs' }),
                 el('div', { class: 'lbl', text: 'Note' }), noteIn,
                 el('div', { class: 'lbl', text: s ? 'Saved in ' + folderOf(s.folder).name + ' · move to' : 'Save to' }),
-                el('div', { class: 'tiles' }, folderPills(s ? s.folder : null, pick),
-                    el('button', { class: 'lp', type: 'button', text: '+ New folder', onclick: e => { e.currentTarget.hidden = true; newIn.hidden = false; newIn.focus(); } })),
-                newIn,
+                pills, newIn,
                 s ? el('button', { class: 'gone', type: 'button', text: 'Remove from saved', onclick: () => { D.saved.items = D.saved.items.filter(x => x.mid !== item.mid); store.saved(); refreshAll(); closeMenu(true); } }) : null,
                 el('div', { class: 'lbl', text: 'Remind me' }),
-                remindPicker(due => { remind(withNote(), due); closeMenu(true); }));
+                remindPicker(null, d => { due = d; summary(); }),
+                sum, el('button', { class: 'rp-set', type: 'button', text: 'Save', onclick: commit }));
+            summary();
             wrap.append(menu);
             // keep it on screen: shift up if it would run off the bottom, and scroll inside on very short windows
             const mr = menu.getBoundingClientRect();
