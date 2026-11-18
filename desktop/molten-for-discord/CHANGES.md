@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.0.7 · 2026-11-17
+
+- GIFs opened full size get the lava around them too. A GIF opens at its own small size, which Molten took for too small to be the viewer; inside Discord's viewer, anything from 96px now counts (a profile card's dialog still doesn't).
+
 ## 1.0.6 · 2026-11-17
 
 - Pictures opened full size get the lava around them now. Discord's viewer dims the app with a layer whose dark sits on a pseudo-element, which Molten didn't see; it now goes by the viewer's dialog instead, and clears the dimming wherever it's painted.
