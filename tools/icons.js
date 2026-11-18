@@ -84,7 +84,17 @@ const prism = (g) => `
   ${tube('M24 59 L46 52.5', { glow: g, w: 2.6, core: 1.1 })}
   ${tube('M54 50 L77 43', { glow: g, w: 2.6, core: 1.1 })}`;
 
-const glyph_molten_for_discord = (g) => `${tube('M50 30 C61 30 69 38 69 49 C69 55 67 59 65 62 C63 65 63 68 63.5 71 C64 74 59.6 75 59.5 72 C59.3 69 57 67 53 67 L44 67 C38 67 31 63 31 52 C31 39 39 30 50 30 Z', { glow: g, w: 4, core: 1.5, fill: .08 }) + '<circle cx="37" cy="74" r="4.4" fill="' + g + '" fill-opacity=".5" filter="url(#bloom)"/><circle cx="37" cy="74" r="2.8" fill="#fff" fill-opacity=".95"/>' + '<circle cx="43.5" cy="48.5" r="4.6" fill="' + g + '" fill-opacity=".45" filter="url(#bloom)"/><circle cx="56.5" cy="48.5" r="4.6" fill="' + g + '" fill-opacity=".45" filter="url(#bloom)"/><ellipse cx="43.5" cy="48.5" rx="2.9" ry="3.6" fill="#fff"/><ellipse cx="56.5" cy="48.5" rx="2.9" ry="3.6" fill="#fff"/><circle cx="44.4" cy="47.3" r=".9" fill="' + g + '"/><circle cx="57.4" cy="47.3" r=".9" fill="' + g + '"/>'}`;
+// a lava blob leaning forward: flame-like flicks sweep back off its left side, lava drips in two humps
+// underneath, two drops trail behind in clear space; drawn in the other Moltens' colors (Molten for
+// Reddit's orange into Molten Tools' red) so it reads as part of the family on Discord's purple
+const MFD_BLOB = 'M55 30 C65.5 30 73 38 73 48.5 C73 56.5 68.8 62.6 63.6 65.2 C62.6 66.2 62.4 67.8 62.8 70 C63.4 73 59.2 73.8 59 71 C58.8 69.2 58 67.6 56.4 67.2 C55.4 67.6 54.8 68.6 54.8 70.2 C54.8 72.6 51.6 72.6 51.4 70.4 C51.3 69 51 67.8 50.2 67 C47 67 41.5 63.5 38.5 58.5 C34.5 59.6 29.5 59 25.5 55.5 C30 55.4 33.6 53.8 35.6 51.4 C31.6 50 27.6 46.8 25.4 42.4 C29.4 43.6 33 43.4 35.8 42 C34 38.6 31.4 35.6 29.6 31.4 C33.6 33.2 37.2 34.2 40.4 34.2 C44 31.4 49 30 55 30 Z';
+const glyph_molten_for_discord = (g) => {
+  const eye = x => `<circle cx="${x}" cy="47.5" r="4.6" fill="${g}" fill-opacity=".45" filter="url(#bloom)"/><ellipse cx="${x}" cy="47.5" rx="2.9" ry="3.6" fill="#fff"/>`;
+  const drop = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r * 1.6}" fill="${g}" fill-opacity=".5" filter="url(#bloom)"/><circle cx="${x}" cy="${y}" r="${r}" fill="#ffb48f"/>`;
+  const body = tube(MFD_BLOB, { glow: g, w: 4, core: 1.5, fill: .06 }).replace('url(#tubeBody)', 'url(#hotTube)');
+  return `<defs><linearGradient id="hotTube" x1="25" y1="30" x2="72" y2="72" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffb48f"/><stop offset=".5" stop-color="#ff4500"/><stop offset="1" stop-color="#ff0033"/></linearGradient></defs>
+  <g transform="translate(1.5 -2) rotate(-10 50 50)">${body}${eye(53)}${eye(63.5)}${drop(18, 34, 1.9)}${drop(15, 43.5, 1.3)}</g>`;
+};
 
 const HG = { a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') };
 const ICONS = {
@@ -94,7 +104,7 @@ const ICONS = {
   'molten-for-reddit': icon({ a: '#ff4500', b: '#c23500', deep: '#3a0f00', rimA: '#ffb48f', rimB: '#ff7a40', glow: '#ff4500', glyph: bubble('#ffc9b0') }),   // Reddit's orange-red, #FF4500
   'molten-tools':      icon({ a: '#ff0033', b: '#c20027', deep: '#3a0010', rimA: '#ff9db0', rimB: '#ff4d6d', glow: '#ff0033', glyph: play('#ffc2cd') }),   // YouTube's red, #FF0033
   'prism':             icon({ a: '#8b5cf6', b: '#2b48b8', deep: '#0c0a2a', rimA: '#d6c6ff', rimB: '#9ec2ff', glow: '#9a7dff', glyph: prism('#c7b5ff') }),
-  "molten-for-discord": icon({ a: '#5865f2', b: '#a3249e', deep: '#120a2e', rimA: '#c9ceff', rimB: '#ff8ae6', glow: '#7d88ff', glyph: glyph_molten_for_discord('#b4bbff') }),
+  "molten-for-discord": icon({ a: '#5865f2', b: '#a3249e', deep: '#120a2e', rimA: '#c9ceff', rimB: '#ff8ae6', glow: '#7d88ff', glyph: glyph_molten_for_discord('#ff4500') }),
 };
 ICONS['molten-for-reddit-mobile'] = ICONS['molten-for-reddit'];
 ICONS['kaleidoscope-mobile'] = ICONS['kaleidoscope'];
