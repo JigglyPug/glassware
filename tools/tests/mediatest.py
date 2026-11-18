@@ -30,12 +30,12 @@ DISCORD = r"""(async () => {
   await w(1800);
   out.open = { viewer: document.documentElement.hasAttribute('data-mfd-viewer'), bd: bd.hasAttribute('data-mfd-vbd'), appHidden: getComputedStyle(app).visibility, layerClear: layer.hasAttribute('data-mfd-vclr'), layerBg: getComputedStyle(layer).backgroundColor, bdBg: getComputedStyle(bd).backgroundColor, bdFilter: getComputedStyle(bd).backdropFilter };
   lc.remove(); await w(60); out.closed = { viewer: document.documentElement.hasAttribute('data-mfd-viewer'), appVisible: getComputedStyle(app).visibility, marks: document.querySelectorAll('[data-mfd-vunder],[data-mfd-vbd]').length };
-  const fs = document.createElement('div'); fs.style.cssText = 'position:fixed;inset:0;background:#000'; const inner = document.createElement('div'); inner.style.cssText = 'width:100%;height:100%;background:#000;display:flex'; const vid = document.createElement('video'); vid.style.cssText = 'width:100%;height:100%;background:#000'; inner.append(vid); fs.append(inner); mount.append(fs);
+  const fs = document.createElement('div'); fs.style.cssText = 'position:fixed;inset:0;background:#000'; const inner = document.createElement('div'); inner.style.cssText = 'width:100%;height:100%;background:#000;display:flex'; const vid = document.createElement('video'); vid.style.cssText = 'width:100%;height:100%;background:#000'; inner.append(vid); fs.append(inner); mount.append(fs); await w(400);   // Molten sees the box before it goes fullscreen (as it can on a slow machine)
   Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => window.__fe || null });
   window.__fe = fs; document.dispatchEvent(new Event('fullscreenchange')); await w(200);
   out.fs = { lavaInside: fs.querySelectorAll(':scope > div.mfd-art, :scope > canvas.mfd-video, :scope > div.mfd-blobs').length, inBody: document.querySelectorAll('body > div.mfd-art, body > canvas.mfd-video, body > div.mfd-blobs').length, boxBg: getComputedStyle(fs).backgroundColor, innerBg: getComputedStyle(inner).backgroundColor, videoBg: getComputedStyle(vid).backgroundColor };
   window.__fe = null; document.dispatchEvent(new Event('fullscreenchange')); await w(200);
-  out.fsExit = { inBody: document.querySelectorAll('body > div.mfd-art, body > canvas.mfd-video, body > div.mfd-blobs').length, left: fs.querySelectorAll('div.mfd-art, canvas.mfd-video, div.mfd-blobs').length, boxBg: getComputedStyle(fs).backgroundColor };
+  out.fsExit = { inBody: document.querySelectorAll('body > div.mfd-art, body > canvas.mfd-video, body > div.mfd-blobs').length, left: fs.querySelectorAll('div.mfd-art, canvas.mfd-video, div.mfd-blobs').length, marks: [fs, inner, vid].filter(e => e.hasAttribute('data-mfd-fclr') || e.hasAttribute('data-mfd-vclr')).length, viewer: document.documentElement.hasAttribute('data-mfd-viewer') };
   return out;
 })()
 """
@@ -97,7 +97,8 @@ else:
     want(not c['viewer'] and c['appVisible'] == 'visible' and c['marks'] == 0, 'molten-for-discord: closing the viewer didn\'t bring the app straight back')
     want(f['lavaInside'] == 4 and f['inBody'] == 0, 'molten-for-discord: the lava didn\'t move into the fullscreen video')
     want(f['boxBg'] == f['innerBg'] == f['videoBg'] == 'rgba(0, 0, 0, 0)', 'molten-for-discord: black stayed around the fullscreen video')
-    want(x['inBody'] == 4 and x['left'] == 0 and x['boxBg'] == 'rgb(0, 0, 0)', 'molten-for-discord: leaving fullscreen didn\'t put the lava and the colors back')
+    want(x['inBody'] == 4 and x['left'] == 0, f'molten-for-discord: leaving fullscreen didn\'t put the lava back: {x}')
+    want(x['marks'] == 0 and not x['viewer'], f'molten-for-discord: after fullscreen, the box kept its see-through marks or was taken for a viewer: {x}')
 d2, err = run('desktop/molten-for-discord/molten-for-discord.user.js', 'https://discord.com/channels/1/2', DISCORD2, '--seed', f'{HERE}/seeds/molten-for-discord.json')
 if not isinstance(d2, dict): bad.append('molten-for-discord: the second test page gave nothing back: ' + err)
 else:

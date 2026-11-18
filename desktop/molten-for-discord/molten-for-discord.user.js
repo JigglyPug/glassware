@@ -578,7 +578,7 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
         const top = document.getElementById('app-mount');
         for (let n = best; n && n.parentElement && n !== top && n !== document.body; n = n.parentElement)
             for (const sib of n.parentElement.children)
-                if (sib !== n && !sib.contains(best) && sib.childElementCount === 0 && big(sib, 0.9) && dim(sib)) return { bd: sib, media: best };
+                if (sib !== n && !sib.contains(best) && sib.childElementCount === 0 && !sib.textContent.trim() && big(sib, 0.9) && dim(sib)) return { bd: sib, media: best };   // empty: no elements, no text
         return null;
     }
     function checkViewer() {
@@ -608,6 +608,7 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
         for (const n of layers.reverse()) host.prepend(n);
         if (want) { want.setAttribute('data-mfd-fclr', ''); const v = q('video', want); if (v) clearAround(v, want, 'data-mfd-fclr'); }
         vs.drawn = false;
+        checkViewer();   // what's on screen changed: a viewer's marks are set again (or dropped) for it
     }
     document.addEventListener('fullscreenchange', onFullscreen);
     function removeLayers() { for (const n of qa('div.mfd-art,canvas.mfd-video,div.mfd-blobs')) n.remove(); vCanvas = null; artNow = ''; vs.drawn = false; }
