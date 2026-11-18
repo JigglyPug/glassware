@@ -4,7 +4,8 @@
 
 Molten for Discord, on a stand-in Discord: a picture opened in the viewer (a dark backdrop over the app) gets
 light glass, the app behind steps out of view and the dark box around the picture goes see-through; closing it
-brings the app straight back; a fullscreen video takes the lava into its fullscreen box with its black made
+brings the app straight back. The viewer is found by what it is, not by Discord's names: a small
+picture centered in a nameless viewer counts, a profile card's banner doesn't. A fullscreen video takes the lava into its fullscreen box with its black made
 see-through, and gives it back on the way out.
 Looking-Glass: its badge hides while a layer over the whole page (a picture viewer) or an open dialog sits on
 top of its video, and comes back when that closes.
@@ -35,6 +36,31 @@ DISCORD = r"""(async () => {
   out.fs = { lavaInside: fs.querySelectorAll(':scope > div.mfd-art, :scope > canvas.mfd-video, :scope > div.mfd-blobs').length, inBody: document.querySelectorAll('body > div.mfd-art, body > canvas.mfd-video, body > div.mfd-blobs').length, boxBg: getComputedStyle(fs).backgroundColor, innerBg: getComputedStyle(inner).backgroundColor, videoBg: getComputedStyle(vid).backgroundColor };
   window.__fe = null; document.dispatchEvent(new Event('fullscreenchange')); await w(200);
   out.fsExit = { inBody: document.querySelectorAll('body > div.mfd-art, body > canvas.mfd-video, body > div.mfd-blobs').length, left: fs.querySelectorAll('div.mfd-art, canvas.mfd-video, div.mfd-blobs').length, boxBg: getComputedStyle(fs).backgroundColor };
+  return out;
+})()
+"""
+DISCORD2 = r"""(async () => {
+  const w = ms => new Promise(r => setTimeout(r, ms));
+  const out = {};
+  const mount = document.getElementById('app-mount') || (() => { const m = document.createElement('div'); m.id = 'app-mount'; document.body.append(m); return m; })();
+  mount.innerHTML = '';
+  const app = document.createElement('div'); app.className = 'q1z'; app.style.cssText = 'position:fixed;inset:0;padding:40px;color:#fff;font:20px sans-serif'; app.textContent = 'CHAT '.repeat(200); mount.append(app);
+  const pic = (wd, ht) => { const c = document.createElement('canvas'); c.width = wd; c.height = ht; const g = c.getContext('2d'); g.fillStyle = '#4ab0e8'; g.fillRect(0, 0, wd, ht); const i = document.createElement('img'); i.src = c.toDataURL(); i.style.cssText = `width:${wd}px;height:${ht}px;display:block`; return i; };
+  // a viewer whose names say nothing, a small picture in the middle, a dark grey box around it
+  const lc = document.createElement('div'); lc.className = 'k9';
+  const bd = document.createElement('div'); bd.className = 'p3'; bd.style.cssText = 'position:absolute;inset:0;background:hsl(0 0% 0% / 1);opacity:.85';
+  const layer = document.createElement('div'); layer.className = 'r7'; layer.style.cssText = 'position:absolute;inset:0';
+  const grey = document.createElement('div'); grey.style.cssText = 'position:absolute;inset:0;background:#1e1f22;display:flex;align-items:center;justify-content:center';
+  const wrap = document.createElement('div'); wrap.append(pic(420, 420)); grey.append(wrap); layer.append(grey); lc.append(bd, layer); mount.append(lc);
+  await w(1500);
+  out.small = { viewer: document.documentElement.hasAttribute('data-mfd-viewer'), appHidden: getComputedStyle(app).visibility, greyBg: getComputedStyle(grey).backgroundColor, bdGlass: bd.hasAttribute('data-mfd-vbd') };
+  lc.remove(); await w(300);
+  // a profile card: a banner near the top of a card, a dark backdrop behind it: not a viewer
+  const lc2 = document.createElement('div'); const bd2 = document.createElement('div'); bd2.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.7)';
+  const card = document.createElement('div'); card.style.cssText = 'position:absolute;left:calc(50% - 300px);top:60px;width:600px;height:640px;background:#232428';
+  card.append(pic(600, 220)); lc2.append(bd2, card); mount.append(lc2);
+  await w(1500);
+  out.profile = { viewer: document.documentElement.hasAttribute('data-mfd-viewer'), appHidden: getComputedStyle(app).visibility };
   return out;
 })()
 """
@@ -72,6 +98,12 @@ else:
     want(f['lavaInside'] == 4 and f['inBody'] == 0, 'molten-for-discord: the lava didn\'t move into the fullscreen video')
     want(f['boxBg'] == f['innerBg'] == f['videoBg'] == 'rgba(0, 0, 0, 0)', 'molten-for-discord: black stayed around the fullscreen video')
     want(x['inBody'] == 4 and x['left'] == 0 and x['boxBg'] == 'rgb(0, 0, 0)', 'molten-for-discord: leaving fullscreen didn\'t put the lava and the colors back')
+d2, err = run('desktop/molten-for-discord/molten-for-discord.user.js', 'https://discord.com/channels/1/2', DISCORD2, '--seed', f'{HERE}/seeds/molten-for-discord.json')
+if not isinstance(d2, dict): bad.append('molten-for-discord: the second test page gave nothing back: ' + err)
+else:
+    sm, pr = d2['small'], d2['profile']
+    want(sm['viewer'] and sm['appHidden'] == 'hidden' and sm['bdGlass'] and sm['greyBg'] == 'rgba(0, 0, 0, 0)', 'molten-for-discord: a small picture in a viewer whose names say nothing stayed on dark grey with the chat behind it')
+    want(not pr['viewer'] and pr['appHidden'] == 'visible', 'molten-for-discord: a profile card was taken for a picture viewer')
 l, err = run('desktop/looking-glass/looking-glass.user.js', 'https://example.com/', BADGE, '--video')
 if not isinstance(l, dict): bad.append('looking-glass: the test page gave nothing back: ' + err)
 else:

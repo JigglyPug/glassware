@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.4
+// @version      1.0.5
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.4';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.5';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -555,17 +555,30 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
         for (let n = media; n && n !== stop.parentElement; n = n.parentElement) if (n === media ? n.tagName === 'VIDEO' : big(n, 0.8) && darkBox(n)) n.setAttribute(attr, '');
     }
     let viewerNow = null;
+    // The viewer, found by what it is, not by Discord's class names (which change, and differ between pictures and
+    // videos): the biggest picture or video on screen, outside the chat, big or centered (see below), with
+    // a dark, empty, full-screen layer beside it on the way up (the backdrop Discord dims the app with).
+    const dim = el => {
+        const cs = getComputedStyle(el), m = /rgba?\(([^)]+)\)/.exec(cs.backgroundColor); if (!m) return false;
+        const a = m[1].split(',').map(Number), alpha = (a.length < 4 ? 1 : a[3]) * (parseFloat(cs.opacity) || 0);
+        return alpha >= 0.3 && a[0] + a[1] + a[2] < 200;
+    };
     function findViewer() {
-        for (const bd of qa('[class*="backdrop"]')) {
-            if (!big(bd, 0.9) || getComputedStyle(bd).visibility === 'hidden') continue;
-            let best = null, area = 0;
-            for (const m of qa('img,video', bd.parentElement)) {
-                if (bd.contains(m)) continue;
-                const r = m.getBoundingClientRect(), a = r.width * r.height;
-                if (a > area) { best = m; area = a; }
-            }
-            if (best && area >= innerWidth * innerHeight * 0.2) return { bd, media: best };   // a picture or video opened big, not a profile card
+        const vw = innerWidth, vh = innerHeight; let best = null, area = 0;
+        for (const m of document.querySelectorAll('img,video')) {
+            if (m.closest('li[id^="chat-messages-"]')) continue;
+            const r = m.getBoundingClientRect();
+            const a = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0)) * Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+            if (a > area) { best = m; area = a; }
         }
+        if (!best) return null;
+        // big, or smaller but centered on the screen the way the viewer shows a small picture (a profile's banner isn't)
+        const r = best.getBoundingClientRect(), centered = Math.abs((r.left + r.right) / 2 - vw / 2) < vw * 0.15 && Math.abs((r.top + r.bottom) / 2 - vh / 2) < vh * 0.15;
+        if (area < vw * vh * (centered ? 0.04 : 0.2)) return null;
+        const top = document.getElementById('app-mount');
+        for (let n = best; n && n.parentElement && n !== top && n !== document.body; n = n.parentElement)
+            for (const sib of n.parentElement.children)
+                if (sib !== n && !sib.contains(best) && sib.childElementCount === 0 && big(sib, 0.9) && dim(sib)) return { bd: sib, media: best };
         return null;
     }
     function checkViewer() {
@@ -580,7 +593,7 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
             const top = document.getElementById('app-mount');
             for (let n = v.bd; n && n !== top && n.parentElement && n !== document.body; n = n.parentElement)
                 for (const sib of n.parentElement.children) if (sib !== n && !sib.contains(v.bd) && !sib.contains(v.media) && !/^(SCRIPT|STYLE|LINK)$/.test(sib.tagName)) sib.setAttribute('data-mfd-vunder', '');
-            clearAround(v.media, v.bd.parentElement, 'data-mfd-vclr');
+            clearAround(v.media, v.bd.parentElement, 'data-mfd-vclr');   // up to the level the backdrop sits at
         }
         scheduleArt(0);
     }

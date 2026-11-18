@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.0.5 · 2026-11-17
+
+- Pictures opened full size now get the lava around them too, not just videos: Molten finds Discord's viewer by what it looks like (a picture in the middle of the screen with Discord's dimmed layer behind it) instead of by names Discord uses only some of the time. Small pictures count; a profile card doesn't.
+
 ## 1.0.4 · 2026-11-17
 
 - **Lava around opened media** (Lava tab, Colors; on by default): a picture or video opened full size sits in light glass over the lava, in the picture's own colors, instead of on a dark backdrop with the chat behind it. A video in fullscreen keeps the lava around it instead of black bars. Closing it brings the chat straight back.
