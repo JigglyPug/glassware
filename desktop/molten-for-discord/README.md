@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten for Discord: Molten glass for Discord" width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.0.5-5865f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-discord/molten-for-discord.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-discord/)
+[![Install](https://img.shields.io/badge/Install-v1.0.6-5865f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-discord/molten-for-discord.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-discord/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-discord.com-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -37,8 +37,8 @@ Molten for Discord puts a lava-lamp background made from what you're looking at 
 
 ## What's new
 
+- **1.0.6** (2026-11-17): Pictures opened full size get the lava around them now. Discord's viewer dims the app with a layer whose dark sits on a pseudo-element, which Molten didn't see; it now goes by the viewer's dialog instead, and clears the dimming wherever it's painted.
 - **1.0.5** (2026-11-17): Pictures opened full size now get the lava around them too, not just videos: Molten finds Discord's viewer by what it looks like (a picture in the middle of the screen with Discord's dimmed layer behind it) instead of by names Discord uses only some of the time. Small pictures count; a profile card doesn't.
 - **1.0.4** (2026-11-17): **Lava around opened media** (Lava tab, Colors; on by default): a picture or video opened full size sits in light glass over the lava, in the picture's own colors, instead of on a dark backdrop with the chat behind it. A video in fullscreen keeps the lava around it instead of black bars. Closing it brings the chat straight back.
-- **1.0.3** (2026-11-17): Lighter while a video or stream plays: only the lava's video follows the frame rate now. Keeping the button in place, cleaning the page, checking reminders and counting activity stay on their own clock, instead of running up to 60 times a second. Switched off, Molten stops watching the page entirely. Reminders: at the limit of 100, a new one never pushes out one that's due sooner (a finished reminder goes first, then the one furthest away). "In 1 month" from the 31st stops at the end of next month instead of spilling into the one after. Export CSV: a server or channel named like a spreadsheet formula starts with an apostrophe, so a spreadsheet shows it as text instead of running it. Export data leaves out the names Screenshot safe hides inside saved messages, reminders and notes too (they read "User"). Your data now says what a saved message keeps: a short preview (its first 80 characters), its author and a link.
 
 [Every change](CHANGES.md)

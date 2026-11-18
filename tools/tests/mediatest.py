@@ -5,7 +5,8 @@
 Molten for Discord, on a stand-in Discord: a picture opened in the viewer (a dark backdrop over the app) gets
 light glass, the app behind steps out of view and the dark box around the picture goes see-through; closing it
 brings the app straight back. The viewer is found by what it is, not by Discord's names: a small
-picture centered in a nameless viewer counts, a profile card's banner doesn't. A fullscreen video takes the lava into its fullscreen box with its black made
+picture centered in a nameless viewer counts, a profile card's banner doesn't, and Discord's own layout
+(copied from the real page: a modal dialog, its scrim dark on a ::before) gets the glass. A fullscreen video takes the lava into its fullscreen box with its black made
 see-through, and gives it back on the way out.
 Looking-Glass: its badge hides while a layer over the whole page (a picture viewer) or an open dialog sits on
 top of its video, and comes back when that closes.
@@ -64,6 +65,30 @@ DISCORD2 = r"""(async () => {
   return out;
 })()
 """
+DISCORD3 = r"""(async () => {
+  const w = ms => new Promise(r => setTimeout(r, ms));
+  const mount = document.getElementById('app-mount') || (() => { const m = document.createElement('div'); m.id = 'app-mount'; document.body.append(m); return m; })();
+  mount.innerHTML = '';
+  const st = document.createElement('style');
+  st.textContent = '.scrim_od1dl1{position:fixed;inset:0}.scrim_od1dl1::before{content:"";position:absolute;inset:0;background:#000;opacity:.85}' +
+    '.layer_C_WHpX{position:fixed;inset:0}.carouselModal_7QK1F9{position:absolute;inset:0;display:flex;flex-direction:column}.mediaArea_RtjmOP{flex:1;display:flex;align-items:center;justify-content:center}';
+  document.head.append(st);
+  const app = document.createElement('div'); app.className = 'layers_Fd0FEH'; app.style.cssText = 'position:fixed;inset:0;padding:40px;color:#fff;font:20px sans-serif';
+  const chatText = document.createElement('div'); chatText.textContent = 'CHAT '.repeat(300); app.append(chatText); mount.append(app);
+  const mk = (tag, cls, css) => { const e = document.createElement(tag); if (cls) e.className = cls; if (css) e.style.cssText = css; return e; };
+  const lc = mk('div', 'layerContainer_VVADeK'), scrim = mk('div', 'scrim_od1dl1 lightbox_od1dl1', 'opacity:1'); scrim.setAttribute('role', 'none');
+  const layer = mk('div', 'layer_C_WHpX'), dlg = mk('div', 'focusLock__KoJTP'); dlg.setAttribute('role', 'dialog'); dlg.setAttribute('aria-modal', 'true'); dlg.setAttribute('aria-label', 'Media Viewer Modal');
+  const car = mk('div', 'carouselModal_7QK1F9'), top = mk('div', 'topBar_QGyCSa', 'height:70px'), av = mk('img', 'avatar_XpIUHy', 'width:40px;height:40px');
+  const c = document.createElement('canvas'); c.width = 576; c.height = 584; const g = c.getContext('2d'); g.fillStyle = '#d2a35a'; g.fillRect(0, 0, 576, 584);
+  av.src = c.toDataURL(); top.append(av);
+  const area = mk('div', 'mediaArea_RtjmOP'), w1 = mk('div'), w2 = mk('div', '', 'cursor:zoom-in'), wrap = mk('div', 'imageWrapper imageWrapper_W6wEGA', 'width:576px;height:584px'), ov = mk('div', 'loadingOverlay_W6wEGA');
+  const img = mk('img', '', 'width:576px;height:584px'); img.src = c.toDataURL();
+  ov.append(img); wrap.append(ov); w2.append(wrap); w1.append(w2); area.append(w1); car.append(top, area); dlg.append(car); layer.append(dlg); lc.append(scrim, layer); mount.append(lc);
+  await w(1500);
+  return { viewer: document.documentElement.hasAttribute('data-mfd-viewer'), scrimGlass: scrim.hasAttribute('data-mfd-vbd'), appHidden: getComputedStyle(app).visibility,
+    scrimBefore: getComputedStyle(scrim, '::before').opacity };
+})()
+"""
 BADGE = r"""(async () => {
   const w = ms => new Promise(r => setTimeout(r, ms));
   const shown = () => __all().filter(e => e.classList && e.classList.contains('b') && e.getAttribute('aria-label') && /Open/.test(e.getAttribute('aria-label')) && !e.classList.contains('out') && getComputedStyle(e).display !== 'none' && +getComputedStyle(e).opacity > 0.1).length;
@@ -105,6 +130,10 @@ else:
     sm, pr = d2['small'], d2['profile']
     want(sm['viewer'] and sm['appHidden'] == 'hidden' and sm['bdGlass'] and sm['greyBg'] == 'rgba(0, 0, 0, 0)', 'molten-for-discord: a small picture in a viewer whose names say nothing stayed on dark grey with the chat behind it')
     want(not pr['viewer'] and pr['appHidden'] == 'visible', 'molten-for-discord: a profile card was taken for a picture viewer')
+d3, err = run('desktop/molten-for-discord/molten-for-discord.user.js', 'https://discord.com/channels/1/2', DISCORD3, '--seed', f'{HERE}/seeds/molten-for-discord.json')
+if not isinstance(d3, dict): bad.append('molten-for-discord: the third test page gave nothing back: ' + err)
+else: want(d3['viewer'] and d3['scrimGlass'] and d3['appHidden'] == 'hidden' and d3['scrimBefore'] == '0',
+           f'molten-for-discord: Discord\'s own viewer layout (a dialog, its scrim dark on a ::before) stayed dark: {d3}')
 l, err = run('desktop/looking-glass/looking-glass.user.js', 'https://example.com/', BADGE, '--video')
 if not isinstance(l, dict): bad.append('looking-glass: the test page gave nothing back: ' + err)
 else:
