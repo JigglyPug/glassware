@@ -6,7 +6,7 @@
 Each panel is opened in a stubbed page by shot.js, captured at full height, cropped to
 the panel, saved as WebP in <platform>/<script>/images/, and the landing-page card is
 cut from the top of the lead image. Hourglass also gets its phone shots (dashboard,
-schedule, block screen, late-night nudge).
+schedule, block screen, late-night nudge), and Molten for Discord its favorites list on hover.
 Run tools/pages.py afterwards to copy the images into the site.
 """
 import os, subprocess, sys, tempfile
@@ -73,6 +73,31 @@ def hourglass_phone(imgs=None):
     pmap(one, THEMES)
     if not QUIET: print('captured desktop/hourglass phone shots')
 
+# Molten for Discord's favorites list, the one that drops out of the lava button when you point at it:
+# opened by pointing at the button, cropped to the button and the list together
+FLY = ("(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));for(let i=0;i<30&&!document.getElementById('mfd-lava');i++)await w(200);"
+       "const b=document.getElementById('mfd-lava');b.dispatchEvent(new MouseEvent('mouseenter'));await w(1200);"
+       "const f=__all().find(e=>e.classList&&e.classList.contains('fly'));if(!f)return 'no list';"
+       # measured once it has finished bursting open (a busy machine may still be mid-animation; the blobs' endless drift isn't waited for), and again until it holds still
+       "await Promise.all([f,b].flatMap(e=>e.getAnimations({subtree:true})).filter(x=>x.effect&&x.effect.getComputedTiming().iterations!==Infinity).map(x=>x.finished.catch(()=>{})));"
+       "let last='';for(let i=0;i<40;i++){const k=JSON.stringify([b.getBoundingClientRect(),f.getBoundingClientRect()]);if(k===last)break;last=k;await w(100);}"
+       "const a=b.getBoundingClientRect(),c=f.getBoundingClientRect(),d=document.createElement('div');d.className='mfd-shotbox';"
+       "const l=Math.round(Math.min(a.left,c.left)),t=Math.round(Math.min(a.top,c.top));"
+       "d.style.cssText='position:fixed;pointer-events:none;left:'+l+'px;top:'+t+'px;width:'+Math.round(Math.max(a.right,c.right)-l)+'px;height:'+Math.round(Math.max(a.bottom,c.bottom)-t)+'px';"
+       "document.body.append(d);return 'ok';})()")
+
+def discord_fly(imgs=None):
+    js = f'{R}/desktop/molten-for-discord/molten-for-discord.user.js'; imgs = imgs or f'{R}/desktop/molten-for-discord/images'
+    def one(ts):
+        theme, sfx = ts
+        tmp = tempfile.mkdtemp()
+        r = cap(['node', f'{HERE}/lib/shot.js', js, 'https://discord.com/channels/101010101010101010/111111111111111111', f'{tmp}/fly.png', '--cmd', 'none',
+                 '--crop', '--clipsel', '.mfd-shotbox', '--clock', CLOCK, '--theme', theme, '--seed', f'{HERE}/seeds/molten-for-discord.json', '--eval', FLY, '--print'])
+        if 'EVAL "ok"' not in r.stdout: raise RuntimeError('the favorites list didn\'t open: ' + next((l for l in r.stdout.splitlines() if l.startswith('EVAL')), 'no answer'))
+        webp(f'{tmp}/fly.png', f'{imgs}/quick-favorites{sfx}.webp')
+    pmap(one, THEMES)
+    if not QUIET: print('captured desktop/molten-for-discord favorites on hover')
+
 def run(p, imgs=None):
     """Capture one script's panels into its images folder (or into imgs, to compare without touching it)."""
     url, cmd, extra, tabs = JOBS[p]; slug = p.split('/')[1]; mobile = '--mobile' in extra
@@ -97,3 +122,4 @@ if __name__ == '__main__':
     for p in JOBS:
         if not want or p.split('/')[1] in want: run(p)
     if not want or 'hourglass' in want: hourglass_phone()
+    if not want or 'molten-for-discord' in want: discord_fly()

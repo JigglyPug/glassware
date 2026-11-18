@@ -147,7 +147,7 @@ S['desktop/molten-for-discord'] = dict(name='Molten for Discord', tag='Molten gl
   '**Screenshot safe and privacy blur**: Hide your own name and avatar, and blur images, DMs, server icons or whole channels until you point at them.',
   "**Easy on your GPU**: The lava pauses while you scroll and when Discord isn't the active window, and calms down during calls and streams.",
  ],
- shots=[('main', 'Settings panel'), ('lava', 'Lava'), ('favorites', 'Favorites'), ('messages', 'Saved messages'), ('reminders', 'Reminders'), ('activity', 'Activity'), ('privacy', 'Privacy')])
+ shots=[('main', 'Settings panel'), ('lava', 'Lava'), ('favorites', 'Favorites'), ('quick-favorites', 'Favorites on hover'), ('messages', 'Saved messages'), ('reminders', 'Reminders'), ('activity', 'Activity'), ('privacy', 'Privacy')])
 
 # Where each script runs. This, not the folder, decides the platform labels, the landing filter,
 # the README sections, the "Also on" links and the "More for..." links. Folders only fix the

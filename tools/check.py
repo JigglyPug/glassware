@@ -674,6 +674,7 @@ if FULL:
             try:
                 screens.run(p, tmp)
                 if p == 'desktop/hourglass': screens.hourglass_phone(tmp)
+                if p == 'desktop/molten-for-discord': screens.discord_fly(tmp)
             except Exception as e: return e
             return tmp
         for p, tmp in zip(targets, pmap(capture, targets, 3)):

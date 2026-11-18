@@ -483,7 +483,8 @@ python3 tools/check.py              # release check: everything below, plus the 
   bump: the capture tool leaves version numbers out of the images, and the Install buttons
   and version chips on the pages carry the current number. Recapture just the scripts
   whose panels changed (`python3 tools/screens.py <script>`). `screens.py hourglass` also
-  refreshes Hourglass's phone shots, the late-night nudge included.
+  refreshes Hourglass's phone shots, the late-night nudge included. `screens.py molten-for-discord` also
+  refreshes its favorites list on hover (`quick-favorites`), opened by pointing at the lava button.
 - Every screenshot is taken in both themes: `<name>.webp` (dark) and `<name>-light.webp`. The site
   has a sun/moon switch in the top bar that follows the device until it's flipped (then remembers
   the choice, with a "Match my device" link in the footer to go back) and swaps the site's palette
