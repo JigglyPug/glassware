@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Hourglass: Screen time and lockdown for every site." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.5.10-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
+[![Install](https://img.shields.io/badge/Install-v1.5.11-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -48,8 +48,8 @@ The same script switches to a phone layout on its own: a bottom-sheet menu, the 
 
 ## What's new
 
+- **1.5.11** (2026-11-19): "Where does your time go?" is now lava bubbles, one per category, sized by its share of your time. The coloured part is now and the faded part is before: a category that grew is a faded blob inside a coloured ring, one that shrank is a coloured blob inside a faded ring, and a new one is just a coloured blob. Point at or tap a bubble for its numbers. The change on that card is in shares now ("from 14% to 9% of your time"), so every figure adds up to 100%. It used to show the change in hours a day as a percentage, which looked wrong next to the shares. On phones, the stats under the charts fill the card's width: the right-hand column lines up on the right. The last date under the day charts no longer drops onto a second line when the range has a part-week at the end.
 - **1.5.10** (2026-11-11): Resetting stats also restarts the listening and browsing clocks, so up to a minute of listening from before the reset (in a tab in the background) isn't added back afterwards.
 - **1.5.9** (2026-11-11): While Hourglass is paused, its settings fold away: Tracking, Lockdown and the late-night nudge in Settings, the Schedule and Sites tabs, Music mode, and adding sites from the Dashboard. General, Appearance and Your data stay, and turning it back on shows everything as you left it.
-- **1.5.8** (2026-11-11): Resetting stats now also clears the session in progress, in every open tab, so "longest session" starts from zero.
 
 [Every change](CHANGES.md)

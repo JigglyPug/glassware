@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.10
+// @version      1.5.11
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.10';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.11';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -37,6 +37,29 @@
     const CATS = ['social', 'shop', 'music', 'custom'];
     const HCOL = ['social', 'shop', 'music', 'custom', 'other']; // order inside each hourly bucket
     const colorOf = cat => (CAT[cat] || OTHER).c;
+    // circles of the given radii, packed tightly around the first (biggest first gives the roundest cluster)
+    function packCircles(rs, gap) {
+        const out = [];
+        const fits = c => out.every(o => Math.hypot(o.x - c.x, o.y - c.y) >= o.r + c.r + gap - 1e-6);
+        for (const r of rs) {
+            if (!out.length) { out.push({ x: 0, y: 0, r }); continue; }
+            if (out.length === 1) { out.push({ x: out[0].r + r + gap, y: 0, r }); continue; }
+            let best = null;
+            for (let a = 0; a < out.length; a++) for (let b = a + 1; b < out.length; b++) {
+                const A = out[a], B = out[b], ra = A.r + r + gap, rb = B.r + r + gap, dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy);
+                if (d > ra + rb || d < Math.abs(ra - rb) || !d) continue;
+                const l = (ra * ra - rb * rb + d * d) / (2 * d), hh = Math.sqrt(Math.max(0, ra * ra - l * l));
+                const mx = A.x + l * dx / d, my = A.y + l * dy / d;
+                for (const sgn of [1, -1]) {
+                    const c = { x: mx - sgn * hh * dy / d, y: my + sgn * hh * dx / d, r };
+                    const score = Math.hypot(c.x / 1.6, c.y);
+                    if ((!best || score < best.score) && fits(c)) best = Object.assign(c, { score });
+                }
+            }
+            out.push(best || { x: Math.max(...out.map(o => o.x + o.r)) + r + gap, y: 0, r });
+        }
+        return out;
+    }
     const THEMES = {
         free: { a: '#5E5CE6', rgb: '94,92,230', fill: '#5E5CE6', hi: '#9391F7', ink: '#4442B8', on: '#fff', bg: 'rgba(246,246,255,.84)', solid: 'rgb(248,248,255)' },
         lock: { a: '#F0A030', rgb: '240,160,48', fill: '#EE9A22', hi: '#FFC36A', ink: '#8A5200', on: '#1d1d1f', bg: 'rgba(255,250,242,.84)', solid: 'rgb(255,250,243)' },
@@ -1104,11 +1127,20 @@ h1 span{color:var(--ink)}
 .sb{display:flex;flex-direction:column-reverse;width:100%;max-width:24px;min-height:2px;border-radius:4px 4px 2px 2px;overflow:hidden;gap:1px}
 .sb i{display:block;flex-basis:0;min-height:0}
 .bar .us{position:absolute;left:12%;right:12%;height:2px;margin-bottom:-1px;border-radius:1px;background:var(--sub);z-index:1}
-.hbar{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;background:var(--ctl)}
-.hbar i{display:block;flex-basis:0}
+.hbub{position:relative;width:100%;aspect-ratio:320/190;margin:2px 0}
+.hb{position:absolute;aspect-ratio:1;height:auto;min-height:0;padding:0;margin:0;border:0;border-radius:50%;cursor:default;background:var(--c);transition:transform .25s cubic-bezier(.3,1.4,.5,1);-webkit-tap-highlight-color:transparent}
+.hb::after{content:'';position:absolute;inset:0;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 34% 28%,rgba(255,255,255,.4),rgba(255,255,255,0) 44%)}
+.hb.grow{background:radial-gradient(closest-side,color-mix(in srgb,var(--c) 30%,transparent) calc(var(--in) * 100% - 1px),var(--c) calc(var(--in) * 100%))}
+.hb.shrink{background:radial-gradient(closest-side,var(--c) calc(var(--in) * 100% - 1px),color-mix(in srgb,var(--c) 30%,transparent) calc(var(--in) * 100%));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 60%,transparent)}
+.hb.gone{background:color-mix(in srgb,var(--c) 30%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 60%,transparent)}
+.hb:hover,.hb.on{transform:scale(1.07)}
+.hb:focus-visible{outline:2px solid var(--fill);outline-offset:3px}
+.bkey{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 10px;font:10px var(--mono);color:var(--sub);margin-top:6px}
 .crow{display:grid;grid-template-columns:10px minmax(0,1fr) auto 64px;align-items:center;gap:8px;font-size:12.5px;padding:7px 0;border-top:1px solid var(--line)}
 .crow i{width:10px;height:10px;border-radius:3px}
 .crow b{font:500 12px var(--mono)}
+.crow.c3{grid-template-columns:10px minmax(0,1fr) auto}
+.crow b em{font-style:normal;font-weight:700;color:var(--text)}
 .sl{font:600 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--sub);margin:16px 0 4px}
 .lvl{margin:16px 18px 8px;font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--sub)}
 .lvl:first-child{margin-top:2px}
@@ -1116,6 +1148,8 @@ h1 span{color:var(--ink)}
 .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;margin-top:14px}
 .stats.five{grid-template-columns:repeat(auto-fit,minmax(110px,1fr));padding-top:12px;border-top:1px solid var(--line)}
 .stats>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.stats:not(.five)>div:nth-child(even),.m .stats.five>div:nth-child(even){align-items:flex-end;text-align:right}
+.m .stats.five{grid-template-columns:repeat(2,minmax(0,1fr))}
 .stats b{font-weight:650;font-size:17px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stats span{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .spark{stroke:var(--fill);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
@@ -1511,7 +1545,7 @@ h1 span{color:var(--ink)}
             const stack = (cats, tot) => h('div', { class: 'sb', style: `height:${tot}%` }, cats.map((v, k) => v > 0 ? h('i', { style: `flex-grow:${v};background:${colorOf(HCOL[k])}` }) : null));
             const xDays = days => h('div', { class: 'xa', 'data-axis': 'x', style: `grid-template-columns:repeat(${days.length},minmax(0,1fr))` },
                 days.length <= 8 ? days.map(x => h('span', { class: x === D.today ? 'now' : null, text: x.dt.toLocaleDateString(undefined, { weekday: 'narrow' }) }))
-                    : days.map((x, i) => i % 7 ? null : h('span', { style: 'grid-column:span 7;text-align:left', text: x.dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })));
+                    : days.map((x, i) => i % 7 || (i && days.length - i < 4) ? null : h('span', { style: `grid-column:${i + 1} / span ${Math.min(7, days.length - i)};text-align:left`, text: x.dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) })));
             const xHours = () => h('div', { class: 'xa', 'data-axis': 'x', style: 'grid-template-columns:repeat(4,minmax(0,1fr))' }, ['12 AM', '6 AM', '12 PM', '6 PM'].map(x => h('span', { style: 'text-align:left', text: x })));
             // a bar per column: heights against max, gridlines, a dashed line (an average or the goal) if given, labelled axes
             const barChart = ({ name, aria, n, bars, max, ticks, line, x, height = 110, under }) => h('div', { class: 'ch', 'data-chart': name, role: 'img', 'aria-label': aria },
@@ -1597,29 +1631,59 @@ h1 span{color:var(--ink)}
             const weekCard = card('How much are you online?', muchAns, D.full,
                 D.win.length ? barChart({ name: 'days', aria: 'Time online per day by category, with your average', n: span.length, max: dtop, ticks: [{ v: dtop, text: fmtDur(dtop) }], line: { v: D.avgNow, text: 'avg' }, x: xDays(span),
                     bars: span.map(x => { const v = totalOf(x.o), tip = dayLabel(x) + ' · ' + fmtDur(v); return h('div', { class: 'bar' + (x === D.today ? ' now' : ''), title: tip, 'data-tip': tip }, v ? stack(catSums(x.o), v / dtop * 100) : null); }) }) : null);
-            // Where does your time go? (categories, with the change from before)
-            const cAll = sum(D.catNow), cTop = D.catNow.reduce((bi, v, i, a) => v > a[bi] ? i : bi, 0);
+            // Where does your time go? A lava bubble per category, sized by its share of your time: the coloured part is
+            // now, the faded part before. Grown: a faded blob (before) inside a coloured ring (now). Shrunk: a coloured
+            // blob (now) inside a faded ring (before). New: just a coloured blob. Shares, not hours, so every figure here
+            // adds up to 100% (how much time changed is the card next to it).
+            const cAll = sum(D.catNow), wAll = sum(D.catWas), cTop = D.catNow.reduce((bi, v, i, a) => v > a[bi] ? i : bi, 0);
+            const shares = HCOL.map((k, i) => ({ k, i, now: D.catNow[i], pn: cAll ? D.catNow[i] / cAll : 0, pw: D.enough && wAll ? D.catWas[i] / wAll : 0, fresh: D.enough && D.catWas[i] < 60 }))
+                .filter(c => c.now >= 60 || (D.enough && D.catWas[c.i] >= 60));
+            const pc = v => Math.round(v * 100) + '%';
             let catAns;
             if (!cAll) catAns = 'Your categories show up after your first full day.';
             else {
                 const nm = catName(cTop);
                 catAns = `${nm} ${nm.endsWith('s') ? 'take' : 'takes'} the most time ${D.inP}.`;
                 if (D.enough) {
-                    const ch = D.catNow.map((v, i) => ({ i, d: v - D.catWas[i], was: D.catWas[i] })).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0];
-                    if (ch && Math.abs(ch.d) >= 300) { const n2 = ch.i === cTop ? (nm.endsWith('s') ? 'They' : 'It') : catName(ch.i);
-                        catAns += ch.was < 60 ? ` ${n2} is new.` : ` ${n2} ${ch.d > 0 ? 'grew' : 'shrank'} the most, ${ch.d > 0 ? 'up' : 'down'} ${Math.round(Math.abs(ch.d) / ch.was * 100)}%.`; }
+                    const ch = shares.map(c => Object.assign({ d: Math.round(c.pn * 100) - Math.round(c.pw * 100) }, c)).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0];
+                    if (ch && (ch.fresh ? ch.pn >= .03 : Math.abs(ch.d) >= 3)) { const n2 = ch.i === cTop ? (nm.endsWith('s') ? 'They' : 'It') : catName(ch.i);
+                        catAns += ch.fresh ? ` ${n2} ${n2 === 'They' ? 'are' : 'is'} new.` : ` ${n2} ${ch.d > 0 ? 'grew' : 'shrank'} the most, from ${pc(ch.pw)} to ${pc(ch.pn)} of your time.`; }
                 }
             }
+            const tipOf = c => `${catName(c.i)} · ${pc(c.pn)} of your time` + (!D.enough ? '' : c.fresh ? ' · new' : ` · was ${pc(c.pw)}`) + ` · ${fmtDur(c.now)} a day`;
+            const bubbles = () => {
+                const W = 320, H = 190, G = 7;
+                const big = Math.max(...shares.map(c => Math.max(c.pn, c.pw)));
+                const rs = shares.map(c => Math.max(.16, Math.sqrt(Math.max(c.pn, c.pw) / big)) * 50);
+                const order = rs.map((r, j) => j).sort((a, b) => rs[b] - rs[a]);
+                const packed = packCircles(order.map(j => rs[j]), G), pos = [];
+                order.forEach((j, n) => { pos[j] = packed[n]; });
+                const x0 = Math.min(...pos.map(q => q.x - q.r)), x1 = Math.max(...pos.map(q => q.x + q.r)), y0 = Math.min(...pos.map(q => q.y - q.r)), y1 = Math.max(...pos.map(q => q.y + q.r));
+                const k = Math.min((W - 8) / (x1 - x0), (H - 8) / (y1 - y0), 1.7), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+                const hint = MOBILE ? 'Tap a bubble for details' : 'Point at a bubble for details';
+                const read = h('div', { class: 'readout', text: hint });
+                const box = h('div', { class: 'hbub', role: 'group', 'aria-label': 'A bubble per category, sized by its share of your time' });
+                shares.forEach((c, j) => {
+                    const q = pos[j], r = q.r * k, x = W / 2 + (q.x - cx) * k, y = H / 2 + (q.y - cy) * k;
+                    const lo = Math.min(c.pn, c.pw), hi = Math.max(c.pn, c.pw);
+                    const kind = !D.enough || Math.abs(c.pn - c.pw) < .005 ? 'same' : c.fresh ? 'new' : c.pn <= 0 ? 'gone' : c.pn > c.pw ? 'grow' : 'shrink';
+                    const b = h('button', { class: 'hb ' + kind, type: 'button', 'aria-label': tipOf(c), 'data-tip': tipOf(c),
+                        style: `left:${((x - r) / W * 100).toFixed(2)}%;top:${((y - r) / H * 100).toFixed(2)}%;width:${(r * 2 / W * 100).toFixed(2)}%;--c:${colorOf(c.k)};--in:${(hi ? Math.sqrt(lo / hi) : 0).toFixed(3)}` });
+                    const say = () => { box.querySelectorAll('.hb.on').forEach(e => e.classList.remove('on')); b.classList.add('on'); read.textContent = tipOf(c); read.classList.add('on'); };
+                    b.addEventListener('pointerenter', say); b.addEventListener('focus', say); b.addEventListener('click', say);
+                    box.append(b);
+                });
+                const rest = () => { box.querySelectorAll('.hb.on').forEach(e => e.classList.remove('on')); read.textContent = hint; read.classList.remove('on'); };
+                box.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch') rest(); });
+                box.addEventListener('focusout', ev => { if (!box.contains(ev.relatedTarget)) rest(); });
+                return [h('div', { 'data-chart': 'categories' }, box,
+                    h('div', { class: 'bkey' }, h('span', { 'data-axis': 'x', text: 'A bubble per category' }), h('span', { 'data-axis': 'y', text: D.enough ? 'size = share · faded = before' : 'size = share of your time' }))), read];
+            };
             const catCard = card('Where does your time go?', catAns, D.full,
-                cAll ? h('div', { class: 'hbar', role: 'img', 'aria-label': 'Share of your time by category' }, D.catNow.map((v, k) => v > 0 ? h('i', { style: `flex-grow:${v};background:${colorOf(HCOL[k])}` }) : null)) : null,
-                cAll ? h('div', { class: 'sl', text: 'Share of your time · change' }) : null,
-                HCOL.map((k, i) => {
-                    if (D.catNow[i] < 60 && D.catWas[i] < 60) return null;   // a category you don't use
-                    const was = D.catWas[i], d = D.catNow[i] - was, pct = was >= 60 ? Math.round(d / was * 100) : null;
-                    const txt = !D.enough ? '' : pct == null ? 'new' : Math.abs(pct) < 5 ? 'same' : (pct > 0 ? '+' : '−') + Math.abs(pct) + '%';
-                    return h('div', { class: 'crow', title: fmtDur(D.catNow[i]) + ' a day' }, h('i', { style: 'background:' + colorOf(k) }), h('span', { text: (CAT[k] || OTHER).n }), h('b', { text: Math.round(D.catNow[i] / cAll * 100) + '%' }),
-                        h('span', { class: 'delta ' + (txt === 'same' || !txt ? 'flat' : d > 0 ? 'up' : 'down'), text: txt }));
-                }));
+                cAll ? bubbles() : null,
+                cAll ? h('div', { class: 'sl', text: D.enough ? 'Share of your time · before → now' : 'Share of your time' }) : null,
+                shares.map(c => h('div', { class: 'crow c3', title: fmtDur(c.now) + ' a day' }, h('i', { style: 'background:' + colorOf(c.k) }), h('span', { text: catName(c.i) }),
+                    h('b', null, !D.enough ? pc(c.pn) : c.fresh ? ['new · ', h('em', { text: pc(c.pn) })] : [pc(c.pw) + ' → ', h('em', { class: c.pn > c.pw + .005 ? 'up' : c.pn < c.pw - .005 ? 'down' : null, text: pc(c.pn) })]))));
             g1.append(weekCard, catCard);
             out.push(g1);
 

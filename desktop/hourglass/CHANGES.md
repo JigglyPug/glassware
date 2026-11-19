@@ -2,6 +2,13 @@
 
 Newest first.
 
+## 1.5.11 · 2026-11-19
+
+- "Where does your time go?" is now lava bubbles, one per category, sized by its share of your time. The coloured part is now and the faded part is before: a category that grew is a faded blob inside a coloured ring, one that shrank is a coloured blob inside a faded ring, and a new one is just a coloured blob. Point at or tap a bubble for its numbers.
+- The change on that card is in shares now ("from 14% to 9% of your time"), so every figure adds up to 100%. It used to show the change in hours a day as a percentage, which looked wrong next to the shares.
+- On phones, the stats under the charts fill the card's width: the right-hand column lines up on the right.
+- The last date under the day charts no longer drops onto a second line when the range has a part-week at the end.
+
 ## 1.5.10 · 2026-11-11
 
 - Resetting stats also restarts the listening and browsing clocks, so up to a minute of listening from before the reset (in a tab in the background) isn't added back afterwards.
