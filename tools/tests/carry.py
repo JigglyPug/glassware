@@ -126,6 +126,18 @@ def check(p, back=0):
         if k in b:
             if b[k] != v: probs.append(f'"{k}" didn\'t carry over: was {v!r}, new version shows {b[k]!r}')
             continue
+        # a label is the title with the description glued on, and a copy pass rewords descriptions: a control
+        # whose label starts the same way (same tab and kind, 12 characters or more of the title) is the same one
+        head = lambda key: key.rsplit(' | ', 1)
+        def common(u, w):
+            n = 0
+            while n < min(len(u), len(w)) and u[n] == w[n]: n += 1
+            return n
+        tk, lab = head(k)
+        same = [y for y in after['state'] if y['key'] not in a and head(y['key'])[0] == tk and common(head(y['key'])[1], lab) >= 12]
+        if len(same) == 1:
+            if same[0]['value'] != v: probs.append(f'"{k}" didn\'t carry over: was {v!r}, new version shows {same[0]["value"]!r}')
+            continue
         # labels can include the current choice's description, so fall back to the control's position
         y = bpos.get(x['pos'])
         if y and y['key'] not in a and y['value'] != v: probs.append(f'"{k}" didn\'t carry over: was {v!r}, new version shows {y["value"]!r}')

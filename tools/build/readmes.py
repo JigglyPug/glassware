@@ -45,14 +45,14 @@ S['desktop/hourglass'] = dict(name='Hourglass', tag='Screen time and lockdown fo
  intro='Hourglass tracks how long you spend on every site and blocks the distracting ones on a schedule. During lockdown the settings lock too, so you cannot talk yourself out of it in the moment.',
  features=[
   '**Dashboard**: every card answers one question in a plain sentence: how today compares with your usual for this weekday, where today went hour by hour, how much you are online and on what over the past 7 days or 4 weeks, which sites rose or dropped, when you drift, whether lockdown is working, and your streak under your goal.',
-  '**Suggestions**: sites not on your list that average 30m+ a day get an Add button (or Ignore).',
-  '**Schedule**: per-day lockdown blocks with drag handles in 30-minute steps, quick presets (9–5, 7–6, evenings, overnight, 24h), and copy-to-weekdays / every day.',
+  '**Suggestions**: sites not on your list that average 30m or more a day get an Add button (or Ignore).',
+  '**Schedule**: per-day lockdown blocks with drag handles in 30-minute steps, quick presets (9–5, 7–6, evenings, overnight, 24h), and copy to weekdays or every day.',
   '**Passes**: a set number of daily passes that open only the site you are on, with a pass length and a think-it-over wait.',
   '**Sites**: Socials, Shopping, Music and Custom lists; set each site to follow the schedule or always block.',
   '**Lockdown protection**: an "Is this important?" screen with a delay before Continue appears; loosening changes only take effect after lockdown ends.',
   '**Music mode** lets music sites through, plus listening time counted separately from screen time.',
   '**Late-night nudge**: a friendly take-a-break reminder after bedtime, even outside lockdown.',
-  'Idle timeout, video/music counts as active, history length, daily goal and week start day.',
+  'Idle timeout, video and music count as active, history length, daily goal and week start day.',
   'Private: data stays in Tampermonkey on that device, and only site names are stored, never full addresses or page titles.'],
  shots=[('main', 'Dashboard'), ('schedule', 'Schedule'), ('sites', 'Sites'), ('settings', 'Settings')],
  )
@@ -71,9 +71,9 @@ S['desktop/looking-glass'] = dict(name='Looking-Glass', tag='Open any video on i
  shots=[('main', 'Settings panel, with the badge on the video to the left')])
 
 S['desktop/molten-tools'] = dict(name='Molten Tools', tag='Molten glass and quality-of-life fixes for YouTube.', sites='YouTube, YouTube Music',
- intro='Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plus a set of quality-of-life fixes. Click the orange lava button in the top bar for settings.',
+ intro='Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plus a set of quality-of-life fixes. Click the red lava button in the top bar for settings.',
  features=[
-  '**Lava background** taken from the video or album art, with Calm / User / Crazy profiles. Each profile remembers its own blur, brightness, saturation, zoom, glass blur, motion and blobs.',
+  '**Lava background** taken from the video or album art, with Calm, User and Crazy profiles. Each profile remembers its own blur, brightness, saturation, zoom, glass blur, motion and blobs.',
   '**Performance controls**: frame rate, sample size and GPU-saving switches.',
   '**Auto-dismiss** for "Continue watching?" and "Video paused" prompts.',
   '**Title bar and seek bar** colored from the current thumbnail, with a tone choice.',
@@ -86,7 +86,7 @@ S['desktop/molten-tools'] = dict(name='Molten Tools', tag='Molten glass and qual
 S['desktop/molten-for-reddit'] = dict(name='Molten for Reddit', tag='Molten glass for new Reddit.', sites='reddit.com (new Reddit)',
  intro='Molten for Reddit puts a lava-lamp background made from the image or video you are looking at behind clear-glass posts and comments. Click the orange lava button in the top bar for settings.',
  features=[
-  '**Lava background** from the post in the middle of the screen (falls back to the subreddit banner or icon), with Calm / User / Crazy profiles.',
+  '**Lava background** from the post in the middle of the screen (falls back to the subreddit banner or icon), with Calm, User and Crazy profiles.',
   '**Glass controls**: frost, blur, roundness, outline and text shadow.',
   '**Title bar and video seek bar** colored from the art.',
   '**Best video quality** for Reddit MP4 videos; glass instead of black bars around narrow videos; a playing video can take over the lava.',
@@ -95,7 +95,7 @@ S['desktop/molten-for-reddit'] = dict(name='Molten for Reddit', tag='Molten glas
   'Master on/off switch and a layout report for troubleshooting.'],
  shots=[('general', 'General'), ('lava', 'Lava'), ('video', 'Video'), ('reddit', 'Reddit'), ('search', 'Search')])
 
-S['desktop/kaleidoscope'] = dict(name='Kaleidoscope', tag='Your AniList list, turned into your next favorite.', sites='anilist.co, claude.ai',
+S['desktop/kaleidoscope'] = dict(name='Kaleidoscope', tag='Recommendations from your AniList list.', sites='anilist.co, claude.ai',
  intro='Click the ✦ button on AniList and pick a mode. Kaleidoscope has Claude build a recommendation board from your list in the background, then opens it for you.',
  features=[
   '**Five modes**: more like my recent, more like my top rated, wildcard, what\'s airing now, clear my backlog. Works for anime and manga.',
@@ -111,7 +111,7 @@ S['mobile/kaleidoscope-mobile'] = dict(name='Kaleidoscope Mobile', tag='Kaleidos
  intro='This is the phone version of Kaleidoscope, built for Edge on Android. It uses the same prompts but has no Claude automation: pick a mode, then Copy, Save or Share the prompt.',
  features=[
   '**The same five modes and the same prompt logic** as desktop Kaleidoscope, for anime and manga.',
-  '**Copy / Save / Share** the prompt.',
+  '**Copy, Save or Share** the prompt.',
   '**Update** builds a "what changed since last time" prompt from your list.',
   '**Changes since last prompt** list.',
   '**Sequel finder** (AniList data, no AI).',
@@ -123,7 +123,7 @@ S['mobile/kaleidoscope-mobile'] = dict(name='Kaleidoscope Mobile', tag='Kaleidos
 S['mobile/molten-for-reddit-mobile'] = dict(name='Molten for Reddit Mobile', tag='Molten glass for Reddit, pocket size.', sites='reddit.com',
  intro='This is the phone version of Molten for Reddit: a gentle lava background from the post you are looking at, clear-glass posts and comments, with simpler controls made for touch.',
  features=[
-  '**Lava**: Calm / Balanced / Crazy presets, with Clear / Soft / Frosted glass.',
+  '**Lava**: Calm, Balanced or Crazy presets, with Clear, Soft or Frosted glass.',
   '**Colors from the art** for the seek bar and the address bar (in browsers that support it).',
   '**Video quality**: Best, Auto, 1080p, 720p or 480p; glass around narrow videos; video shows through the lava (Off, Subtle or Strong).',
   '**No "Open in app" nagging**: hides app banners and taps "Continue" for you.',
@@ -133,7 +133,7 @@ S['mobile/molten-for-reddit-mobile'] = dict(name='Molten for Reddit Mobile', tag
 
 
 
-S['desktop/molten-for-discord'] = dict(name='Molten for Discord', tag='Molten glass for Discord', sites='discord.com',
+S['desktop/molten-for-discord'] = dict(name='Molten for Discord', tag='Molten glass for Discord.', sites='discord.com',
  intro="Molten for Discord puts a lava-lamp background made from what you're looking at behind frosted-glass panes, and keeps your favorite channels one point away on the lava button.",
  features=[
   "**Lava from what you're looking at**: The background comes from the image, video or stream in the middle of the chat, or the profile you open. With nothing on screen it takes the server's icon colors, or Discord purple.",

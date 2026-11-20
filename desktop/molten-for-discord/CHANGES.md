@@ -2,9 +2,16 @@
 
 Newest first.
 
+## 1.0.10 · 2026-11-19
+
+- The bubbles card says it the way you'd say it ("Lava Lounge took a third of your Discord time"), and "What changed?" puts a big jump in words ("more than halved").
+- The bubble key is in plain sentences, and the line under the bubbles shows the biggest one until you point at one.
+- Settings descriptions say what happens when a switch is off in a sentence, and a few read more clearly.
+- The last date under the day charts no longer drops onto a second line when the range ends in a part-week.
+
 ## 1.0.9 · 2026-11-18
 
-- A new icon: a lava blob leaning forward, flicks of flame sweeping back off it and lava dripping underneath, glowing in Molten for Reddit's orange and Molten Tools' red on Discord's purple.
+- A new icon: a leaning lava blob with flame and drips, in Molten for Reddit's orange and Molten Tools' red on Discord's purple.
 
 ## 1.0.8 · 2026-11-17
 

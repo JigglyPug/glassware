@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Prism
 // @namespace
-// @version      2.2.11
+// @version      2.2.12
 // @description  Colors your app title bars to match each site, from its icon, manifest, theme color or favicon. Clean frosted menu with a color dropper (Alt+Shift+P).
 // @match        *://*/*
 // @grant        GM_getValue
@@ -28,7 +28,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.11';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '2.2.12';
     const FALLBACK = '#121212';
     const ORIGIN = location.origin;
     const HOST = location.hostname;
@@ -50,7 +50,7 @@
     const TONES = {
         exact:  { label: 'Exact',  desc: 'The color exactly as found' },
         dark:   { label: 'Dark',   desc: 'Deepened so the title text stays easy to read' },
-        bright: { label: 'Bright', desc: 'Lifted and vivid, easy to spot' },
+        bright: { label: 'Bright', desc: 'Brightened so it stands out' },
     };
 
     /* ───────────────────────── storage ───────────────────────── */
@@ -1025,7 +1025,7 @@ kbd{font:10px var(--mono);padding:1px 4px;border-radius:4px;background:var(--ctl
             const quiet = ['disabled', 'off'].includes(S.mode);
             E.swatch.classList.toggle('none', !cur || quiet);
             if (this.root.activeElement !== E.hexIn) E.hexIn.value = cur && !quiet ? cur.slice(1) : '';
-            E.hexNote.textContent = S.mode === 'custom' ? 'Your color ·' : S.mode === 'yielded' ? 'Set by ' + (S.yieldedTo || 'another script') : quiet ? 'Type a hex or use the dropper' : S.mode === 'checking' ? 'Checking…' : 'Auto · type to set your own';
+            E.hexNote.textContent = S.mode === 'custom' ? 'Your color ·' : S.mode === 'yielded' ? 'Set by ' + (S.yieldedTo || 'another script') : quiet ? 'Type a hex or use the dropper' : S.mode === 'checking' ? 'Checking…' : 'Auto. Type a hex to set your own';
             E.off.setAttribute('aria-checked', String(!!S.site.off));
             E.auto.hidden = !S.site.custom;
 

@@ -55,14 +55,14 @@ CHANGES = {
 CHANGE_FROM = date(2026, 10, 27)
 
 PLANTED = {
-    # card question: words its sentence must include (case-insensitive), for each scenario; a
+    # card question: words its sentence must include (case-insensitive; a tuple is any one of them), for each scenario; a
     # {'week': [...], 'month': [...]} entry when the change only stands out in one range
     'habit': {
         "How's today going?": ['above', 'Tuesday'],
         'Where did today go?': ['busiest hour'],
         'How much are you online?': ['more than before'],
         'Where does your time go?': ['Socials'],
-        'What changed?': ['youtube.com', 'rose'],
+        'What changed?': ['youtube.com', ('rose', 'doubled', 'tripled')],
         'When do you drift?': {'week': ['later'], 'month': []},
         'Is lockdown working?': ['fell'],
         'Are you under your goal?': ['streak'],
@@ -73,7 +73,7 @@ PLANTED = {
         'How much are you online?': ['less than before'],
         'Where does your time go?': [],
         # one good week is the biggest change over 7 days; over 4 weeks it's one of several
-        'What changed?': {'week': ['youtube.com', 'dropped'], 'month': ['dropped']},
+        'What changed?': {'week': ['youtube.com', ('dropped', 'halved')], 'month': [('dropped', 'halved')]},
         'When do you drift?': [],
         'Is lockdown working?': [],
         'Are you under your goal?': ['streak'],

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Molten Tools
 // @namespace    jigglypug
-// @version      3.8.4
-// @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the orange lava button in the top bar for settings.
+// @version      3.8.5
+// @description  YouTube QOL tools for YouTube and YouTube Music: a molten-glass lava theme with profiles, automatic video quality, auto-dismiss for "Still watching?", a title bar and seek bar that match the album art, a default-account switcher, and a screenshot-safe mode that hides your account names. Click the red lava button in the top bar for settings.
 // @match        https://www.youtube.com/*
 // @match        https://music.youtube.com/*
 // @exclude      https://www.youtube.com/embed/*
@@ -37,7 +37,7 @@
      - Auto-dismiss: answers "Still watching?" / "Continue watching?" so playback never stops
      - Art colors: tints the installed-app (PWA) title bar and the seek bar to match the album art or video
      - Default account: switches to a chosen channel once per launch, then respects manual switches
-   Click the orange lava button in the top bar to open the settings.
+   Click the red lava button in the top bar to open the settings.
    Lava, quality and general settings are shared by YouTube and YouTube Music (open tabs update live).
    The default account and the lava on/off switch are per site.
    If you use separate quality, lava-theme or PWA-color scripts, turn them off so they don't conflict. */
@@ -4846,7 +4846,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       body.append(f);
 
       let enabled = saved ? saved.enabled !== false : true;
-      const auto = toggleRow(body, 'Auto-switch when this app launches', saved ? 'One try per launch; manual switches are respected until refresh' : 'Save a default account below first',
+      const auto = toggleRow(body, 'Auto-switch when this app launches', saved ? 'Tries once per launch, and leaves a switch you make by hand alone until you refresh' : 'Save a default account below first',
         () => enabled,
         v => {
           enabled = v;
@@ -4974,10 +4974,10 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
       const adv = el('details');
       adv.append(el('summary', null, 'Advanced'));
-      toggleRow(adv, 'Use the player API', 'Off = click through the gear menu instead', get('useAPI'), set('useAPI', 'res'));
+      toggleRow(adv, 'Use the player API', 'When off, it clicks through the gear menu instead', get('useAPI'), set('useAPI', 'res'));
       toggleRow(adv, 'Set quality as early as possible', 'Turn off if videos fail to load', get('setResolutionEarly'), set('setResolutionEarly'));
       toggleRow(adv, 'Theater error-screen fix', 'Keeps the right error screen in front', get('enableErrorScreenWorkaround'), set('enableErrorScreenWorkaround', 'size'));
-      toggleRow(adv, 'Allow theater cookie', 'Lets theater mode apply faster', get('allowCookies'), set('allowCookies'));
+      toggleRow(adv, 'Use the theater cookie', 'Lets theater mode apply faster', get('allowCookies'), set('allowCookies'));
       body.append(adv);
 
       const status = el('div', 'ytt-status');
@@ -4995,7 +4995,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       const get = k => () => lava[k];
 
       toggleRow(body, IS_MUSIC ? 'Lava animation' : 'Lava background',
-        (IS_MUSIC ? 'Off = still blurred art; the frosted UI stays' : 'Shows behind the page while a video plays') +
+        (IS_MUSIC ? 'When off, the art stays still and blurred, and the frosted look stays' : 'Shows behind the page while a video plays') +
         '. This switch is per site.',
         () => lavaOn, v => { setLavaOn(v); render(); });
 
@@ -5021,7 +5021,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       sliderRow(all, 'Frosted-glass blur', 'Player bar and panels', { min: 0, max: 40, step: 1, unit: 'px', hardMin: 0 }, get('uiBlur'), set('uiBlur'), P.uiBlur);
 
       section(all, 'Motion');
-      toggleRow(all, 'Random motion', 'Off = the theme\'s fixed animation (speed and amount need this on)', get('randomize'), set('randomize'));
+      toggleRow(all, 'Random motion', 'When off, the theme plays its fixed animation. Speed and amount need this on', get('randomize'), set('randomize'));
       const mo = fold(lava.randomize);
       sliderRow(mo, 'Speed', '1 = normal, 2 = twice as fast', { min: 0.1, max: 4, step: 0.05, unit: '×', hardMin: 0.05 },
         get('motionSpeed'), set('motionSpeed'), P.motionSpeed);
@@ -5036,7 +5036,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
       section(all, 'Blobs');
       toggleRow(all, 'Moving color blobs', 'Turning these off saves the most GPU', get('blobs'), set('blobs'));
       if (lava.blobs) {
-        sliderRow(all, 'Smoothness', 'Repaints per cycle; lower = cheaper, choppier', { min: 5, max: 240, step: 1, hardMin: 1 },
+        sliderRow(all, 'Smoothness', 'How often the blobs redraw. Lower is lighter on your GPU but choppier', { min: 5, max: 240, step: 1, hardMin: 1 },
           get('blobSteps'), set('blobSteps'), P.blobSteps);
       }
 
@@ -5046,15 +5046,15 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
       section(all, 'Performance (all profiles)');
       const S = SHARED_DEFAULTS;
-      toggleRow(all, 'Use the playing video', IS_MUSIC ? 'Off = album art only' : 'On YouTube the lava needs this on', get('video'), set('video'));
+      toggleRow(all, 'Use the playing video', IS_MUSIC ? 'When off, the lava uses the album art only' : 'On YouTube the lava needs this on', get('video'), set('video'));
       if (lava.video) {
-        sliderRow(all, 'Frame rate', 'Lower = cheaper; it is blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps', hardMin: 1, hardMax: 60 },
+        sliderRow(all, 'Frame rate', 'Lower is lighter on your GPU. It\'s blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps', hardMin: 1, hardMax: 60 },
           get('videoFps'), set('videoFps'), S.videoFps);
         sliderRow(all, 'Frame copy width', 'Small is fine behind the blur', { min: 32, max: 512, step: 16, unit: 'px', hardMin: 8, hardMax: 1024 },
           get('videoWidth'), set('videoWidth'), S.videoWidth);
         toggleRow(all, 'Crop black bars', 'Ignores bars baked into the video', get('videoCropBars'), set('videoCropBars'));
       }
-      sliderRow(all, 'Album art resolution', 'YouTube Music background; it is blurred anyway', { min: 64, max: 1024, step: 32, unit: 'px', hardMin: 32 },
+      sliderRow(all, 'Album art resolution', 'The YouTube Music background. It\'s blurred anyway', { min: 64, max: 1024, step: 32, unit: 'px', hardMin: 32 },
         get('artSize'), set('artSize'), S.artSize);
       const rb = el('div', 'ytt-btns');
       btn(rb, 'Reset performance settings', () => { lavaResetShared(); render(); });
@@ -5089,7 +5089,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
       section(body, 'Playback');
       COUNTS.line(toggleRow(body, 'Auto-dismiss "Still watching?"',
-        'Answers "Continue watching?" and "Video paused" prompts so playback never stops', get('autoDismiss'), set('autoDismiss')), 'dismissed');
+        'Answers "Continue watching?" and "Video paused" prompts so playback keeps going', get('autoDismiss'), set('autoDismiss')), 'dismissed');
 
       const swatch = (parent, get) => {
         const row = el('div', 'ytt-row');
@@ -5127,7 +5127,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
         () => LOOK.get() === 'auto', v => { gmSet('appearance', v ? 'auto' : (LOOK.dark() ? 'dark' : 'light')); LOOK.apply(); render(); }).querySelector('input').setAttribute('data-gw-match', '');
 
       section(body, 'Troubleshooting');
-      toggleRow(body, 'Log to the console', 'Lines start with [LavaLamp] / [yt-hd] / [molten] (F12)', () => lava.debug, v => { lavaSet('debug', v); render(); });
+      toggleRow(body, 'Log to the console', 'Lines start with [LavaLamp], [yt-hd] or [molten] (F12)', () => lava.debug, v => { lavaSet('debug', v); render(); });
     }
 
     function render() {
@@ -5163,7 +5163,7 @@ html[data-lava-on] ytd-commentbox #underline .style-scope[class*="focus"] {
 
       const head = el('div', 'ytt-head');
       const t = el('div');
-      t.append(el('div', 'ytt-title', 'Molten Tools'), el('div', 'ytt-tagline', 'YouTube QOL tools'));
+      t.append(el('div', 'ytt-title', 'Molten Tools'), el('div', 'ytt-tagline', 'Quality-of-life fixes for YouTube'));
       const x = el('button', 'ytt-x'); x.append(gwCloseIcon());
       x.type = 'button';
       x.title = 'Close';

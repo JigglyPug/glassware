@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.4.12
+// @version      1.4.13
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -2287,7 +2287,7 @@ div.lava-blobs {
     const videoLook = () => lava.videoSource === 'off' ? 'off' : (lava.videoStrength >= 0.7 ? 'strong' : 'subtle');
 
     function buildLava(body) {
-      toggleRow(body, 'Lava background', 'Off = clear glass over a plain dark page', () => lava.on, v => { lavaSet('on', v); render(); });
+      toggleRow(body, 'Lava background', 'When off, the glass sits over a plain dark page', () => lava.on, v => { lavaSet('on', v); render(); });
       const look = fold(lava.on);
       section(look, 'Lava');
       choiceRow(look, null, null, Object.keys(PRESETS).map(p => [p, PROFILE_NAMES[p]]), lavaStore.profile, p => lavaSwitchProfile(p));
@@ -2299,14 +2299,14 @@ div.lava-blobs {
         Object.assign(glass, GLASS_LOOKS[k]); saveGlass(); GLASS.write();
       });
       body.append(el('div', 'ytt-hint ytt-seg-hint', 'How much white frost sits on posts and the top bar.'));
-      body.append(el('div', 'ytt-note', 'No picture on screen? The lava uses the subreddit\'s banner or icon, then a built-in palette.'));
+      body.append(el('div', 'ytt-note', 'With no picture on screen, the lava uses the subreddit\'s banner or icon, then a built-in palette.'));
     }
 
     function buildVideo(body) {
       section(body, 'Quality');
       choiceRow(body, null, null, [['best', 'Best'], ['auto', 'Auto'], ['1080', '1080p'], ['720', '720p'], ['480', '480p']],
         rd.videoQuality || 'best', k => { rd.videoQuality = k; saveRd(); QUALITY.apply(); });
-      body.append(el('div', 'ytt-hint ytt-seg-hint', 'Best = the sharpest file Reddit offers. Auto = Reddit decides (saves data).'));
+      body.append(el('div', 'ytt-hint ytt-seg-hint', 'Best picks the sharpest file Reddit offers. Auto lets Reddit decide, which saves data.'));
       toggleRow(body, 'See-through video bars', 'The black around narrow or wide videos shows the glass instead',
         () => glass.clearVideo, v => { glass.clearVideo = v; saveGlass(); GLASS.write(); refreshPlayerSheets(); render(); });
       section(body, 'Video in the lava');
@@ -2351,7 +2351,7 @@ div.lava-blobs {
       sub.placeholder = 'in subreddit (optional)';
       const key = el('input', 'ytt-text');
       key.type = 'text';
-      key.placeholder = 'keyword: post titles / comment text (optional)';
+      key.placeholder = 'Keyword in post titles or comment text (optional)';
       const after = el('input', 'ytt-text'); after.type = 'date'; after.title = 'After';
       const before = el('input', 'ytt-text'); before.type = 'date'; before.title = 'Before';
       const f1 = el('div', 'ytt-field');

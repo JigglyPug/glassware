@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit
 // @namespace    molten-tools
-// @version      2.4.11
+// @version      2.4.12
 // @description  Molten glass for new Reddit: a lava-lamp background made from the video or image you're looking at, clear-glass posts and comments, Calm / User / Crazy profiles, best video quality, art-colored seek bar, Arctic Shift profile lookup, plus Reddit QOL tweaks. Click the orange lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -2248,7 +2248,7 @@ div.lava-blobs {
       const gget = k => () => glass[k];
       const GD = GLASS_DEFAULTS;
 
-      toggleRow(body, 'Lava background', 'Off = clear glass over a plain black page', lget('on'), lset('on'));
+      toggleRow(body, 'Lava background', 'When off, the glass sits over a plain black page', lget('on'), lset('on'));
       const look = fold(lava.on);
       const seg = el('div', 'ytt-seg');
       for (const p of Object.keys(PRESETS)) {
@@ -2264,14 +2264,14 @@ div.lava-blobs {
       sliderRow(look, 'Saturation', null, { min: 0, max: 5, step: 0.05, hardMin: 0 }, lget('bgSaturate'), lset('bgSaturate'), P.bgSaturate);
       sliderRow(look, 'Zoom', null, { min: 1, max: 2.5, step: 0.01, hardMin: 0.1 }, lget('bgScale'), lset('bgScale'), P.bgScale);
       section(look, 'Motion');
-      toggleRow(look, 'Random motion', 'Off = a fixed animation', lget('randomize'), lset('randomize'));
+      toggleRow(look, 'Random motion', 'When off, it plays a fixed animation', lget('randomize'), lset('randomize'));
       const mo = fold(lava.randomize);
       sliderRow(mo, 'Speed', '1 = normal, 2 = twice as fast', { min: 0.1, max: 4, step: 0.05, unit: '×', hardMin: 0.05 }, lget('motionSpeed'), lset('motionSpeed'), P.motionSpeed);
       sliderRow(mo, 'Amount', 'How far it breathes, drifts, tilts and wanders', { min: 0, max: 3, step: 0.05, unit: '×', hardMin: 0 }, lget('motionAmount'), lset('motionAmount'), P.motionAmount);
       look.append(mo);
       toggleRow(look, 'Moving color blobs', 'Turning these off saves the most GPU', lget('blobs'), lset('blobs'));
       if (lava.blobs) {
-        sliderRow(look, 'Blob smoothness', 'Lower = cheaper, choppier', { min: 5, max: 240, step: 1, hardMin: 1 }, lget('blobSteps'), lset('blobSteps'), P.blobSteps);
+        sliderRow(look, 'Blob smoothness', 'Lower is lighter on your GPU but choppier', { min: 5, max: 240, step: 1, hardMin: 1 }, lget('blobSteps'), lset('blobSteps'), P.blobSteps);
       }
       const pb = el('div', 'ytt-btns');
       btn(pb, 'Shuffle motion', () => fadeReseed(true));
@@ -2296,7 +2296,7 @@ div.lava-blobs {
       const rb = el('div', 'ytt-btns');
       btn(rb, 'Reset glass', () => { Object.assign(glass, GLASS_DEFAULTS); saveGlass(); GLASS.write(); render(); });
       body.append(rb);
-      body.append(el('div', 'ytt-note', 'No picture on screen? The lava uses the subreddit\'s banner or icon, then a built-in palette. Hold a slider to see through this panel.'));
+      body.append(el('div', 'ytt-note', 'With no picture on screen, the lava uses the subreddit\'s banner or icon, then a built-in palette. Hold a slider to see through this panel.'));
     }
 
     // ---------------- Video ----------------
@@ -2320,7 +2320,7 @@ div.lava-blobs {
       selectRow(body, 'Playing videos', 'A playing video takes over the lava while it plays',
         [['any', 'Everywhere'], ['post', 'Posts only'], ['off', 'Never']], lget('videoSource'), lset('videoSource'));
       const v = fold(lava.videoSource !== 'off' && lava.on, 'far');
-      sliderRow(v, 'Frame rate', 'Lower = cheaper; it is blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps', hardMin: 1, hardMax: 60 }, lget('videoFps'), lset('videoFps'), S.videoFps);
+      sliderRow(v, 'Frame rate', 'Lower is lighter on your GPU. It\'s blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps', hardMin: 1, hardMax: 60 }, lget('videoFps'), lset('videoFps'), S.videoFps);
       sliderRow(v, 'Frame copy width', 'Small is fine behind the blur', { min: 32, max: 512, step: 16, unit: 'px', hardMin: 8, hardMax: 1024 }, lget('videoWidth'), lset('videoWidth'), S.videoWidth);
       toggleRow(v, 'Crop black bars', 'Leaves bars baked into a video out of the lava (measured from its first frame when needed)', lget('videoCropBars'), lset('videoCropBars'));
       body.append(v);
@@ -2358,7 +2358,7 @@ div.lava-blobs {
       sub.placeholder = 'in subreddit (optional)';
       const key = el('input', 'ytt-text');
       key.type = 'text';
-      key.placeholder = 'keyword: post titles / comment text (optional)';
+      key.placeholder = 'Keyword in post titles or comment text (optional)';
       const after = el('input', 'ytt-text'); after.type = 'date'; after.title = 'After';
       const before = el('input', 'ytt-text'); before.type = 'date'; before.title = 'Before';
       const f1 = el('div', 'ytt-field');

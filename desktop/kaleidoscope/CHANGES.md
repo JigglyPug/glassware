@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.10.13 · 2026-11-19
+
+- A few lines in the panel read more plainly: the Standing preferences hint, the Wildcard and What's airing now hints, the sequel finder when nothing is missing, and the button for making a new board anyway.
+
 ## 2.10.12 · 2026-11-10
 
 - Damaged saved data can't break the panel or the board page.

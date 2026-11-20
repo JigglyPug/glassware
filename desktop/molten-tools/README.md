@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten Tools: Molten glass and quality-of-life fixes for YouTube." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v3.8.4-ff0033?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-tools/molten-tools.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-tools/)
+[![Install](https://img.shields.io/badge/Install-v3.8.5-ff0033?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-tools/molten-tools.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-tools/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-YouTube%2C%20YouTube%20Music-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -12,7 +12,7 @@
 
 </div>
 
-Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plus a set of quality-of-life fixes. Click the orange lava button in the top bar for settings.
+Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plus a set of quality-of-life fixes. Click the red lava button in the top bar for settings.
 
 ## Features
 
@@ -33,8 +33,8 @@ Molten Tools gives YouTube and YouTube Music a molten-glass lava background, plu
 
 ## What's new
 
+- **3.8.5** (2026-11-19): Settings descriptions say what happens when a switch is off in a sentence, and the lava's GPU settings say what lower means. The panel's tagline reads "Quality-of-life fixes for YouTube", and Tampermonkey's description says the lava button is red, as it is now.
 - **3.8.4** (2026-11-17): No dark band under the top bar on Shorts in a browser tab. YouTube puts a shade there, and Molten turned it into frosted glass instead of clearing it (it only showed in a tab, where the page is shorter than in the app window). Shades are always cleared now.
 - **3.8.3** (2026-11-17): The icon matches the panel: YouTube's red (#FF0033), in Tampermonkey's list, the panel's header and on the website.
-- **3.8.2** (2026-11-17): The panel uses YouTube's red (#FF0033, the same on YouTube Music) instead of a general Molten orange: switches, buttons, tabs, headings and the glow. The lava itself is unchanged.
 
 [Every change](CHANGES.md)

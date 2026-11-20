@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope Mobile
 // @namespace    jigglypug.anime.kaleidoscope-mobile
-// @version      1.3.8
+// @version      1.3.9
 // @description  Phone-friendly Kaleidoscope prompt builder for AniList. Pick a mode (recent, top rated, wildcard, airing now, backlog), then Copy, Save or Share the prompt. Update builds a "what changed since last time" prompt from your list. Also finds sequels you haven't watched. Open it from the Tampermonkey menu or the small ✦ button.
 // @match        https://anilist.co/*
 // @noframes
@@ -51,8 +51,8 @@
     const MODES = [
       { id: 'recent', color: '#3DB4F2', title: 'More like my recent', hint: 'Keeps your current streak going' },
       { id: 'top', color: '#5CC22F', title: 'More like my top rated', hint: 'Built on what your favorites have in common' },
-      { id: 'wild', color: '#9256F3', title: 'Wildcard', hint: 'Outside your usual genres, still your taste' },
-      { id: 'airing', color: '#F779A4', title: 'What\'s airing now', hint: 'Picks from this season\'s real lineup', animeOnly: true },
+      { id: 'wild', color: '#9256F3', title: 'Wildcard', hint: 'Outside your usual genres, but close to what you like' },
+      { id: 'airing', color: '#F779A4', title: 'What\'s airing now', hint: 'Picks from what\'s airing this season', animeOnly: true },
       { id: 'backlog', color: '#E85D75', title: 'Clear my backlog', hint: 'What to start next from Planning and Paused' },
     ];
 
@@ -1216,7 +1216,7 @@
           sequelResult = { key, items };
           const onPlan = items.filter(x => x.planned).length;
           say(items.length ? 'Found ' + items.length + ' missing sequel' + (items.length === 1 ? '' : 's') +
-            (onPlan ? ' (' + onPlan + ' already planned).' : '.') : 'You\'re all caught up.');
+            (onPlan ? ' (' + onPlan + ' already planned).' : '.') : 'No missing sequels.');
         } catch (e) {
           console.error('[Kaleidoscope]', e);
           sequelResult = null;
@@ -1297,7 +1297,7 @@
       body.append(uh);
 
       section(body, 'Standing preferences');
-      body.append(el('span', 'kld-hint', 'Stacked on top of the core prompt in every mode, before your mood. Leave empty to let your list speak for itself.'));
+      body.append(el('span', 'kld-hint', 'Added to every prompt, before your mood. Leave it empty to go by your list alone.'));
       const ta = el('textarea', 'kld-text');
       ta.value = cfg.prefs;
       ta.addEventListener('input', () => { cfg.prefs = ta.value; save(); });

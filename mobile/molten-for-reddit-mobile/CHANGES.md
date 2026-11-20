@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.4.13 · 2026-11-19
+
+- The lava and video quality descriptions read as plain sentences, and so does the keyword box in the profile lookup.
+
 ## 1.4.12 · 2026-11-17
 
 - The icon matches the panel: Reddit's orange-red (#FF4500), in Tampermonkey's list, the panel's header and on the website.

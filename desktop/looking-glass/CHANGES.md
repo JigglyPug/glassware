@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.2.12 · 2026-11-19
+
+- The description under "Switch to the new tab" reads as a sentence.
+
 ## 1.2.11 · 2026-11-17
 
 - The badge no longer sits on top of a picture viewer or a dialog opened over the page (Discord's viewer, a site's lightbox): it belongs to the video underneath, so it waits until that closes.

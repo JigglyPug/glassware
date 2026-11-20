@@ -557,3 +557,76 @@ python3 tools/check.py              # release check: everything below, plus the 
   a release didn't go out.
 - Don't create a repo named `userscripts` on this account: GitHub redirects that old name
   here, and installed copies may still rely on the redirect.
+
+## Words (panels, dashboards, pages)
+
+The look set above is house style and stays: ◆ section labels in monospace caps, the monospace context
+line and readout, question labels on dashboard cards, the glass, the `·` in the footer and readouts.
+What drifts is the words written to fill those places, which tend to come out sounding generated.
+Write every string people see the way you'd say it to someone looking at the screen with you.
+
+- **How it should sound.** Plain and specific. Short sentences that say the thing outright, with
+  the real number in digits ("3 passes left", "2h 05m a day"), never "many" or "significantly".
+  Understatement over enthusiasm: a dry line is fine where there's room for one (an empty state),
+  never a joke on every screen. Hourglass is the exception in tone: its small lines (the late-night
+  nudge, the take-a-break reminder) are warm and friendly on purpose ("Maybe call it a night?"). The script doesn't say "I" and doesn't hedge
+  ("may help", "can potentially"). A list is as long as it really is; don't trim or pad it to three.
+  Too far is as bad as too stiff: "Socials ate half your week. No surprise there." is not the voice.
+- **Say it, don't spec it.** Keys, hints, `aria-label`s, setting descriptions and table headings are
+  words, not notation: no `=`, `→`, "Off = …", `x per y` shorthand or `A · B · C` strings in them.
+  "Each bubble is a category. Bigger means more of your time." not "A bubble per category · size =
+  share". Figures in a row ("48% → 50%") and the readout line keep their format. Numbers keep their
+  math symbols: a slider's scale written as "1 = normal, 2 = twice as fast", "0 = perfectly clear
+  glass" or "× 100 px" is the house style, not notation to remove. The rule is about words standing
+  in for sentences ("Off = …", "Lower = cheaper", "size = share").
+- **Name the period.** "Now" doesn't say when. Say what each side covers, in the range bar's own
+  terms: the past 7 days (or 4 weeks) against everything before. Say the period once per card, not in
+  every sentence.
+- **An answer sounds like someone noticed something.** Inside the `.ans` limits (Dashboards), lead
+  with what matters and round the way people talk: "Socials took half your time in the past 7 days."
+  beats "Socials take the most time in the past 7 days." A sentence built from a template gets two or
+  three wordings picked by the data (a big jump, a small one, a near tie), and no two cards on a
+  dashboard open with the same pattern. The example sentence under Dashboards shows the length, not a
+  wording to copy.
+- **Instructions only where nothing else shows it.** Drop lines like "Tap a bubble for details" when
+  the readout already appears on hover, focus or first tap; let the readout's resting state show
+  something useful (the biggest item) instead.
+- **Settings rows.** The title names the setting or what it does when on ("Autoplay", "Skip app
+  prompts"), never "Enable…", "Turn on…" or a question. The description says what changes, from the
+  person's side, in one line ("When off, …" rather than "Off = …"), and doesn't repeat the title;
+  leave it out if it would. Sentence case everywhere except the ◆ labels. One word per idea across a
+  panel and its page (don't switch between block, restrict and limit).
+- **Plain words.** No seamless, effortless, powerful, smart, intelligent, unlock, elevate,
+  supercharge, journey, all-in-one or next-level; no stock phrases ("speak for itself", "all caught
+  up"); no "Oops", no cheering ("Great job!", "You're all set!"), no emoji or ✨ in UI text (a mark
+  the script draws itself, like Kaleidoscope's ✦ or Molten for Reddit's 🔍, may be named). Slash lists
+  ("Calm / User / Crazy") and "30+" shorthand are notation too. A word list never catches every
+  generated-sounding line, so a copy pass reads every string, not just what the check flags. Use a period or a comma where an em dash wants to go. This holds
+  for the product copy in `tools/build/readmes.py` and `tools/build/features.py` too.
+- **Fixed strings stay fixed.** The wordings this file sets (the on/off card, the footer, menu
+  commands, "Troubleshooting", "Match my device", counter lines) aren't part of a copy pass.
+- `tools/check.py` fails on the notation and the words above in panel text, `.ans`, `[data-axis]`,
+  `aria-label`s and the page data, and allows the readout line, figure rows, numbers with their math
+  symbols and the fixed strings (`tools/tests/words.py`, which proves itself on good and bad samples
+  first; add a sample when a new kind of slip turns up). When this section changes, change that check too.
+
+### Copy passes: show first, then do it all at once
+
+When asked for a copy pass, or small UI tweaks for the same reason, change nothing at first. Read the
+scripts and the page data, then list every proposed change as one numbered table, grouped by script:
+where (file:line, or the data file for pages), the exact text or CSS now, the exact text or CSS after,
+and why in a few words. Strings built from data show the template and two real results, one of them
+an edge case. Under the table, list what was looked at and left alone on purpose. End with "Nothing
+has been changed." and wait.
+
+- Approval is only `apply all`, `apply all except 3, 9`, `apply 1, 4, 7` or `revise 5: <note>`
+  (show the revised item and wait again), or a plain instruction to go ahead that says which items
+  to leave out. Anything else, "looks good" included, is discussion.
+- After approval, apply every approved item in one go and ship them together: one `@version` bump
+  and one `CHANGES.md` entry per changed script, one recapture of the changed panels, one
+  `tools/pages.py`, one look at the sheet, one `tools/check.py`, one `tools/push.py`. Don't stop
+  between items; stop only for an item that can't go in as written (shared, built elsewhere, no
+  longer fits) or a check failure you can't fix, and say which.
+- `tools/tests/dash.py` reads `.ans` and `[data-axis]`: keep those elements, change their words,
+  and if its check for the planted change matches exact wording, update the matcher in the same
+  change.

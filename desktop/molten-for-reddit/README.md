@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten for Reddit: Molten glass for new Reddit." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.4.11-ff4500?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)
+[![Install](https://img.shields.io/badge/Install-v2.4.12-ff4500?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com%20%28new%20Reddit%29-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -19,7 +19,7 @@ Molten for Reddit puts a lava-lamp background made from the image or video you a
 - **Lava from what you're looking at**: The background comes from the image or video in the middle of the screen, or the subreddit's banner when there isn't one.
 - **Clear-glass posts**: Frost, blur, roundness and outline you can tune, so the lava shows through without hurting readability.
 - **Calm, User or Crazy**: Three profiles, each with its own blur, brightness, color and motion.
-- **Video, done right**: The best MP4 quality, glass instead of black bars, and playing videos that take over the lava.
+- **Sharper video, no black bars**: The best MP4 quality, glass instead of black bars, and playing videos that take over the lava.
 - **Colors from the art**: The title bar and seek bar match the post.
 - **Reddit, tidied up**: Your default comment sort, replies that expand themselves, and an optional cleaner layout.
 - **Look anyone up**: Search a user's posts and comments on Arctic Shift, with a 🔍 next to names on profiles.
@@ -33,8 +33,8 @@ Molten for Reddit puts a lava-lamp background made from the image or video you a
 
 ## What's new
 
+- **2.4.12** (2026-11-19): Settings descriptions say what happens when a switch is off in a sentence, and the lava's GPU settings say what lower means. The keyword box in Look someone up reads more plainly.
 - **2.4.11** (2026-11-17): The icon matches the panel: Reddit's orange-red (#FF4500), in Tampermonkey's list, the panel's header and on the website.
 - **2.4.10** (2026-11-17): The panel uses Reddit's own orange-red (#FF4500) instead of a general Molten orange: switches, buttons, tabs, headings and the glow. The lava itself is unchanged.
-- **2.4.9** (2026-11-11): Opening reply threads on its own now stops at exactly 150 per page (it allowed 151). If the browser blocks the page's storage, the comment-sort step is skipped instead of stopping the script from starting.
 
 [Every change](CHANGES.md)

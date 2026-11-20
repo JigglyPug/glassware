@@ -9,7 +9,7 @@ line per problem ("clean" otherwise):
 - every card is [data-q] with its question as its label and its answer in .ans: at most two
   sentences, each under 16 words with at most one comma
 - the answer names what that scenario planted (PLANTED in the seed generator, per range
-  where a change only shows in one)
+  where a change only shows in one; a tuple there means any one of its words)
 - cards that cover a period ([data-range]) say which one ("past 7 days", "past 4 weeks" or "28 days")
 - no figure (a time, a percentage, a count) shows on two cards; axis labels ([data-axis]) aside
 - every chart ([data-chart]) labels its bottom and its height ([data-axis=x] and [data-axis=y])
@@ -106,8 +106,9 @@ def problems(SEEDS, scen, got):
             for x in sents:
                 if len(x.split()) > 15 or x.count(',') > 1: bad.append(f'{tag}"{q}": too long to follow (under 16 words, one comma at most): "{x}"')
             words = want[q][rng] if isinstance(want[q], dict) else want[q]
-            for w_ in words:
-                if w_.lower() not in a.lower(): bad.append(f'{tag}"{q}" should mention "{w_}": "{a}"')
+            for w_ in words:   # a tuple is a choice: any one of its words will do ("rose", "doubled" or "tripled")
+                alts = w_ if isinstance(w_, tuple) else (w_,)
+                if not any(x.lower() in a.lower() for x in alts): bad.append(f'{tag}"{q}" should mention "{" or ".join(alts)}": "{a}"')
             if c['ranged'] and not any(n in a for n in names) and 'more day' not in a and 'nothing' not in a.lower(): bad.append(f'{tag}"{q}" covers a range but doesn\'t say "{period}": "{a}"')
             for ch in c['charts']:
                 if not ch['x'] or not ch['y']: bad.append(f'{tag}"{q}": chart "{ch["name"]}" needs labels along the bottom and for the height')

@@ -2,6 +2,11 @@
 
 Newest first.
 
+## 2.4.12 · 2026-11-19
+
+- Settings descriptions say what happens when a switch is off in a sentence, and the lava's GPU settings say what lower means.
+- The keyword box in Look someone up reads more plainly.
+
 ## 2.4.11 · 2026-11-17
 
 - The icon matches the panel: Reddit's orange-red (#FF4500), in Tampermonkey's list, the panel's header and on the website.

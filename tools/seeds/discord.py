@@ -79,7 +79,7 @@ PLANTED = {
         'Where does your time go?': [],
         'How much are you on Discord?': ['less than before'],
         'How much do you talk?': ['down from'],
-        'What changed?': {'week': ['Lava Lounge', 'dropped'], 'month': ['dropped']},
+        'What changed?': {'week': ['Lava Lounge', ('dropped', 'halved')], 'month': [('dropped', 'halved')]},
         'When are you on?': [],
         'How often are you on?': ['run'],
         'What are your records?': ['longest session'],

@@ -29,6 +29,9 @@ It checks, in order:
              or tools
   pages      every page and README shows each script's current version; icons are in place;
              every script has a RUNS entry
+  words      the words people read follow CLAUDE.md's Words section: no notation standing in for
+             sentences, no stock or hype words, no emoji, plain setting titles (tools/tests/words.py,
+             which proves itself on good and bad samples first)
   registry   every script is listed everywhere the tools need it (pages, screenshots, tests)
   commits    commits not yet pushed are by JigglyPug and carry no chat or session links
   generated  the pages rebuild to exactly what's committed (no hand edits, nothing stale)
@@ -406,6 +409,13 @@ for p, s in S.items():
     a, b = f'{R}/assets/icons/{slug}.png', f'{R}/docs/img/{slug}/icon.png'
     ok(os.path.exists(b) and open(a, 'rb').read() == open(b, 'rb').read(), f'{slug}: site icon is out of date (run python3 tools/pages.py)')
 done(n)
+
+# ------------------------------------------------------------------ words
+head('words')
+import words as _words
+_wp = _words.run()
+for x in _wp: ok(False, x)
+if not _wp: print('  ✓ every string people read, in every script, the page data and the latest change logs')
 
 # ------------------------------------------------------------------ registry
 head('registry'); n = 0

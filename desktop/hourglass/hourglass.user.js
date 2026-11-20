@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.11
+// @version      1.5.12
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.11';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.12';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -37,6 +37,12 @@
     const CATS = ['social', 'shop', 'music', 'custom'];
     const HCOL = ['social', 'shop', 'music', 'custom', 'other']; // order inside each hourly bucket
     const colorOf = cat => (CAT[cat] || OTHER).c;
+    // a share the way people say it: "half your time", "a third of your time" (within 2 points), else "41% of your time"
+    const shareOf = (p, what) => {
+        const v = p * 100;
+        for (const [t, w] of [[25, 'a quarter of '], [100 / 3, 'a third of '], [50, 'half '], [200 / 3, 'two thirds of '], [75, 'three quarters of ']]) if (Math.abs(v - t) <= 2) return w + what;
+        return Math.round(v) + '% of ' + what;
+    };
     // circles of the given radii, packed tightly around the first (biggest first gives the roundest cluster)
     function packCircles(rs, gap) {
         const out = [];
@@ -1212,6 +1218,7 @@ h1 span{color:var(--ink)}
 .wkt{display:grid;grid-template-columns:38px 1fr 54px;gap:10px;padding:2px 8px 0}
 .wkt div{display:flex;justify-content:space-between;font:10px var(--mono);color:var(--sub)}
 .days{display:grid;grid-template-columns:repeat(7,44px);gap:6px}
+.dinfo{display:flex;align-items:center;gap:10px}.dname{text-align:right}
 .day{position:relative;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--field);font-weight:600;font-size:13px}
 .day:hover{background:var(--field-hi)}
 .day.sel{background:var(--fill);color:var(--on);border-color:transparent;box-shadow:0 4px 14px -6px rgba(var(--a-rgb),1)}
@@ -1308,7 +1315,7 @@ h1 span{color:var(--ink)}
 .m .foot{padding-bottom:4px}
 .m .site{grid-template-columns:30px minmax(0,1fr) 46px 36px}.m .site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
 .m .slr{grid-template-columns:minmax(0,1fr) 66px}.m .slr>div:first-child{grid-column:1/-1}
-.m .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.m .days{grid-template-columns:repeat(7,minmax(0,1fr))}.m .day{width:auto}.m .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+.m .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.m .days{grid-template-columns:repeat(7,minmax(0,1fr))}.m .day{width:auto}.m .days,.m .dinfo{flex:1 1 100%}.m .dinfo{justify-content:space-between}.m .dname{text-align:left}.m .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
 .m .srow2,.m .srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.m .srow2 .spk{display:none}.m .srow2 .acts{grid-column:2/-1}.m .srow2 .acts:empty{display:none}
 /* the accent, never a neutral: browsers that darken pages themselves leave outlines alone */
 .bar.tapped>i,.bar.tapped>.sb,.hm i.tapped,.cal i.tapped{outline:2px solid var(--fill);outline-offset:2px;box-shadow:0 0 12px -2px rgba(var(--a-rgb),.9)}
@@ -1316,7 +1323,7 @@ h1 span{color:var(--ink)}
 .readout{margin-top:10px;font:500 11.5px var(--mono);color:var(--sub);min-height:16px}
 .readout.on{color:var(--text)}
 @media (max-width:620px){
-  .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.days{grid-template-columns:repeat(7,minmax(0,1fr))}.day{width:auto}.chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dbtns{grid-template-columns:repeat(2,minmax(0,1fr))}.days{grid-template-columns:repeat(7,minmax(0,1fr))}.day{width:auto}.days,.dinfo{flex:1 1 100%}.dinfo{justify-content:space-between}.dname{text-align:left}.chips{grid-template-columns:repeat(2,minmax(0,1fr))}
   .srow2,.srow2.wa{grid-template-columns:30px minmax(0,1fr) 62px}.srow2 .spk{display:none}.srow2 .acts{grid-column:2/-1}.srow2 .acts:empty{display:none}
   .site{grid-template-columns:30px minmax(0,1fr) 40px 30px}.site>.seg{grid-column:2/-1;grid-row:2;justify-self:start}
   .slr{grid-template-columns:minmax(0,1fr) 66px}.slr>div:first-child{grid-column:1/-1}
@@ -1642,13 +1649,15 @@ h1 span{color:var(--ink)}
             let catAns;
             if (!cAll) catAns = 'Your categories show up after your first full day.';
             else {
-                const nm = catName(cTop);
-                catAns = `${nm} ${nm.endsWith('s') ? 'take' : 'takes'} the most time ${D.inP}.`;
-                if (D.enough) {
-                    const ch = shares.map(c => Object.assign({ d: Math.round(c.pn * 100) - Math.round(c.pw * 100) }, c)).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0];
-                    if (ch && (ch.fresh ? ch.pn >= .03 : Math.abs(ch.d) >= 3)) { const n2 = ch.i === cTop ? (nm.endsWith('s') ? 'They' : 'It') : catName(ch.i);
-                        catAns += ch.fresh ? ` ${n2} ${n2 === 'They' ? 'are' : 'is'} new.` : ` ${n2} ${ch.d > 0 ? 'grew' : 'shrank'} the most, from ${pc(ch.pw)} to ${pc(ch.pn)} of your time.`; }
-                }
+                // the biggest share, said the way people talk; two within 2 points are a tie. Then what moved most:
+                // folded into the first sentence when it's the biggest category itself, else a sentence of its own
+                const [A1, B1] = shares.slice().sort((a, b) => b.pn - a.pn), tie = B1 && B1.pn >= .2 && Math.round(A1.pn * 100) - Math.round(B1.pn * 100) <= 2;
+                const ch = D.enough ? shares.map(c => Object.assign({ d: Math.round(c.pn * 100) - Math.round(c.pw * 100) }, c)).sort((a, b) => Math.abs(b.d) - Math.abs(a.d))[0] : null;
+                const moved = ch && (ch.fresh ? ch.pn >= .03 : Math.abs(ch.d) >= 3);
+                if (tie) catAns = `${catName(A1.i)} and ${catName(B1.i)} took about ${pc(A1.pn)} each ${D.inP}.`;
+                else if (moved && !ch.fresh && ch.i === A1.i) catAns = `${catName(A1.i)} took ${shareOf(A1.pn, 'your time')} ${D.inP}, ${ch.d > 0 ? 'up' : 'down'} from ${pc(ch.pw)}.`;
+                else catAns = `${catName(A1.i)} took ${shareOf(A1.pn, 'your time')} ${D.inP}.`;
+                if (moved && (ch.fresh || ch.i !== A1.i || tie)) catAns += ch.fresh ? ` ${catName(ch.i)} is new.` : ` ${catName(ch.i)} ${ch.d > 0 ? 'grew' : 'fell'} the most, from ${pc(ch.pw)} to ${pc(ch.pn)}.`;
             }
             const tipOf = c => `${catName(c.i)} · ${pc(c.pn)} of your time` + (!D.enough ? '' : c.fresh ? ' · new' : ` · was ${pc(c.pw)}`) + ` · ${fmtDur(c.now)} a day`;
             const bubbles = () => {
@@ -1660,9 +1669,9 @@ h1 span{color:var(--ink)}
                 order.forEach((j, n) => { pos[j] = packed[n]; });
                 const x0 = Math.min(...pos.map(q => q.x - q.r)), x1 = Math.max(...pos.map(q => q.x + q.r)), y0 = Math.min(...pos.map(q => q.y - q.r)), y1 = Math.max(...pos.map(q => q.y + q.r));
                 const k = Math.min((W - 8) / (x1 - x0), (H - 8) / (y1 - y0), 1.7), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
-                const hint = MOBILE ? 'Tap a bubble for details' : 'Point at a bubble for details';
+                const hint = tipOf(shares.reduce((a, b) => b.pn > a.pn ? b : a));   // at rest, the biggest category's own line
                 const read = h('div', { class: 'readout', text: hint });
-                const box = h('div', { class: 'hbub', role: 'group', 'aria-label': 'A bubble per category, sized by its share of your time' });
+                const box = h('div', { class: 'hbub', role: 'group', 'aria-label': 'Each bubble is a category. Bigger means more of your time.' });
                 shares.forEach((c, j) => {
                     const q = pos[j], r = q.r * k, x = W / 2 + (q.x - cx) * k, y = H / 2 + (q.y - cy) * k;
                     const lo = Math.min(c.pn, c.pw), hi = Math.max(c.pn, c.pw);
@@ -1677,11 +1686,11 @@ h1 span{color:var(--ink)}
                 box.addEventListener('pointerleave', ev => { if (ev.pointerType !== 'touch') rest(); });
                 box.addEventListener('focusout', ev => { if (!box.contains(ev.relatedTarget)) rest(); });
                 return [h('div', { 'data-chart': 'categories' }, box,
-                    h('div', { class: 'bkey' }, h('span', { 'data-axis': 'x', text: 'A bubble per category' }), h('span', { 'data-axis': 'y', text: D.enough ? 'size = share · faded = before' : 'size = share of your time' }))), read];
+                    h('div', { class: 'bkey' }, h('span', { 'data-axis': 'x', text: 'Each bubble is a category.' }), h('span', { 'data-axis': 'y', text: D.enough ? 'Bigger means more of your time. The faded part is before.' : 'Bigger means more of your time.' }))), read];
             };
             const catCard = card('Where does your time go?', catAns, D.full,
                 cAll ? bubbles() : null,
-                cAll ? h('div', { class: 'sl', text: D.enough ? 'Share of your time · before → now' : 'Share of your time' }) : null,
+                cAll ? h('div', { class: 'sl', text: D.enough ? 'Share of your time, before and ' + D.inP : 'Share of your time' }) : null,
                 shares.map(c => h('div', { class: 'crow c3', title: fmtDur(c.now) + ' a day' }, h('i', { style: 'background:' + colorOf(c.k) }), h('span', { text: catName(c.i) }),
                     h('b', null, !D.enough ? pc(c.pn) : c.fresh ? ['new · ', h('em', { text: pc(c.pn) })] : [pc(c.pw) + ' → ', h('em', { class: c.pn > c.pw + .005 ? 'up' : c.pn < c.pw - .005 ? 'down' : null, text: pc(c.pn) })]))));
             g1.append(weekCard, catCard);
@@ -1692,8 +1701,11 @@ h1 span{color:var(--ink)}
             const top = D.moved[0];
             if (!D.enough) chAns = `Changes show up after ${D.need} more day${D.need === 1 ? '' : 's'} of history.`;
             else if (!top) chAns = `Nothing moved much ${D.inP}. Every site stayed within 5m a day.`;
-            else if (top.was < 60) chAns = `${top.k} is new ${D.inP}. It's at ${fmtDur(top.now)} a day.`;
-            else chAns = `${top.k} ${top.d > 0 ? 'rose' : 'dropped'} the most ${D.inP}. It went from ${fmtDur(top.was)} to ${fmtDur(top.now)} a day.`;
+            else if (top.was < 60) chAns = `${top.k} is new ${D.inP}, at ${fmtDur(top.now)} a day.`;
+            else { const r = top.now / top.was;   // a big jump in words; the row shows the minutes
+                chAns = r > 3 ? `${top.k} more than tripled ${D.inP}.` : r > 2 ? `${top.k} more than doubled ${D.inP}.` : r < .5 ? `${top.k} more than halved ${D.inP}.`
+                    : `${top.k} ${top.d > 0 ? 'rose' : 'dropped'} the most ${D.inP}, from ${fmtDur(top.was)} to ${fmtDur(top.now)} a day.`;
+                if (chAns.split(/\s+/).length > 15) chAns = `${top.k} ${top.d > 0 ? 'rose' : 'dropped'} the most ${D.inP}. It went from ${fmtDur(top.was)} to ${fmtDur(top.now)} a day.`; }   // too long for one sentence
             const rows = D.enough ? D.moved : D.topSites;
             const addBtns = s => [h('button', { class: 'btn sm primary', onclick: () => this.addSite(s.k, guessCat(s.k)) }, icon(ICONS.plus, 12, 2.4), 'Add'),
                 h('button', { class: 'btn sm', text: 'Ignore', onclick: () => { S.ignored.push({ d: s.k, avg: s.now }); set('ignored', S.ignored); this.render(); } })];
@@ -1704,7 +1716,7 @@ h1 span{color:var(--ink)}
                 return sv('svg', { class: 'spk', width: W, height: Hh, viewBox: `0 0 ${W} ${Hh}`, role: 'img', 'aria-label': s.k + ', each day' }, sv('path', { class: 'sparkf', d: d + ` L${W - p} ${Hh - p} L${p} ${Hh - p} Z` }), sv('path', { class: 'spark', d })); };
             const sugOpen = this.ignOpen;
             out.push(card('What changed?', chAns, D.full,
-                rows.length ? h('div', { class: 'sl', text: (D.enough ? 'Sites that moved' : 'Your top sites so far') + ' · time a day · each day' }) : null,
+                rows.length ? h('div', { class: 'sl', text: (D.enough ? 'Sites that moved' : 'Your top sites so far') + ', by time a day' }) : null,
                 rows.map(s => h('div', { class: 'srow2' + (acts ? ' wa' : '') },
                     h('div', { class: 'fav', style: 'background:' + colorOf(s.cat) + (s.listed && s.cat !== 'music' ? '' : ';color:#1d1d1f'), text: s.k[0].toUpperCase() }),
                     h('div', { class: 'nm' }, h('b', { text: s.k }), h('small', { text: (s.listed ? CAT[s.cat].n : 'Not on your list') + ' · ' + (D.enough ? fmtDur(s.was) + ' → ' : '') + fmtDur(s.now) })),
@@ -1724,7 +1736,7 @@ h1 span{color:var(--ink)}
             let drAns;
             if (!D.hTot) drAns = 'Nothing yet. Your busiest hours show up after a day of browsing.';
             else {
-                drAns = `Your busiest hours ${D.inP} were ${hourName(D.peak)} to ${hourName((D.peak + 3) % 24)}.`;
+                drAns = `${hourName(D.peak)} to ${hourName((D.peak + 3) % 24)} was your busiest stretch ${D.inP}.`;
                 if (D.cWas != null) {
                     const r = Math.round((D.cNow - D.cWas) * 2) / 2, a = Math.abs(r);
                     drAns += a < .5 ? " That's about the same time as before." : " That's about " + (a === .5 ? 'half an hour' : a === 1 ? 'an hour' : (Math.floor(a) + (a % 1 ? '½' : '')) + ' hours') + (r > 0 ? ' later' : ' earlier') + ' than before.';
@@ -1749,16 +1761,18 @@ h1 span{color:var(--ink)}
 
             const g2 = h('div', { class: 'grid2' });
             // Is lockdown working?
-            const n1 = v => String(Math.round(v * 10) / 10);
+            // counts the way people say them: whole numbers, "about" when rounding moved it, "less than once" under 1
+            const tries = (v, about) => v < 1 ? 'less than once' : ((about || Math.abs(v - Math.round(v)) >= .2) ? 'about ' : '') + Math.round(v) + (Math.round(v) === 1 ? ' time' : ' times');
+            const num = v => (Math.abs(v - Math.round(v)) >= .2 ? 'about ' : '') + Math.max(1, Math.round(v));
             let lkAns;
             if (!D.win.length) lkAns = 'Blocked tries show up here after your first full day.';
             else if (D.triesNow == null) lkAns = `No lockdown ${D.inP}. Nothing was blocked.`;
-            else if (D.triesWas == null) lkAns = D.win.length === 1 ? `You tried a blocked site ${n1(D.triesNow)} times on your first day.` : `You tried a blocked site ${n1(D.triesNow)} times a lockdown day ${D.inP}.`;
+            else if (D.triesWas == null) lkAns = D.win.length === 1 ? `You tried a blocked site ${tries(D.triesNow)} on your first day.` : `You tried a blocked site ${tries(D.triesNow)} a lockdown day ${D.inP}.`;
             else {
-                const r = D.triesNow / Math.max(.1, D.triesWas), now_ = n1(D.triesNow), was = n1(D.triesWas);
-                lkAns = r < .8 ? `Blocked tries fell ${D.inP}. You tried ${now_} times a lockdown day, down from ${was}.`
-                    : r > 1.25 ? `Blocked tries rose ${D.inP}. You tried ${now_} times a lockdown day, up from ${was}.`
-                        : `Blocked tries held steady ${D.inP}. You tried about ${now_} times a lockdown day.`;
+                const r = D.triesNow / Math.max(.1, D.triesWas);
+                lkAns = r < .8 ? `Blocked tries fell ${D.inP}. You tried ${tries(D.triesNow)} a lockdown day, down from ${num(D.triesWas)}.`
+                    : r > 1.25 ? `Blocked tries rose ${D.inP}. You tried ${tries(D.triesNow)} a lockdown day, up from ${num(D.triesWas)}.`
+                        : `Blocked tries held steady ${D.inP}. You tried ${tries(D.triesNow, true)} a lockdown day.`;
             }
             const tmax = Math.max(4, ...span.map(D.att));
             g2.append(card('Is lockdown working?', lkAns, D.full,
@@ -1767,7 +1781,7 @@ h1 span{color:var(--ink)}
                         const n = D.att(x), p = (x.o?.pass || []).length, tip = dayLabel(x) + ' · ' + n + (n === 1 ? ' try' : ' tries') + (p ? ', ' + p + (p === 1 ? ' pass' : ' passes') : '');
                         return h('div', { class: 'bar' + (D.lockOn(x) ? '' : ' off') + (x === D.today ? ' now' : ''), title: tip, 'data-tip': tip }, p ? h('b', { class: 'pdot' }) : null, h('i', { style: `height:${n / tmax * 100}%` }));
                     }) }) : null,
-                D.win.length ? h('div', { class: 'd', style: 'margin-top:8px' }, D.mostTried ? ['Most tried: ', h('b', { text: D.mostTried[0] }), ' · '] : null, (D.passesUsed ? D.passesUsed + (D.passesUsed === 1 ? ' pass' : ' passes') + ' used' : 'No passes used') + ' · dots mark days with a pass') : null));
+                D.win.length ? h('div', { class: 'd', style: 'margin-top:8px' }, D.mostTried ? ['Most tried: ', h('b', { text: D.mostTried[0] }), '. '] : null, (D.passesUsed ? D.passesUsed + (D.passesUsed === 1 ? ' pass' : ' passes') + ' used' : 'No passes used') + '. Dots mark days with a pass.') : null));
 
             // Are you under your goal? (the streak calendar: five whole weeks)
             const goalTxt = fmtDur(D.goal);
@@ -1818,7 +1832,7 @@ h1 span{color:var(--ink)}
                         h('span', { class: 'hrs', text: dr ? dayHours(dr) + 'h*' : dayHours(a) ? dayHours(a) + 'h' : 'Free' }));
                 })),
                 h('div', { class: 'wkt' }, h('span'), h('div', null, ['12a', '6a', '12p', '6p', '12a'].map(x => h('span', { text: x }))), h('span')),
-                Object.keys(S.schedPend).length ? h('div', { class: 'd', style: 'margin-top:8px', text: '* Dashed outline = a looser change waiting until ' + shortU(currentBlock()?.e ?? 0) }) : null);
+                Object.keys(S.schedPend).length ? h('div', { class: 'd', style: 'margin-top:8px', text: '* A dashed outline is a looser change that starts at ' + shortU(currentBlock()?.e ?? 0) }) : null);
 
             const i = this.day, sd = this.viewDay(i), pending = !!S.schedPend[i], full = DAYS[i];
             const editor = h('div', { class: 'tile full' });
@@ -1827,14 +1841,14 @@ h1 span{color:var(--ink)}
                     const v = this.viewDay(k);
                     return h('button', { class: 'day' + (k === i ? ' sel' : '') + (v.on && v.blocks.length ? ' has' : ''), 'aria-label': d, 'aria-pressed': String(k === i), text: d[0], onclick: () => { this.day = k; this.render(); } });
                 })),
-                h('div', { style: 'display:flex;align-items:center;gap:10px' },
-                    h('div', { style: 'text-align:right' }, h('div', { class: 't', text: full }), h('div', { class: 'd', text: !sd.on ? 'Free all day' : dayHours(sd) + 'h of lockdown' + (pending ? ' · waits until ' + shortU(currentBlock()?.e ?? 0) : '') })),
+                h('div', { class: 'dinfo' },
+                    h('div', { class: 'dname' }, h('div', { class: 't', text: full }), h('div', { class: 'd', text: !sd.on ? 'Free all day' : dayHours(sd) + 'h of lockdown' + (pending ? ' · waits until ' + shortU(currentBlock()?.e ?? 0) : '') })),
                     toggle(sd.on, () => { const nd = clone(sd); nd.on = !nd.on; if (nd.on && !nd.blocks.length) nd.blocks = [{ s: 18, e: 34 }]; this.setDay(i, nd); this.render(); }, 'Lockdown on ' + full))));
             if (sd.on) {
                 sd.blocks.forEach((b, bi) => editor.append(this.blockEditor(i, sd, b, bi, pending)));
                 editor.append(h('div', { class: 'row', style: 'margin-top:10px' },
                     h('button', { class: 'btn', onclick: () => { const nd = clone(sd); const last = nd.blocks[nd.blocks.length - 1]; nd.blocks.push(last && last.e <= 40 ? { s: Math.min(46, last.e + 2), e: Math.min(48, last.e + 8) } : { s: 0, e: 12 }); this.setDay(i, nd); this.render(); } }, icon(ICONS.plus, 13, 2.2), 'Add a time block'),
-                    h('span', { class: 'd', text: 'Drag the handles · 30-minute steps' })));
+                    h('span', { class: 'd', text: 'Drag the handles to change the times, in 30-minute steps' })));
             } else {
                 editor.append(h('div', { class: 'blkc', style: 'text-align:center;padding:22px' }, h('div', { class: 't', text: 'No lockdown on ' + full }), h('div', { class: 'd', text: 'Every site is free all day. Turn the switch on to add hours.' })));
             }
@@ -1917,7 +1931,7 @@ h1 span{color:var(--ink)}
                     this.seg(CATS.map(k => [k, CAT[k].n]), this.addCat, v => { this.addCat = v; this.render(); }, true, { 'aria-label': 'Category for the new site', style: 'flex:none' }),
                     here ? (hereListed ? h('span', { class: 'pill acc', text: here + ' is on your list' })
                         : h('button', { class: 'btn', text: 'Add this site · ' + here, onclick: () => this.addSite(here, this.addCat === 'custom' ? guessCat(here) : this.addCat) })) : null),
-                h('div', { class: 'd', style: 'margin-top:12px' }, h('b', { text: 'Schedule' }), ' blocks during lockdown · ', h('b', { text: 'Always' }), " blocks all day, every day · switch a site off to only count its time. Every site's time is counted either way. Adding ", h('span', { class: 'mono', text: 'reddit.com' }), ' covers all of Reddit.'));
+                h('div', { class: 'd', style: 'margin-top:12px' }, h('b', { text: 'Schedule' }), ' blocks during lockdown. ', h('b', { text: 'Always' }), " blocks all day, every day. Switch a site off to only count its time. Every site's time is counted either way. Adding ", h('span', { class: 'mono', text: 'reddit.com' }), ' covers all of Reddit.'));
             const groups = CATS.map(k => {
                 const list = S.sites.filter(s => s.cat === k), open = !this.closed[k];
                 const tot = sum(list.map(s => (o.s || {})[s.d] || 0));
@@ -1967,7 +1981,7 @@ h1 span{color:var(--ink)}
             if (!MOBILE) tracking.append(h('div', { class: 'row', style: 'margin-top:10px' }, h('div', null, h('div', { class: 't', text: 'Count listening time' }), h('div', { class: 'd', text: 'Sound playing in any tab, even tabbed out into a game. Shown next to Music mode, kept apart from screen time.' })), toggle(c.listen, () => upd('listen', !c.listen), 'Count listening time')));
             const off = !c.nudge;
             const bed = h('div', { class: 'tile full' }, this.label('Late-night nudge', inBedtime() ? 'Bedtime now' : null),
-                h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Take-a-break reminder' }), h('div', { class: 'd', text: "A friendly nudge when you're still browsing past bedtime, even outside lockdown." })), toggle(c.nudge, () => upd('nudge', !c.nudge), 'Late-night nudge')),
+                h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Late-night nudge' }), h('div', { class: 'd', text: "A friendly nudge when you're still browsing past bedtime, even outside lockdown." })), toggle(c.nudge, () => upd('nudge', !c.nudge), 'Late-night nudge')),
                 h('div', { 'data-fold': 'on', hidden: off, style: 'margin-top:8px' },   // the reminder's own settings: only while it's on
                     this.slr('Bedtime starts', 'When late-night time starts counting', this.slider({ min: 36, max: 54, value: c.bedS < 24 ? c.bedS + 48 : c.bedS, disabled: off, label: 'Bedtime starts', fmt: v => fmtU(v % 48), commit: v => upd('bedS', v % 48) })),
                     this.slr('Bedtime ends', 'Morning, when it stops', this.slider({ min: 2, max: 22, value: c.bedE, disabled: off, label: 'Bedtime ends', fmt: v => fmtU(v), commit: v => upd('bedE', v) })),

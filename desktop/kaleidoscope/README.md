@@ -2,9 +2,9 @@
 
 <img src="../../assets/icons/kaleidoscope.png" alt="Kaleidoscope icon" width="112">
 
-<img src="images/banner.svg" alt="Kaleidoscope: Your AniList list, turned into your next favorite." width="100%">
+<img src="images/banner.svg" alt="Kaleidoscope: Recommendations from your AniList list." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.10.12-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/kaleidoscope/kaleidoscope.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/kaleidoscope/)
+[![Install](https://img.shields.io/badge/Install-v2.10.13-3db4f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/kaleidoscope/kaleidoscope.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/kaleidoscope/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-anilist.co%2C%20claude.ai-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -32,8 +32,8 @@ Click the ✦ button on AniList and pick a mode. Kaleidoscope has Claude build a
 
 ## What's new
 
+- **2.10.13** (2026-11-19): A few lines in the panel read more plainly: the Standing preferences hint, the Wildcard and What's airing now hints, the sequel finder when nothing is missing, and the button for making a new board anyway.
 - **2.10.12** (2026-11-10): Damaged saved data can't break the panel or the board page.
 - **2.10.11** (2026-11-10): Closing the Claude tab before the board is ready ends the job right away, with a message.
-- **2.10.10** (2026-11-10): When AniList is slow, down or unreachable, the panel says so plainly.
 
 [Every change](CHANGES.md)

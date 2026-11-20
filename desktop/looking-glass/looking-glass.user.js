@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Looking-Glass
 // @namespace    jigglypug
-// @version      1.2.11
+// @version      1.2.12
 // @description  A small circle in the corner of every video, in the site's own color. Tap it to open the video file in its own tab. Facebook, Instagram, Reddit, X, TikTok, YouTube and any page with a plain video, on phone and PC.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -31,7 +31,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.11';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.2.12';
     const PW = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const HOST = location.hostname.toLowerCase().replace(/^(www|m|mobile|web|old|new)\./, '');
     const TOUCH = matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -1425,7 +1425,7 @@ button:disabled{cursor:not-allowed}
                 this.row('Duck under headers', 'Slides down when a site bar covers the corner', toggle(c.cover, () => upd('cover', !c.cover), 'Duck under headers')));
 
             const opening = h('div', { class: 'tile' }, this.label('Opening'),
-                this.row('Switch to the new tab', 'Off opens it quietly in the background', toggle(c.active, () => upd('active', !c.active), 'Switch to the new tab')),
+                this.row('Switch to the new tab', 'When off, it opens in the background', toggle(c.active, () => upd('active', !c.active), 'Switch to the new tab')),
                 this.row('Quality', null, this.seg([['best', 'Best'], ['saver', 'Data saver']], c.quality, v => upd('quality', v))),
                 this.row('No direct file', 'What a tap does when only the post can be found', this.seg([['post', 'Open post'], ['hide', 'Hide badge']], c.noDirect, v => upd('noDirect', v)), 'wrap'),
                 this.row('Look harder', 'Quietly loads the post page to find the file when the feed hasn\'t shared it', toggle(c.deep, () => upd('deep', !c.deep), 'Look harder')),

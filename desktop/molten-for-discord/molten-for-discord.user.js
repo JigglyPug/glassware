@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.9
+// @version      1.0.10
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.9';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.10';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -1473,6 +1473,12 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
     // the dashboard's numbers, in Hourglass's shape: finished days only for the range, today on its own
     const fmtDur = sec => { const m = Math.round((sec || 0) / 60); if (m < 1) return sec > 0 ? '<1m' : '0m'; const hh = Math.floor(m / 60), r = m % 60; return hh ? (r ? hh + 'h ' + r + 'm' : hh + 'h') : r + 'm'; };
     const hourName = n => (n % 12 || 12) + (n < 12 ? ' AM' : ' PM');
+    // a share the way people say it: "half your Discord time", "a third of your messages" (within 2 points), else "41% of …"
+    const shareOf = (p, what) => {
+        const v = p * 100;
+        for (const [t, w] of [[25, 'a quarter of '], [100 / 3, 'a third of '], [50, 'half '], [200 / 3, 'two thirds of '], [75, 'three quarters of ']]) if (Math.abs(v - t) <= 2) return w + what;
+        return Math.round(v) + '% of ' + what;
+    };
     const sumOf = a => a.reduce((x, y) => x + y, 0);
     const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const dow = d => (d.getDay() + 6) % 7;
@@ -2491,7 +2497,7 @@ button{cursor:pointer}
         lava() {
             if (!S.enabled) return [this.offNote()];
             const p = LAVA.profile, PR = PRESETS[p], cur = LAVA.profiles[p], r = DC.route();
-            const out = [this.sec(null, this.tgl('lavaOn', 'Lava background', 'Off = clear glass over a plain black page'),
+            const out = [this.sec(null, this.tgl('lavaOn', 'Lava background', 'When off, the glass sits over a plain black page'),
                 this.fold(S.lavaOn, 'on',
                     h('div', { class: 'seg prof', role: 'radiogroup', 'aria-label': 'Profile' }, Object.keys(PRESETS).map(k =>
                         h('button', { class: k === p ? 'on' : null, role: 'radio', 'aria-checked': String(k === p), text: PROFILE_NAMES[k], onclick: () => { LAVA.profile = k; saveLava(); lavaLive('profile'); this.render(); } }))),
@@ -2501,27 +2507,27 @@ button{cursor:pointer}
                     this.lsl('bgSaturate', 'Saturation', null, { min: 0, max: 5, step: 0.05, hard: 15 }),
                     this.lsl('bgScale', 'Zoom', null, { min: 1, max: 2.5, step: 0.01, hard: 7.5 })))];
             out.push(this.fold(S.lavaOn, 'far', this.sec('Motion',
-                this.row('Random motion', 'Off = a fixed animation', toggle(cur.randomize, () => { cur.randomize = !cur.randomize; saveLava(); lavaLive('randomize'); this.render(); }, 'Random motion')),
+                this.row('Random motion', 'When off, it plays a fixed animation', toggle(cur.randomize, () => { cur.randomize = !cur.randomize; saveLava(); lavaLive('randomize'); this.render(); }, 'Random motion')),
                 this.fold(cur.randomize, 'on',
                     this.lsl('motionSpeed', 'Speed', '1 = normal, 2 = twice as fast', { min: 0.1, max: 4, step: 0.05, unit: '×', hard: 12 }),
                     this.lsl('motionAmount', 'Amount', 'How far it breathes, drifts, tilts and wanders', { min: 0, max: 3, step: 0.05, unit: '×', hard: 9 })),
                 this.row('Moving color blobs', 'Turning these off saves the most GPU', toggle(cur.blobs, () => { cur.blobs = !cur.blobs; saveLava(); lavaLive('blobs'); this.render(); }, 'Moving color blobs')),
-                this.fold(cur.blobs, 'on', this.lsl('blobSteps', 'Blob smoothness', 'Lower = cheaper, choppier', { min: 5, max: 240, step: 1, hard: 720 })),
+                this.fold(cur.blobs, 'on', this.lsl('blobSteps', 'Blob smoothness', 'Lower is lighter on your GPU but choppier', { min: 5, max: 240, step: 1, hard: 720 })),
                 this.btns(['Shuffle motion', shuffle], ['Reset ' + PROFILE_NAMES[p], () => { LAVA.profiles[p] = Object.assign({}, PR); saveLava(); lavaLive('profile'); this.render(); }]))));
             const mine = r.gid && r.gid !== '@me' ? D.colors[r.gid] || '' : '';
             const others = Object.keys(D.colors).filter(g => g !== r.gid);
             out.push(this.sec('Colors',
                 this.tgl('videoLava', 'Videos and streams', 'A playing video, stream or camera takes over the lava'),
                 this.fold(S.videoLava, 'on',
-                    this.sl('videoFps', 'Frame rate', 'Lower = cheaper; it is blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps' }),
+                    this.sl('videoFps', 'Frame rate', 'Lower is lighter on your GPU. It\'s blurred anyway', { min: 1, max: 60, step: 1, unit: 'fps' }),
                     this.sl('videoWidth', 'Frame copy width', 'Small is fine behind the blur', { min: 32, max: 512, step: 16, unit: 'px' }),
                     this.tgl('videoCropBars', 'Crop black bars', 'Leaves bars baked into a video out of the lava')),
                 this.tgl('clearMedia', 'Lava around opened media', 'A picture or video opened full size, or a video in fullscreen, sits in the glass and lava instead of black'),
                 this.tgl('voiceLava', 'Voice in the lava', 'In a call, the lava takes the avatar of whoever is talking'),
-                this.fold(S.voiceLava, 'on', this.ch('voiceWhere', 'Where', 'Anywhere = while you\'re connected, whatever you\'re looking at', [['call', 'Call screen'], ['any', 'Anywhere']])),
+                this.fold(S.voiceLava, 'on', this.ch('voiceWhere', 'Where', 'Anywhere means while you\'re in a call, whatever you\'re looking at', [['call', 'Call screen'], ['any', 'Anywhere']])),
                 this.tgl('profileLava', 'Profiles in the lava', 'Opening someone\'s profile takes their banner or avatar'),
                 this.tgl('followMedia', 'Follow media as you scroll', 'The picture closest to the middle of the chat'),
-                this.tgl('serverTint', 'Server colors', 'Nothing on screen? Your color for the server, its icon, then its banner. Off = Discord purple'),
+                this.tgl('serverTint', 'Server colors', 'With nothing on screen, the lava uses your color for the server, then its icon, then its banner. When off, it\'s Discord purple'),
                 this.fold(S.serverTint, 'on',
                     r.gid && r.gid !== '@me' ? this.row('This server\'s color', mine ? 'Yours, instead of its icon and banner' : 'From its icon. Pick one to use your own',
                         h('div', { class: 'inline' }, h('input', { class: 'color', type: 'color', value: mine || hexOf(serverRgb(r.gid, DC.guildIcon(r.gid))), 'aria-label': 'This server\'s color',
@@ -2551,7 +2557,7 @@ button{cursor:pointer}
                 this.tgl('pauseScroll', 'Pause the lava while scrolling', 'Smoother on long chats'),
                 this.tgl('pauseUnfocused', 'Pause when Discord isn\'t the active window', 'Even when you can still see it on another screen'),
                 this.tgl('easeCalls', 'Calm during calls and streams', 'Switches to Calm while you\'re in a call or watching a stream'),
-                this.note('No media on screen? The lava uses your color for the server, its icon, then its banner, and last Discord purple. Hold a slider to see through this panel.')));
+                this.note('With no media on screen, the lava uses your color for the server, then its icon, then its banner, then Discord purple. Hold a slider to see through this panel.')));
             return out;
         },
 
@@ -2589,7 +2595,7 @@ button{cursor:pointer}
                     this.text(D.notes[r.cid] || '', 'Add a short note…', v => { if (v) D.notes[r.cid] = v; else delete D.notes[r.cid]; store.notes(); refreshAll(); }, 'Channel note', 200))
                     : this.note('Open a channel to give it a note.')));
             out.push(this.fold(S.enabled, 'far', this.sec('Lava button',
-                this.tgl('favHover', 'Show favorites when you point at it', 'Off = the lava button only opens this panel'),
+                this.tgl('favHover', 'Show favorites when you point at the lava button', 'When off, the lava button only opens this panel'),
                 this.tgl('favDrops', 'Lava drop on channels', 'Point at a channel in the list on the left and click its drop to add or remove it'))));
             out.push(this.sec('Recent',
                 this.tgl('keepRecent', 'Keep a Recent list', 'The last ' + RECENT_CAP + ' channels you opened, on this computer'),
@@ -2779,15 +2785,17 @@ button{cursor:pointer}
             out.push(level('Where and when'));
             const F = A.lists[this.field] ? this.field : 'time', L = A.lists[F], L0 = L[0], LT = sumOf(L.map(e => e.v)), pc = L0 ? Math.round(L0.v / LT * 100) : 0;
             const msgsOf = v => Math.round(v) + (Math.round(v) === 1 ? ' message' : ' messages');
-            const Q = { time: 'Where does your time go?', msgs: 'Where do you talk?', people: 'Who do you spend time with?', channels: 'Which channels hold you?' }[F];
+            const Q = { time: 'Where does your time go?', msgs: 'Where do you talk?', people: 'Who do you spend time with?', channels: 'Which channels do you spend time in?' }[F];
             let hero;
             if (!L0) hero = { time: 'Nothing counted yet. Bubbles fill in as you use Discord.', msgs: 'Nothing sent yet. Bubbles fill in as you talk.',
                 people: 'Nothing in your DMs yet. Bubbles fill in as you chat.', channels: 'Nothing counted yet. Bubbles fill in as you use Discord.' }[F];
             else if (A.firstDay) hero = `Nothing finished yet. ${L0.name} leads today so far.`;
-            else hero = { time: `${L0.name} took the most time ${A.inP}. That's ${pc}% of your Discord time.`,
-                msgs: `${L0.name} got the most of your messages ${A.inP}. That's ${pc}% of them.`,
-                people: `You spent the most time with ${L0.name} ${A.inP}. That's ${pc}% of your DM time.`,
-                channels: `${L0.name} held you the longest ${A.inP}. That's ${pc}% of your channel time.` }[F];
+            else if (L[1] && L[1].v / LT >= .2 && pc - Math.round(L[1].v / LT * 100) <= 2) hero = `${L0.name} and ${L[1].name} took about ${pc}% each ${A.inP}.`;   // a near tie
+            else { const p = L0.v / LT;
+                hero = { time: `${L0.name} took ${shareOf(p, 'your Discord time')} ${A.inP}.`,
+                    msgs: `${L0.name} got ${shareOf(p, 'your messages')} ${A.inP}.`,
+                    people: `You spent ${shareOf(p, 'your DM time')} with ${L0.name} ${A.inP}.`,
+                    channels: `${L0.name} took ${shareOf(p, 'your channel time')} ${A.inP}.` }[F]; }
             out.push(card(Q, hero, A.full && !A.firstDay, this.orbit(L, LT, F === 'msgs' ? msgsOf : fmtDur, F)));
 
             // How much are you on Discord? (a bar per day, with the average)
@@ -2818,12 +2826,15 @@ button{cursor:pointer}
             let chAns; const top = A.moved[0];
             if (!A.enough) chAns = `Changes show up after ${A.need} more day${A.need === 1 ? '' : 's'} of history.`;
             else if (!top) chAns = `Nothing moved much ${A.inP}. Every place stayed within 5m a day.`;
-            else if (top.was < 60) chAns = `${top.name} is new ${A.inP}. It's at ${fmtDur(top.now)} a day.`;
-            else chAns = `${top.name} ${top.d > 0 ? 'rose' : 'dropped'} the most ${A.inP}. It went from ${fmtDur(top.was)} to ${fmtDur(top.now)} a day.`;
+            else if (top.was < 60) chAns = `${top.name} is new ${A.inP}, at ${fmtDur(top.now)} a day.`;
+            else { const r = top.now / top.was;   // a big jump in words; the row shows the minutes
+                chAns = r > 3 ? `${top.name} more than tripled ${A.inP}.` : r > 2 ? `${top.name} more than doubled ${A.inP}.` : r < .5 ? `${top.name} more than halved ${A.inP}.`
+                    : `${top.name} ${top.d > 0 ? 'rose' : 'dropped'} the most ${A.inP}, from ${fmtDur(top.was)} to ${fmtDur(top.now)} a day.`;
+                if (chAns.split(/\s+/).length > 15) chAns = `${top.name} ${top.d > 0 ? 'rose' : 'dropped'} the most ${A.inP}. It went from ${fmtDur(top.was)} to ${fmtDur(top.now)} a day.`; }   // too long for one sentence
             const sign = d => (d > 0 ? '+' : '−') + fmtDur(Math.abs(d));
             const big = Math.max(1, ...A.moved.map(s => Math.max(s.now, s.was)));
             out.push(card('What changed?', chAns, A.full,
-                A.moved.length ? h('div', { class: 'sl', text: 'Places that moved · time a day · each day' }) : null,
+                A.moved.length ? h('div', { class: 'sl', text: 'Places that moved, by time a day' }) : null,
                 A.moved.map(s => h('button', { class: 'srow2', type: 'button', title: 'Go to ' + s.name, onclick: () => DC.go(s.go) },
                     this.bubbleFace(s, 30, Math.max(s.now, s.was) / big), h('div', { class: 'nm' }, h('b', { class: s.dm ? 'who' : null, text: s.name }), h('small', { text: fmtDur(s.was) + ' → ' + fmtDur(s.now) })),
                     this.spark(s), h('div', { class: 'delta ' + (s.d > 0 ? 'up' : 'down'), text: sign(s.d) })))));
@@ -2909,7 +2920,7 @@ button{cursor:pointer}
         xDays(days, today) {
             return h('div', { class: 'xa', 'data-axis': 'x', style: `grid-template-columns:repeat(${days.length},minmax(0,1fr))` },
                 days.length <= 8 ? days.map(x => h('span', { class: x === today ? 'now' : null, text: x.dt.toLocaleDateString(undefined, { weekday: 'narrow' }) }))
-                    : days.map((x, i) => i % 7 ? null : h('span', { style: 'grid-column:span 7;text-align:left', text: shortDate(x.dt) })));
+                    : days.map((x, i) => i % 7 || (i && days.length - i < 4) ? null : h('span', { style: `grid-column:${i + 1} / span ${Math.min(7, days.length - i)};text-align:left`, text: shortDate(x.dt) })));
         },
         xHours() { return h('div', { class: 'xa', 'data-axis': 'x', style: 'grid-template-columns:repeat(4,minmax(0,1fr))' }, ['12 AM', '6 AM', '12 PM', '6 PM'].map(x => h('span', { style: 'text-align:left', text: x }))); },
         // a bar per day against max, a gridline at the top, a dashed average if given, labelled axes (as in Hourglass)
@@ -2950,14 +2961,15 @@ button{cursor:pointer}
                     chip(field === v, t, at([146, 109, 71, 34][i], 42, 46), () => { this.field = v; this.render(); })));
             const ranges = h('div', { class: 'arc rangebar', role: 'radiogroup', 'aria-label': 'Range' },
                 [['week', '7 days'], ['month', '4 weeks']].map(([v, t], i) => chip(this.range === v, t, at([238, 302][i], 42, 46), () => { this.range = v; this.render(); })));
-            const B = list.length ? this.bubbles(list, total, fmt) : { box: h('div', { class: 'bub empty', text: 'Nothing here yet' }), read: h('div', { class: 'readout', text: '' }) };
-            const what = { time: 'A bubble per server or DM', msgs: 'A bubble per server or DM', people: 'A bubble per person', channels: 'A bubble per channel' }[field];
+            const what = { time: 'Each bubble is a server or DM.', msgs: 'Each bubble is a server or DM.', people: 'Each bubble is a person.', channels: 'Each bubble is a channel.' }[field];
+            const how = field === 'msgs' ? 'Bigger means more messages.' : 'Bigger means more time.';
+            const B = list.length ? this.bubbles(list, total, fmt, what + ' ' + how) : { box: h('div', { class: 'bub empty', text: 'Nothing here yet' }), read: h('div', { class: 'readout', text: '' }) };
             return [h('div', { 'data-chart': 'places' }, h('div', { class: 'orb' }, ring, B.box, fields, ranges),
-                h('div', { class: 'bkey' }, h('span', { 'data-axis': 'x', text: what }), h('span', { 'data-axis': 'y', text: field === 'msgs' ? 'bigger = more messages' : 'bigger = more time' }))), B.read];
+                h('div', { class: 'bkey' }, h('span', { 'data-axis': 'x', text: what }), h('span', { 'data-axis': 'y', text: how }))), B.read];
         },
         // Bubbles (area = amount). Point at one and it swells while its neighbors lean out of the way, the way
         // an Apple Watch's app grid does; click one to go there.
-        bubbles(list, total, fmt) {
+        bubbles(list, total, fmt, label) {
             const MAX = 16, W = 340, H = 290, G = 3;
             let items = list.slice(0, MAX);
             if (list.length > MAX) { const rest = list.slice(MAX - 1); items = list.slice(0, MAX - 1).concat({ id: 'rest', name: rest.length + ' more', sub: 'together', v: sumOf(rest.map(e => e.v)), icon: '', rest: true }); }
@@ -2966,12 +2978,12 @@ button{cursor:pointer}
             const x0 = Math.min(...pos.map(p => p.x - p.r)), x1 = Math.max(...pos.map(p => p.x + p.r)), y0 = Math.min(...pos.map(p => p.y - p.r)), y1 = Math.max(...pos.map(p => p.y + p.r));
             const k = Math.min((W - 8) / (x1 - x0), (H - 8) / (y1 - y0), 96 / 50), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
             const B = pos.map(p => ({ x: W / 2 + (p.x - cx) * k, y: H / 2 + (p.y - cy) * k, r: p.r * k }));
-            const hint = 'Point at a bubble for details. Click one to go there.';
-            const read = h('div', { class: 'readout', text: hint });
             const pct = e => Math.max(1, Math.round(e.v / total * 100)) + '%';
+            const hint = items[0].name + ' · ' + fmt(items[0].v) + ' · ' + pct(items[0]) + (items[0].sub ? ' · ' + items[0].sub : '');   // at rest, the biggest bubble's own line
+            const read = h('div', { class: 'readout', text: hint });
             const tipOf = e => e.name + ' · ' + fmt(e.v) + ' · ' + pct(e) + (e.sub ? ' · ' + e.sub : '');
             const say = e => { read.replaceChildren(h('b', { class: e.dm ? 'who' : null, text: e.name }), ' · ' + fmt(e.v) + ' · ' + pct(e) + (e.sub ? ' · ' + e.sub : '') + (e.go ? ' · click to go there' : '')); read.classList.add('on'); };
-            const box = h('div', { class: 'bub', role: 'group', 'aria-label': 'One bubble per place, sized by how much it holds' });
+            const box = h('div', { class: 'bub', role: 'group', 'aria-label': label });
             const btns = items.map((e, i) => {
                 const b = B[i];
                 const btn = h('button', { class: 'bb' + (e.rest ? ' rest' : ''), type: 'button', 'aria-label': tipOf(e), 'data-tip': tipOf(e),
@@ -3027,7 +3039,7 @@ button{cursor:pointer}
                     h('div', { class: 'd hint', text: 'Blurred until you point at them.' }),
                     this.tgl('blurMedia', 'Images and videos', 'In messages and embeds'),
                     this.tgl('blurDMs', 'Direct messages', 'Names and pictures in your DM list'),
-                    this.tgl('blurServers', 'Server icons', 'The icons in the server list on the left'),
+                    this.tgl('blurServers', 'Server icons', 'In the list on the left'),
                     this.tgl('blurChat', 'Messages in chosen channels', 'Message text in the channels you pick'),
                     this.fold(S.blurChat, 'on',
                         r.cid ? this.row('Blur this channel', blurring ? 'Messages here are blurred' : 'Messages here show normally',

@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Looking-Glass: Open any video on its own." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.2.11-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
+[![Install](https://img.shields.io/badge/Install-v1.2.12-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -26,8 +26,8 @@ Looking-Glass puts a small circle in the corner of every video, in the site's ow
 
 ## What's new
 
+- **1.2.12** (2026-11-19): The description under "Switch to the new tab" reads as a sentence.
 - **1.2.11** (2026-11-17): The badge no longer sits on top of a picture viewer or a dialog opened over the page (Discord's viewer, a site's lightbox): it belongs to the video underneath, so it waits until that closes.
 - **1.2.10** (2026-11-11): A redirect is checked before it's followed: a site's icon that redirects to your own computer or home network is now never asked for there. Before, the request was made and only its answer thrown away. Redirects to other public addresses still work.
-- **1.2.9** (2026-11-11): Looking-Glass never asks your own computer or home network for a site's icon. Before, an icon Tampermonkey refused could still be fetched by the browser, and some addresses written another way ([::ffff:192.168.1.1], "localhost.", 100.64.x.x) got past the check entirely.
 
 [Every change](CHANGES.md)

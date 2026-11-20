@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.3.9 · 2026-11-19
+
+- A few lines in the panel read more plainly: the Standing preferences hint, the Wildcard and What's airing now hints, and the sequel finder when nothing is missing.
+
 ## 1.3.8 · 2026-11-10
 
 - Pull the menu's handle or header down to close it, and taps inside the menu no longer reach AniList behind it.

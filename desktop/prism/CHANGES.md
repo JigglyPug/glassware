@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.2.12 · 2026-11-19
+
+- The Bright tone's description and the hint in the hex box read more plainly.
+
 ## 2.2.11 · 2026-11-11
 
 - A redirect is checked before it's followed: a site's manifest or icon that redirects to your own computer or home network is now never asked for there. Before, the request was made and only its answer thrown away. Redirects to other public addresses still work.
