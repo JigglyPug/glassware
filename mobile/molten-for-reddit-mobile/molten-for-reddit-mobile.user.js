@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.4.15
+// @version      1.4.16
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -761,6 +761,7 @@ div.lava-blobs {
     try { sheet = new CSSStyleSheet(); } catch (e) { sheet = null; }
     const done = new WeakSet();
     const fallback = new Set();
+    let adoptT = 0;
     let seekColor = '';
     let tokens = '';
     let chip = 'rgba(255,255,255,.18)';
@@ -795,6 +796,8 @@ div.lava-blobs {
     function apply(sr) {
       if (!sr || done.has(sr)) return;
       done.add(sr);
+      // new components restyle the page once they're in (see redrawPosts), so their buttons don't start out blank
+      clearTimeout(adoptT); adoptT = setTimeout(redrawPosts, 400);
       if (sheet) {
         try { sr.adoptedStyleSheets = [...sr.adoptedStyleSheets, sheet]; return; } catch (e) { /* fall back below */ }
       }
@@ -2507,12 +2510,14 @@ div.lava-blobs {
     }
   }, 500);
   let scrollIdle = 0, settleT = 0;
-  /* Phone browsers can skip redrawing parts of the frosted posts after a scroll (short on graphics memory, they
-     drop what's inside Reddit's own components): the vote, comment and share buttons go blank until the next tap.
-     When scrolling stops, the posts on screen get a one-frame layer of their own, which makes the browser draw
-     them again. */
+  /* After a scroll, phone browsers can leave the vote, comment and share buttons blank (they sit inside Reddit's own
+     components) until something restyles the page: a tap, or any change in the panel. When scrolling stops, the
+     page is restyled the same way (a value on the page root changes, which reaches inside every component) and the
+     posts on screen get a one-frame layer of their own, so they're drawn again too. */
+  let restyleN = 0;
   function redrawPosts() {
     if (!ENABLED) return;
+    document.documentElement.style.setProperty('--molten-restyle', String(++restyleN % 1000));
     const h = innerHeight;
     for (const p of document.querySelectorAll('shreddit-post, shreddit-ad-post')) {
       const r = p.getBoundingClientRect();

@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten for Reddit Mobile: Molten glass for Reddit, pocket size." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.4.15-ff4500?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/molten-for-reddit-mobile/)
+[![Install](https://img.shields.io/badge/Install-v1.4.16-ff4500?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/mobile/molten-for-reddit-mobile/molten-for-reddit-mobile.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/mobile/molten-for-reddit-mobile/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Phone-555?style=flat-square)
 
@@ -31,8 +31,8 @@ This is the phone version of Molten for Reddit: a gentle lava background from th
 
 ## What's new
 
+- **1.4.16** (2026-11-20): The vote, comment and share buttons stay drawn after you scroll: when scrolling stops, and when new posts load in, the page restyles itself the way a change in the panel does, so you don't have to tap or change a setting to bring them back.
 - **1.4.15** (2026-11-20): The vote, comment and share buttons no longer go blank after you scroll. When scrolling stops, the posts on screen are drawn again, so you don't have to tap to bring them back.
 - **1.4.14** (2026-11-19): A new icon in the family style: the speech bubble's tail has melted into a heavy drop.
-- **1.4.13** (2026-11-19): The lava and video quality descriptions read as plain sentences, and so does the keyword box in the profile lookup.
 
 [Every change](CHANGES.md)

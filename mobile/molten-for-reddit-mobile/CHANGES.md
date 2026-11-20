@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.4.16 · 2026-11-20
+
+- The vote, comment and share buttons stay drawn after you scroll: when scrolling stops, and when new posts load in, the page restyles itself the way a change in the panel does, so you don't have to tap or change a setting to bring them back.
+
 ## 1.4.15 · 2026-11-20
 
 - The vote, comment and share buttons no longer go blank after you scroll. When scrolling stops, the posts on screen are drawn again, so you don't have to tap to bring them back.
