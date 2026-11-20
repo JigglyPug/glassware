@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten for Reddit: Molten glass for new Reddit." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.4.12-ff4500?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)
+[![Install](https://img.shields.io/badge/Install-v2.4.13-ff4500?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-reddit/molten-for-reddit.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-reddit/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-reddit.com%20%28new%20Reddit%29-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -33,8 +33,8 @@ Molten for Reddit puts a lava-lamp background made from the image or video you a
 
 ## What's new
 
+- **2.4.13** (2026-11-19): A new icon in the family style: the speech bubble's tail has melted into a heavy drop.
 - **2.4.12** (2026-11-19): Settings descriptions say what happens when a switch is off in a sentence, and the lava's GPU settings say what lower means. The keyword box in Look someone up reads more plainly.
 - **2.4.11** (2026-11-17): The icon matches the panel: Reddit's orange-red (#FF4500), in Tampermonkey's list, the panel's header and on the website.
-- **2.4.10** (2026-11-17): The panel uses Reddit's own orange-red (#FF4500) instead of a general Molten orange: switches, buttons, tabs, headings and the glow. The lava itself is unchanged.
 
 [Every change](CHANGES.md)

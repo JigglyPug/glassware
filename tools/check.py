@@ -492,6 +492,7 @@ if '--quick' not in args:
         ok(r.returncode == 0, f'the glitch check crashed (exit {r.returncode}): ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
         cur = ''; seen = set()
         for l in r.stdout.splitlines():
+            if l.startswith('== selftest:'): ok('catch the bunched sample' in l, 'the fill-the-row checks failed their self-test: ' + l[13:]); continue
             if l.startswith('== '): cur = l[3:].split(':')[0].split('/')[1]; seen.add(cur); (print(f'  ✓ {cur}: clean') if l.endswith('clean') else None)
             elif l.strip() and cur: ok(False, f'{cur}: {l.strip()}')
         for p in targets:   # every script asked about must report back; silence is not a pass

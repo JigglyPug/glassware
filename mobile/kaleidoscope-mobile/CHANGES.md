@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.3.10 · 2026-11-19
+
+- A new icon in the family style: the gem with each facet in a soft color.
+
 ## 1.3.9 · 2026-11-19
 
 - A few lines in the panel read more plainly: the Standing preferences hint, the Wildcard and What's airing now hints, and the sequel finder when nothing is missing.

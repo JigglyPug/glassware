@@ -51,38 +51,78 @@ ${part === 'tile' ? '' : glyph}
 }
 
 // ---------- glyphs (centered in the tile, ~40 units across) ----------
-const hourglass = (g) => `
+// ---------- the family style (Molten for Discord's): warm glass bodies and lava that's part of the shape ----------
+// a body tube in its own gradient (ids are per icon, one icon per document)
+const hot = (d, g, stops, opts = {}) => `<defs><linearGradient id="hot" x1="25" y1="28" x2="74" y2="74" gradientUnits="userSpaceOnUse">${stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient></defs>`
+  + tube(d, Object.assign({ glow: g, w: 4, core: 1.5, fill: .07 }, opts)).replace('url(#tubeBody)', 'url(#hot)');
+const drop = (x, y, r, c, glow) => `<circle cx="${x}" cy="${y}" r="${(r * 1.7).toFixed(2)}" fill="${glow || c}" fill-opacity=".5" filter="url(#bloom)"/><circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`;
+const blob = (d, c, glow, op = 1) => `<path d="${d}" fill="${glow}" fill-opacity=".5" filter="url(#bloom)"/><path d="${d}" fill="${c}" fill-opacity="${op}"/>`;
+
+// Molten Tools: the play button softening in the heat: its lower edge sags into one run, the bottom corner slumps
+// into a heavy drip, three flames trail behind
+const MT = 'M44.6 31.8 L67.4 45.8 C70.4 47.6 70.4 49.6 67.6 51.2 C64 53.4 61.6 55 59.6 56.6 C58.2 57.8 57.8 59.2 58 61.2 C58.3 64 54.8 64.6 54.6 61.8 C54.4 60.4 54 59.6 52.6 60 C49.6 61.4 47.6 63.4 46.8 66 C46.2 68.4 46.6 70.8 46.8 73 C47.1 77 41.8 77.6 41.6 73.6 C41.4 70.6 40.8 68 40.6 64 L40.6 35.4 C40.6 31.6 42.4 30.6 44.6 31.8 Z';
+const glyph_molten_tools = g => `<g transform="translate(-2 -2.5)">${hot(MT, '#ff4d6d', [[0, '#fff2b8'], [.45, '#ffb347'], [1, '#ff3d6a']])}
+</g>`;
+
+// Molten for Reddit: the bubble's bottom edge sags into a small run, and the tail has melted into a heavy drop,
+// hanging on by a thin neck; three beads for a reply being typed
+const MR = 'M35 31 H65 Q71 31 71 37 V53.4 Q71 59.4 65 59.4 L44.6 60.3 C42.4 61.4 41.8 63.4 42 66.4 C42.3 70.0 41 72.6 38.6 73.6 C35.4 75.0 32.6 72.9 33.6 70.1 C34.6 67.6 37 65.7 37.4 63.1 C37.6 61.5 36.6 60.3 35 60.2 Q29 59.4 29 53.4 V37 Q29 31 35 31 Z';
+const glyph_molten_for_reddit = g => `<g transform="translate(0 -3)">${hot(MR, '#ff7a40', [[0, '#fff0e0'], [.5, '#ffb48f'], [1, '#ff5a1f']])}${[41, 50, 59].map(x => drop(x, 45, 2.7, '#fff0e0', '#ffb347')).join('')}</g>`;
+
+// Hourglass: lava for sand, falling through the neck and piling up; the heat softens the base, which sags into a run
+const HGL = 'M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 M63.5 34 C63.5 43 53.5 46 53.5 50 C53.5 54 63.5 57 63.5 66';
+const glyph_hourglass = g => `<g>
   <path d="M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 L63.5 66 C63.5 57 53.5 54 53.5 50 C53.5 46 63.5 43 63.5 34 Z" fill="#fff" fill-opacity=".07"/>
-  <path d="M41 38.5 L59 38.5 C57.5 43.5 51.5 45.5 50 48 C48.5 45.5 42.5 43.5 41 38.5 Z" fill="#fff" fill-opacity=".3"/>
-  <path d="M41 63.5 C43 58.5 47 57.5 50 57.5 C53 57.5 57 58.5 59 63.5 Z" fill="#fff" fill-opacity=".34"/>
-  ${tube('M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 M63.5 34 C63.5 43 53.5 46 53.5 50 C53.5 54 63.5 57 63.5 66', { glow: g, w: 3.6, core: 1.3 })}
-  ${tube('M32 31 H68 M32 69 H68', { glow: g, w: 4.6, core: 1.7 })}`;
+  <defs><linearGradient id="lava" x1="0" y1="36" x2="0" y2="66" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffe08a"/><stop offset=".55" stop-color="#ff9f43"/><stop offset="1" stop-color="#ff5e7e"/></linearGradient></defs>
+  ${blob('M41.2 39.4 C44 39 46 40.4 50 39.6 C54 40.4 56 39 58.8 39.4 C57.6 43.6 52 45.6 50 48.4 C48 45.6 42.4 43.6 41.2 39.4 Z', 'url(#lava)', '#ff9f43')}
+  ${drop(50, 51.6, 1.15, '#ffb347', '#ff9f43')}${drop(50, 54.8, .85, '#ff9f43', '#ff7a3d')}
+  ${blob('M40.6 63.6 C41.4 60.2 44 58.6 46.6 59.6 C47.8 57.4 52 57 53.6 59.2 C56 58.4 58.6 60.2 59.4 63.6 Z', 'url(#lava)', '#ff7a3d')}
+  ${tube(HGL, { glow: g, w: 3.6, core: 1.3 })}
+  ${tube('M32 31 H68 M32 69 H68', { glow: g, w: 4.6, core: 1.7 })}</g>`;
 
-function gem(g) {
-  const r = 23, pts = [...Array(6)].map((_, i) => { const t = Math.PI / 3 * i - Math.PI / 2; return [50 + r * Math.cos(t), 50 + r * Math.sin(t)]; });
-  const P = p => p.map(v => v.toFixed(2)).join(' ');
-  const shade = [['#ffffff', .5], ['#bfe6ff', .3], ['#5f8fff', .16], ['#c9a8ff', .24], ['#4f7cff', .12], ['#e6f6ff', .4]];
-  const facets = pts.map((p, i) => `<path d="M50 50 L${P(p)} L${P(pts[(i + 1) % 6])} Z" fill="${shade[i][0]}" fill-opacity="${shade[i][1]}"/>`).join('');
-  const hex = 'M' + pts.map(P).join(' L') + ' Z';
-  const spokes = pts.map(p => `M50 50 L${P(p)}`).join(' ');
-  return facets + tube(spokes, { glow: g, w: 1.8, core: .8 }) + tube(hex, { glow: g, w: 3.4, core: 1.3 });
-}
-
-const magnifier = (g) => `
-  <defs><radialGradient id="lens" cx="40" cy="40" r="18" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".18"/><stop offset="1" stop-color="#fff" stop-opacity=".04"/></radialGradient></defs>
+// Looking-Glass: a video with its play button behind the lens; the ring softens at the bottom into a run, and the
+// handle's end droops and drips
+const glyph_looking_glass = g => `<g>
+  <defs><radialGradient id="lens" cx="40" cy="40" r="18" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity=".05"/></radialGradient>
+    <clipPath id="lensClip"><circle cx="45" cy="45" r="13.2"/></clipPath>
+    <linearGradient id="vid" x1="34" y1="36" x2="56" y2="56" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff7ab6"/><stop offset="1" stop-color="#7a5cff"/></linearGradient></defs>
   <circle cx="45" cy="45" r="15" fill="url(#lens)"/>
-  <path d="M36 41 A10 10 0 0 1 42 34.6" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2" stroke-linecap="round"/>
+  <g clip-path="url(#lensClip)">
+    <rect x="31" y="35.5" width="28" height="19" rx="4.5" fill="url(#vid)" fill-opacity=".55"/>
+    <path d="M41.6 39.6 Q41.6 37.8 43.2 38.7 L51 43.6 Q52.6 44.6 51 45.6 L43.2 50.5 Q41.6 51.4 41.6 49.6 Z" fill="#fff" fill-opacity=".95"/>
+  </g>
+  <path d="M35.6 40.6 A10 10 0 0 1 41.6 34.2" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2" stroke-linecap="round"/>
   ${tube('M45 30 A15 15 0 1 1 44.99 30 Z', { glow: g, w: 4.2, core: 1.5 })}
-  ${tube('M56.2 56.2 L69 69', { glow: g, w: 5.6, core: 2 })}`;
+  ${tube('M56.2 56.2 L69 69', { glow: g, w: 5.6, core: 2 })}</g>`;
 
-const bubble = (g) => tube('M33 31 H67 Q73 31 73 37 V55 Q73 61 67 61 H45 L36 69 V61 H33 Q27 61 27 55 V37 Q27 31 33 31 Z', { glow: g, w: 4, core: 1.5, fill: .07 });
+// Prism: white light meets the glass and stops at its face, crosses it faintly, and leaves the far face as a spectrum;
+// the heat sags the base into a run and slumps one bottom corner
+const SPEC = ['#ff4d5e', '#ff9f43', '#ffe066', '#5ee38a', '#4dabff', '#9b6bff'];
+const glyph_prism = g => {
+  const ex = [59.4, 47.4], rays = SPEC.map((c, i) => {
+    const d = `M${ex[0] + i * .3} ${ex[1] + i * .55} L81 ${36.5 + i * 5.2}`;
+    return `<path d="${d}" stroke="${c}" stroke-width="3.8" stroke-opacity=".45" stroke-linecap="round" filter="url(#bloom)"/><path d="${d}" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>`;
+  }).join('');
+  const beam = 'M17 58.6 L37.9 52';
+  const body = 'M50 31 L70 65.6 H30 Z';
+  return `<defs><linearGradient id="inside" x1="38" y1="52" x2="60" y2="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#fff" stop-opacity=".2"/></linearGradient></defs>
+  <g>${rays}
+  <path d="M37.9 51.4 L59.4 47.2 L60.4 50.6 L37.9 52.6 Z" fill="url(#inside)"/>
+  <path d="${beam}" stroke="#fff" stroke-width="5.2" stroke-opacity=".5" stroke-linecap="round" filter="url(#bloom)"/><path d="${beam}" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+  ${tube(body, { glow: g, w: 4, core: 1.5, fill: .09 })}</g>`;
+};
 
-const play = (g) => tube('M41 33.5 Q41 30 44 31.8 L67 46.3 Q70 48.2 67 50.1 L44 64.6 Q41 66.4 41 62.9 Z', { glow: g, w: 4, core: 1.5, fill: .07 });
-
-const prism = (g) => `
-  ${tube('M50 31 L70 66 H30 Z', { glow: g, w: 4, core: 1.5, fill: .07 })}
-  ${tube('M24 59 L46 52.5', { glow: g, w: 2.6, core: 1.1 })}
-  ${tube('M54 50 L77 43', { glow: g, w: 2.6, core: 1.1 })}`;
+// Kaleidoscope: the gem with softly colored facets and plain spokes; its bottom point softens and runs
+const glyph_kaleidoscope = g => {
+  const r = 23, pts = [...Array(6)].map((_, i) => { const t = Math.PI / 3 * i - Math.PI / 2; return [50 + r * Math.cos(t), 50 + r * Math.sin(t)]; });
+  const F = p => p.map(v => v.toFixed(2)).join(' ');
+  const tints = ['#ff7eb6', '#ffc94d', '#4fe0b0', '#5cb6ff', '#b48cff', '#ff9f6b'];
+  const facets = pts.map((p, i) => `<path d="M50 50 L${F(p)} L${F(pts[(i + 1) % 6])} Z" fill="${tints[i]}" fill-opacity=".45"/>`).join('');
+  const spokes = pts.map(p => `M50 50 L${F(p)}`).join(' ');
+  const hex = 'M' + pts.map(F).join(' L') + ' Z';
+  const tip = 'M50 73 C50 74.4 50 75.6 50 76.6';
+  return `<g>${facets}${tube(spokes, { glow: g, w: 1.8, core: .8 })}${tube(hex, { glow: g, w: 3.4, core: 1.3 })}</g>`;
+};
 
 // a lava blob leaning forward: flame-like flicks sweep back off its left side, lava drips in two humps
 // underneath, two drops trail behind in clear space; drawn in the other Moltens' colors (Molten for
@@ -96,14 +136,14 @@ const glyph_molten_for_discord = (g) => {
   <g transform="translate(1.5 -2) rotate(-10 50 50)">${body}${eye(53)}${eye(63.5)}${drop(18, 34, 1.9)}${drop(15, 43.5, 1.3)}</g>`;
 };
 
-const HG = { a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') };
+const HG = { a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: glyph_hourglass('#a985ff') };
 const ICONS = {
-  'hourglass':         icon({ a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: hourglass('#c3a8ff') }),
-  'kaleidoscope':      icon({ a: '#2f7dff', b: '#1a3a9c', deep: '#06112e', rimA: '#a9d1ff', rimB: '#7fd6ff', glow: '#5aa2ff', glyph: gem('#8ec8ff') }),
-  'looking-glass':     icon({ a: '#3a8bff', b: '#1d3f9e', deep: '#07122f', rimA: '#b4d6ff', rimB: '#a3b8ff', glow: '#5c9dff', glyph: magnifier('#9ec7ff') }),
-  'molten-for-reddit': icon({ a: '#ff4500', b: '#c23500', deep: '#3a0f00', rimA: '#ffb48f', rimB: '#ff7a40', glow: '#ff4500', glyph: bubble('#ffc9b0') }),   // Reddit's orange-red, #FF4500
-  'molten-tools':      icon({ a: '#ff0033', b: '#c20027', deep: '#3a0010', rimA: '#ff9db0', rimB: '#ff4d6d', glow: '#ff0033', glyph: play('#ffc2cd') }),   // YouTube's red, #FF0033
-  'prism':             icon({ a: '#8b5cf6', b: '#2b48b8', deep: '#0c0a2a', rimA: '#d6c6ff', rimB: '#9ec2ff', glow: '#9a7dff', glyph: prism('#c7b5ff') }),
+  'hourglass':         icon({ a: '#8f63ff', b: '#4a1fa8', deep: '#14082e', rimA: '#d2c2ff', rimB: '#f09bff', glow: '#a985ff', glyph: glyph_hourglass('#a985ff') }),
+  'kaleidoscope':      icon({ a: '#2f7dff', b: '#1a3a9c', deep: '#06112e', rimA: '#a9d1ff', rimB: '#7fd6ff', glow: '#5aa2ff', glyph: glyph_kaleidoscope('#5aa2ff') }),
+  'looking-glass':     icon({ a: '#3a8bff', b: '#1d3f9e', deep: '#07122f', rimA: '#b4d6ff', rimB: '#a3b8ff', glow: '#5c9dff', glyph: glyph_looking_glass('#5c9dff') }),
+  'molten-for-reddit': icon({ a: '#ff4500', b: '#c23500', deep: '#3a0f00', rimA: '#ffb48f', rimB: '#ff7a40', glow: '#ff4500', glyph: glyph_molten_for_reddit('#ff4500') }),   // Reddit's orange-red, #FF4500
+  'molten-tools':      icon({ a: '#ff0033', b: '#c20027', deep: '#3a0010', rimA: '#ff9db0', rimB: '#ff4d6d', glow: '#ff0033', glyph: glyph_molten_tools('#ff0033') }),   // YouTube's red, #FF0033
+  'prism':             icon({ a: '#8b5cf6', b: '#2b48b8', deep: '#0c0a2a', rimA: '#d6c6ff', rimB: '#9ec2ff', glow: '#9a7dff', glyph: glyph_prism('#9a7dff') }),
   "molten-for-discord": icon({ a: '#5865f2', b: '#a3249e', deep: '#120a2e', rimA: '#c9ceff', rimB: '#ff8ae6', glow: '#7d88ff', glyph: glyph_molten_for_discord('#ff4500') }),
 };
 ICONS['molten-for-reddit-mobile'] = ICONS['molten-for-reddit'];

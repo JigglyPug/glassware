@@ -2,6 +2,11 @@
 
 Newest first.
 
+## 1.5.13 · 2026-11-19
+
+- A new icon in the family style: the sand is lava, falling through the neck in drops and piling up at the bottom. The header and block screen draw it too.
+- On the block screen and the lockdown screen, the lava drips: a glob swells at the neck, stretches and drops onto the pile, twice before each flip. It stands still if your device asks for less motion.
+
 ## 1.5.12 · 2026-11-19
 
 - "Where does your time go?" says it the way you'd say it: "Socials took half your time in the past 7 days." When two categories are about even, it says so.

@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.4.14 · 2026-11-19
+
+- A new icon in the family style: the speech bubble's tail has melted into a heavy drop.
+
 ## 1.4.13 · 2026-11-19
 
 - The lava and video quality descriptions read as plain sentences, and so does the keyword box in the profile lookup.

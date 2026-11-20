@@ -498,6 +498,45 @@ function stubPage() {
         const pr = p.getBoundingClientRect(), R = pr.right - parseFloat(pc.paddingRight) - parseFloat(pc.borderRightWidth || 0), last = Math.max(...qs.map(q => q.right)), w = Math.min(...qs.map(q => q.width));
         if (R - last >= w - 2) add('empty segment', p, kids.length + ' choices leave ' + Math.round(R - last) + 'px of the bar empty; give the bar as many columns as it has choices');
       }
+      // groups that don't fill their row (CLAUDE.md: everything fills its row): three or more like items in one line
+      // (day buttons, chips, tiles, cells: the same tag, about the same size) whose line, with whatever shares it,
+      // covers less than 82% of the width they're given, with the empty stretch all on one side
+      const contentBox = p => { const pc = getComputedStyle(p), pr = p.getBoundingClientRect(); return { L: pr.left + parseFloat(pc.paddingLeft) + parseFloat(pc.borderLeftWidth || 0), R: pr.right - parseFloat(pc.paddingRight) - parseFloat(pc.borderRightWidth || 0) }; };
+      for (const g of els) {
+        const kids = [...g.children].filter(k => vis(k) && !/absolute|fixed/.test(getComputedStyle(k).position));
+        if (kids.length < 3 || kids.some(k => k.tagName !== kids[0].tagName)) continue;
+        const qs = kids.map(k => k.getBoundingClientRect()), w0 = qs[0].width;
+        if (w0 < 16 || qs.some(q => Math.abs(q.top - qs[0].top) > 4 || Math.abs(q.width - w0) > w0 * .12 || Math.abs(q.height - qs[0].height) > 4)) continue;
+        // the width they're given: the group's own box, or its parent's when the group only hugs its items
+        let box = contentBox(g), P = parentOf(g);
+        const gr = g.getBoundingClientRect(), span = Math.max(...qs.map(q => q.right)) - Math.min(...qs.map(q => q.left));
+        let line = [{ left: Math.min(...qs.map(q => q.left)), right: Math.max(...qs.map(q => q.right)) }];
+        // (a group placed in its own grid area, like a chart's day labels under the bars, is measured in that area)
+        if (P && P.nodeType === 1 && getComputedStyle(P).display !== 'grid' && span > (box.R - box.L) - 4) {
+          const pb = contentBox(P), pw = pb.R - pb.L;
+          if (pw > (box.R - box.L) + 8) { box = pb;
+            for (const k of P.children) { if (k === g || !vis(k)) continue; const r = k.getBoundingClientRect(); if (r.bottom > gr.top + 2 && r.top < gr.bottom - 2) line.push({ left: r.left, right: r.right }); } }
+        }
+        const W = box.R - box.L; if (W < 120) continue;
+        const left = Math.min(...line.map(x => x.left)), right = Math.max(...line.map(x => x.right)), covered = line.reduce((a, x) => a + (x.right - x.left), 0);
+        const free = W - covered, freeL = left - box.L, freeR = box.R - right;
+        if (free > W * .18 && Math.max(freeL, freeR) > free * .7) add('bunched group', g, kids.length + ' items leave ' + Math.round(free) + 'px (' + Math.round(free / W * 100) + '%) of the row empty on the ' + (freeR > freeL ? 'right' : 'left') + '; let them fill the row (equal columns, or space between)');
+      }
+      // columns of figures: a grid of equal cells whose last column's content hugs its left edge, so the two
+      // columns don't fill the width (the stats under a chart): the last column lines up on the right
+      const textRight = e => { let m = -1e9; const tw = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); while (tw.nextNode()) { if (!tw.currentNode.nodeValue.trim()) continue; const rg = document.createRange(); rg.selectNodeContents(tw.currentNode); for (const r of rg.getClientRects()) m = Math.max(m, r.right); } return m; };
+      for (const g of els) {
+        const cs = getComputedStyle(g); if (cs.display !== 'grid') continue;
+        const cols = cs.gridTemplateColumns.split(' ').filter(Boolean).length; if (cols < 2 || cols > 3) continue;
+        const kids = [...g.children].filter(vis); if (kids.length < cols * 2 || kids.some(k => k.tagName !== kids[0].tagName)) continue;
+        // plain cells of figures only: a tile, card or button with its own background or border holds its content its own way
+        const boxed = k => { const c = getComputedStyle(k); return k.tagName === 'BUTTON' || k.tagName === 'A' || (c.backgroundColor !== 'rgba(0, 0, 0, 0)' && c.backgroundColor !== 'transparent') || parseFloat(c.borderTopWidth) > 0 || parseFloat(c.borderLeftWidth) > 0 || c.backgroundImage !== 'none'; };
+        if (kids.some(boxed)) continue;
+        const qs = kids.map(k => k.getBoundingClientRect()), xs = [...new Set(qs.map(q => Math.round(q.left)))].sort((a, b) => a - b); if (xs.length !== cols) continue;
+        const lastCol = kids.filter((k, i) => Math.round(qs[i].left) === xs[xs.length - 1]);
+        const hug = lastCol.every(k => { const r = k.getBoundingClientRect(), t = textRight(k); return t > -1e8 && r.right - t > r.width * .4; });
+        if (hug) add('lopsided columns', g, 'the last of ' + cols + ' columns keeps its content at its left edge, leaving its right side empty; line the last column up on the right');
+      }
       // shape (tools/lib/tokens.json): the panel's width and corners, the header's and tab bar's insets from
       // the panel's edge, and every rounded corner inside the panel on the radius scale (or nested
       // inside its parent's corner: the parent's radius less its padding)
@@ -567,6 +606,8 @@ function stubPage() {
     // a cropped capture shows the whole panel: if anything inside it still scrolls, the picture is cut off
     if (crop) { const cut = await page.evaluate(() => __all().filter(e => { const c = getComputedStyle(e); return /auto|scroll/.test(c.overflowY) && e.scrollHeight > e.clientHeight + 2 && e.clientHeight > 40; }).length);
       if (cut) console.log('CLIPPED ' + file + ': the panel scrolls, so part of it is missing (capture it taller with --vh)'); }
+    // SVG's own animations (Hourglass's dripping lava) aren't CSS: stop them at their first frame too
+    await page.evaluate(() => { for (const e of __all()) if (e.tagName === 'svg' && e.pauseAnimations && !e.animationsPaused()) { e.pauseAnimations(); e.setCurrentTime(0); } }).catch(() => {});
     await page.screenshot({ path: file, clip, animations: 'disabled' });   // animations stopped, so captures repeat exactly
     console.log('saved', file, clip ? 'cropped' : '');
     if (has('--text')) console.log('TEXT>>', await page.evaluate(() => { const seen = new Set(); const out = []; for (const e of __all()) { if (e.children.length) continue; const t = (e.textContent || '').trim(); const r = e.getBoundingClientRect(); if (!t || r.width === 0 || seen.has(t) || t.length > 140) continue; if (e.closest('header,main')) continue; seen.add(t); out.push(t); } return out.join(' | '); }));

@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 3.8.6 · 2026-11-19
+
+- A new icon in the family style: the play button softens and melts at its lower edge, in the same yellow-to-red as Molten for Discord.
+
 ## 3.8.5 · 2026-11-19
 
 - Settings descriptions say what happens when a switch is off in a sentence, and the lava's GPU settings say what lower means.

@@ -16,9 +16,10 @@ THEMES = {
 }
 KICKER = {'molten': '#ff8a3d', 'frost': '#5b5bd6', 'midnight': '#3db4f2'}
 
-def layer(id_, title, sub, theme, mode, kicker, w, h):
+def layer(id_, title, sub, theme, mode, kicker, w, h, ink=False):
     """One full banner in one mode; ids are prefixed so two can share an SVG."""
     bg, fg, sb, glass, edge, (c1, c2, c3, c4) = THEMES[(theme, mode)]
+    if ink: sb = fg
     def blob(cx, cy, r, c, dx, dy, dur):
         return (f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{c}"><animateTransform attributeName="transform" type="translate" '
                 f'values="0 0;{dx} {dy};{-dy} {dx};0 0" dur="{dur}s" repeatCount="indefinite" calcMode="spline" '
@@ -33,15 +34,17 @@ def layer(id_, title, sub, theme, mode, kicker, w, h):
 <text x="100" y="{196 if k else 176}" font-size="68" font-weight="800" letter-spacing="-2.4" fill="{fill}">{t}</text>
 <text x="102" y="{238 if k else 222}" font-size="23" fill="{sb}">{s}</text></g></g>'''
 
-def banner(title, sub, theme, kicker='', accent='#ffffff', lava=False, w=1200, h=320):
+def banner(title, sub, theme, kicker='', accent='#ffffff', lava=False, w=1200, h=320, cut=None, ink=False, warm=False):
     """Light and dark on one banner, cut along the same diagonal as the link previews (tools/build/prismcut.py):
     light upper left, dark lower right, a thin seam in the script's accent. For Molten the edge is a
     lava lamp: a slow wave with wax drops of light glass melting off it into the dark (a goo filter), kept clear
-    of the text."""
+    of the text. The front banner passes its own cut (top, bottom), so the edge runs right of the words, and
+    warm: the seam glows like the icons' glass tubes (a white core in a soft halo) and the wordmark runs
+    yellow to red like the Molten icons' lava. ink: the tagline in full text color."""
     import math
     import json
     CUT = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'lib', 'tokens.json'), encoding='utf-8'))['cut']
-    x0, x1 = w * CUT['top'], w * CUT['bottom']   # the same diagonal as the link previews (tools/lib/tokens.json)
+    x0, x1 = (w * cut[0], w * cut[1]) if cut else (w * CUT['top'], w * CUT['bottom'])   # the same diagonal as the link previews (tools/lib/tokens.json)
     nx, ny = h, -(x1 - x0); L = math.hypot(nx, ny); nx, ny = nx / L, ny / L   # unit normal, toward the dark side
     amp = 1 if lava else 0
     pts = []
@@ -58,16 +61,18 @@ def banner(title, sub, theme, kicker='', accent='#ffffff', lava=False, w=1200, h
             x, y = x0 + (x1 - x0) * t, h * t; d = side * (r + gap)
             drops += f'<circle cx="{x + nx * d:.1f}" cy="{y + ny * d:.1f}" r="{r}" fill="{"#fff" if side > 0 else "#000"}"/>'
     shape = f'<path d="{region}" fill="#fff"/>{drops}'
-    grad = '<linearGradient id="{0}g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffd27a"/><stop offset=".35" stop-color="#ff8a3d"/><stop offset=".7" stop-color="#ff2d6f"/><stop offset="1" stop-color="#b98bff"/></linearGradient>'
+    grad = ('<linearGradient id="{0}g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffd27a"/><stop offset=".4" stop-color="#ffb347"/><stop offset=".75" stop-color="#ff5a1f"/><stop offset="1" stop-color="#ff1e4d"/></linearGradient>' if warm else
+            '<linearGradient id="{0}g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffd27a"/><stop offset=".35" stop-color="#ff8a3d"/><stop offset=".7" stop-color="#ff2d6f"/><stop offset="1" stop-color="#b98bff"/></linearGradient>')
     t_ = html.escape(title)
-    dark = layer('d', title, sub, theme, 'dark', kicker, w, h); light = layer('l', title, sub, theme, 'light', kicker, w, h)
+    dark = layer('d', title, sub, theme, 'dark', kicker, w, h, ink); light = layer('l', title, sub, theme, 'light', kicker, w, h, ink)
     # goo: blur, then sharpen the alpha back up, so drops touching the edge melt into it
     goo = '<filter id="goo" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="7"/><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 26 -11"/></filter>'
     # the seam follows the mask's edge: a thin accent line plus a faint glow
     line = (f'<filter id="ln" x="-10%" y="-10%" width="120%" height="120%">' + ('<feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 26 -11" result="s"/>' if lava else '<feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 1 0 0 0 0" result="s"/>')
             + f'<feMorphology in="s" operator="dilate" radius="1" result="d"/><feComposite in="d" in2="s" operator="out" result="e"/>'
             f'<feFlood flood-color="{accent}" flood-opacity="{CUT["max"]}"/><feComposite in2="e" operator="in" result="c"/>'
-            f'<feGaussianBlur in="c" stdDeviation="5" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="c"/></feMerge></filter>')
+            + (f'<feGaussianBlur in="c" stdDeviation="9" result="g"/><feFlood flood-color="#fff"/><feComposite in2="e" operator="in" result="w"/><feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="c"/><feMergeNode in="w"/></feMerge></filter>' if warm else
+             f'<feGaussianBlur in="c" stdDeviation="5" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="c"/></feMerge></filter>'))
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" role="img" aria-label="{t_}, in light and dark">
 <defs><clipPath id="c"><rect width="{w}" height="{h}" rx="28"/></clipPath>
 <filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="46"/></filter>{goo}{line}
@@ -85,7 +90,7 @@ if __name__ == '__main__':
     exec(src[:src.index('\nACCENT = {')], ns); S = ns['S']
     from site_themes import THEME
     os.makedirs(f'{R}/assets', exist_ok=True)
-    if not ONLY: open(f'{R}/assets/glassware-banner.svg', 'w').write(banner('Glassware', 'Glass for the web. Frosted, lava-lit tools by JigglyPug.', 'molten', accent='#ff8a3d', lava=True))
+    if not ONLY: open(f'{R}/assets/glassware-banner.svg', 'w').write(banner('Glassware', 'Glass for the web. Frosted, lava-lit tools by JigglyPug.', 'molten', accent='#ff6a1f', lava=True, cut=(.66, .8), ink=True, warm=True))
     for p, s in S.items():
         if ONLY and p not in ONLY: continue
         th, acc = THEME[p]

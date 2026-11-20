@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.4.13 · 2026-11-19
+
+- A new icon in the family style: the speech bubble's tail has melted into a heavy drop.
+
 ## 2.4.12 · 2026-11-19
 
 - Settings descriptions say what happens when a switch is off in a sentence, and the lava's GPU settings say what lower means.

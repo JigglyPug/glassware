@@ -11,7 +11,9 @@ also checked at small and large phone sizes. Prints one line per problem; no out
 script means it's clean. It also checks the glass recipe (blur 28px, saturate 170%, light glass
 at 84%, dark at 80%), flags text fainter than 3:1 (SVG chart text too) and marks, dashed lines and
 outlines under 1.8:1 against what's behind them ("hard to see"), and taps a chart bar to check the
-selected state, and flags button text that isn't centered (the site CSS gives buttons a fixed
+selected state, flags groups that don't fill their row ("bunched group": three or more like items leaving
+18% or more of the row empty on one side) and grids whose last column hugs its left edge ("lopsided columns"),
+proving both on tools/tests/fixtures/rows.user.js first, and flags button text that isn't centered (the site CSS gives buttons a fixed
 height with bottom-aligned content, as Reddit does). What a script draws outside its panel (SURFACES below: Hourglass's block screen
 and late-night nudge, Looking-Glass's badge menu) gets the same checks. Every size runs in dark
 on a plain page and with the global CSS big sites ship ("with site CSS"), which panels outside a
@@ -76,8 +78,26 @@ def audit(p, w, h, phone, hostile=False, theme='dark'):
     if line is None: return [f'could not run: {(r.stderr or r.stdout)[-300:]}']
     return json.loads(line[6:])
 
+def selftest():
+    """The fill-the-row checks prove themselves on tools/tests/fixtures/rows.user.js: its bunched day picker and
+    lopsided stat columns must be flagged, and the same rows done right must not be."""
+    out = []
+    def run(q):
+        r = subprocess.run(['node', f'{HERE}/lib/shot.js', f'{HERE}/tests/fixtures/rows.user.js', 'https://example.com/' + q, '/dev/null', '--cmd', 'none', '--audit', '--vw', '390', '--vh', '700', '--mobile'], capture_output=True, text=True, timeout=180)
+        line = next((l for l in r.stdout.splitlines() if l.startswith('AUDIT ')), None)
+        return json.loads(line[6:]) if line else None
+    bad, good = run(''), run('?good')
+    if bad is None or good is None: return ['self-test could not run']
+    for kind in ('bunched group', 'lopsided columns'):
+        if not any(f'| {kind} |' in i for i in bad): out.append(f'self-test: the bunched sample was not flagged for "{kind}"')
+        if any(f'| {kind} |' in i for i in good): out.append(f'self-test: the good sample was flagged for "{kind}"')
+    return out
+
 if __name__ == '__main__':
     only = sys.argv[1:]
+    st = selftest()
+    print('== selftest: ' + ('the fill-the-row checks catch the bunched sample' if not st else '; '.join(st)))
+    if st: sys.exit(1)
     for p in JOBS:
         if only and p.split('/')[1] not in only: continue
         sizes = ([] if RUNS[p] == 'phone' else [(w, h, False) for w, h in DESKTOP]) + ([(w, h, True) for w, h in PHONE] if RUNS[p] != 'desktop' else [])

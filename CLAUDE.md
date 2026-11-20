@@ -462,7 +462,14 @@ python3 tools/check.py              # release check: everything below, plus the 
   lay such rows out as one row, or as a grid of equal columns (two per row on phones). A row that holds only
   action buttons (two or more) spans the full width of its row and splits it evenly, so nothing sits
   pushed to one side next to an empty stretch; the audit flags rows that don't. A lone button keeps its
-  own size, and segmented controls (on their own filled bar) and buttons beside a label are left alone. `node tools/lib/shot.js … --forcedark` opens a page
+  own size, and segmented controls (on their own filled bar) and buttons beside a label are left alone.
+  **Everything fills its row, on desktop and on phones**: pickers, segmented buttons, button rows, chips,
+  tiles, cards and columns of figures share the width they're given (equal columns, or space between),
+  and the last column of figures lines up on the right edge, so nothing sits bunched to one side next to
+  an empty stretch. This is the rule, not just what the audit can see: the audit flags three or more like
+  items whose row leaves 18% or more empty on one side ("bunched group") and grids whose last column
+  keeps its content at its left edge ("lopsided columns"), and proves both on
+  `tools/tests/fixtures/rows.user.js` before it starts. The pages follow it too. `node tools/lib/shot.js … --forcedark` opens a page
   the way browsers that darken pages themselves show it, to look at by eye. Fix what it finds before shipping; it should print
   "clean" for every script.
 - Panels that live in the page (not a shadow root) inherit the site's CSS: undo text rules like
@@ -510,7 +517,7 @@ python3 tools/check.py              # release check: everything below, plus the 
   in `tools/seeds/` so the screenshots show it; otherwise the pages never show the new feature.
 - A capture shows the whole panel: `tools/screens.py` fails if anything in a cropped capture still
   scrolls (part of the panel would be missing), so give long panels a taller `--vh`.
-- Captures repeat exactly (fixed clock, demo data, animations stopped, the fonts in `tools/lib/fonts.conf`),
+- Captures repeat exactly (fixed clock, demo data, animations stopped (SVG animations too, at their first frame), the fonts in `tools/lib/fonts.conf`),
   so `tools/check.py` recaptures every changed script's panels in a scratch folder and fails if a
   committed screenshot no longer matches its panel.
 

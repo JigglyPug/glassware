@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.2.13 · 2026-11-19
+
+- A new icon in the family style: white light hits the prism and comes out the other side as a spectrum.
+
 ## 2.2.12 · 2026-11-19
 
 - The Bright tone's description and the hint in the hex box read more plainly.
