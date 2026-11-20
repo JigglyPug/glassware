@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.13
+// @version      1.5.14
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.13';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.14';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -607,6 +607,9 @@ button:disabled{cursor:not-allowed}
 .btn.primary:hover{filter:brightness(1.06)}
 .btn.sm{height:28px;padding:0 10px;font-size:11.5px;border-radius:8px}
 .btn.danger{color:var(--danger)}
+.btn.danger-fill{background:#d22d39;color:#fff;font-weight:600}   /* the deeper red in both themes, so white text reads */
+.ask{margin-top:12px;padding:12px;border-radius:10px;background:var(--ctl);box-shadow:inset 0 0 0 1px var(--danger)}
+.ask .d{margin-top:4px}.ask .btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
 .btn:focus-visible,.sw:focus-visible,.seg button:focus-visible,.ibtn:focus-visible,.day:focus-visible,.chip:focus-visible,.wkr:focus-visible,.link:focus-visible,.gbtn:focus-visible,.disc:focus-visible{outline:2px solid var(--fill);outline-offset:2px}
 .fade{opacity:0;transform:translateY(6px);pointer-events:none}
 .fade.ready{opacity:1;transform:none;pointer-events:auto}
@@ -1172,6 +1175,9 @@ h1 span{color:var(--ink)}
 .crow i{width:10px;height:10px;border-radius:3px}
 .crow b{font:500 12px var(--mono)}
 .crow.c3{grid-template-columns:10px minmax(0,1fr) auto}
+.crow.c2{grid-template-columns:minmax(0,1fr) auto}
+/* side by side, the day chart grows into any room the card beside it leaves, so the two cards end level */
+.grid2>.qc{display:flex;flex-direction:column}.grid2>.qc>[data-chart="days"]{flex:1 0 auto;grid-template-rows:minmax(150px,1fr) auto}.grid2>.qc>[data-chart="days"] .pl{height:auto!important}
 .crow b em{font-style:normal;font-weight:700;color:var(--text)}
 .sl{font:600 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--sub);margin:16px 0 4px}
 .lvl{margin:16px 18px 8px;font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--sub)}
@@ -1361,13 +1367,13 @@ h1 span{color:var(--ink)}
 
     const ui = {
         host: null, root: null, panel: null, scroll: null, tab: 'dash', unlocked: false, range: 'week', day: dow(), ignOpen: false, closed: {},
-        addText: '', addCat: 'custom', addBad: false, dragging: false, timer: null, gateTimer: null, resetArm: 0,
+        addText: '', addCat: 'custom', addBad: false, dragging: false, timer: null, gateTimer: null, resetAsk: false,
 
         toggle() { this.host ? this.close() : this.open(); },
         open() {
             if (this.host) return;
             load(); flush(); applyPendingIfFree();
-            this.tab = 'dash'; this.unlocked = false; this.day = dow(); this.resetArm = 0;
+            this.tab = 'dash'; this.unlocked = false; this.day = dow(); this.resetAsk = false;
             const host = this.host = hostEl('hourglass-panel');
             const root = this.root = host.attachShadow({ mode: 'closed' });
             root.append(h('style', { text: PANEL_CSS }));
@@ -1660,10 +1666,23 @@ h1 span{color:var(--ink)}
             // (averages and sentences still use finished days only)
             const span = !D.full && D.win.length ? [...D.win, D.today] : D.win;
             const dayLabel = x => x === D.today ? 'Today so far' : dayTip(x);
+            // under the chart: the busiest and quietest days, and how many beat your average
+            const daysList = () => {
+                const used = D.win.filter(x => totalOf(x.o) > 0);
+                if (used.length < 2) return [];
+                const hi = used.reduce((a, x) => totalOf(x.o) > totalOf(a.o) ? x : a), lo = used.reduce((a, x) => totalOf(x.o) < totalOf(a.o) ? x : a);
+                const over = D.win.filter(x => totalOf(x.o) > D.avgNow).length;
+                const sday = x => x.dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                const row = (k, v) => h('div', { class: 'crow c2' }, h('span', { text: k }), h('b', { text: v }));
+                return [h('div', { class: 'sl', text: 'Busiest and quietest days' }),
+                    row(sday(hi) + ' was the busiest', fmtDur(totalOf(hi.o))), row(sday(lo) + ' was the quietest', fmtDur(totalOf(lo.o))),
+                    row('Over your average', over + ' of ' + D.win.length + ' days')];
+            };
             const dtop = Math.ceil(Math.max(3600, ...span.map(x => totalOf(x.o))) / 3600) * 3600;
             const weekCard = card('How much are you online?', muchAns, D.full,
                 D.win.length ? barChart({ name: 'days', aria: 'Time online per day by category, with your average', n: span.length, max: dtop, ticks: [{ v: dtop, text: fmtDur(dtop) }], line: { v: D.avgNow, text: 'avg' }, x: xDays(span),
-                    bars: span.map(x => { const v = totalOf(x.o), tip = dayLabel(x) + ' · ' + fmtDur(v); return h('div', { class: 'bar' + (x === D.today ? ' now' : ''), title: tip, 'data-tip': tip }, v ? stack(catSums(x.o), v / dtop * 100) : null); }) }) : null);
+                    bars: span.map(x => { const v = totalOf(x.o), tip = dayLabel(x) + ' · ' + fmtDur(v); return h('div', { class: 'bar' + (x === D.today ? ' now' : ''), title: tip, 'data-tip': tip }, v ? stack(catSums(x.o), v / dtop * 100) : null); }), height: 150 }) : null,
+                ...daysList());
             // Where does your time go? A lava bubble per category, sized by its share of your time: the coloured part is
             // now, the faded part before. Grown: a faded blob (before) inside a coloured ring (now). Shrunk: a coloured
             // blob (now) inside a faded ring (before). New: just a coloured blob. Shares, not hours, so every figure here
@@ -1992,7 +2011,7 @@ h1 span{color:var(--ink)}
             const lock = inLockdown(), c = S.cfg;
             const upd = (k, v) => { c[k] = v; saveCfg(); if (k === 'hist') prune(); evaluate(); this.render(); };
             const master = h('div', { class: 'card' }, h('div', { class: 'row' },
-                h('div', null, h('div', { class: 't', text: 'Hourglass' }), h('div', { class: 'd', text: lock ? "Can't be turned off during lockdown. It unlocks at " + shortU(currentBlock().e) + '.' : c.enabled ? 'Counting every site and enforcing your schedule.' : 'Paused. Nothing is counted or blocked.' })),
+                h('div', null, h('div', { class: 't', text: 'Hourglass' }), h('div', { class: 'd', text: lock ? "Can't be turned off during lockdown. It unlocks at " + shortU(currentBlock().e) + '.' : c.enabled ? 'Everything is on. Turn off to stop every feature at once.' : 'Everything is off. Your settings are kept.' })),
                 toggle(c.enabled, () => { if (!inLockdown()) upd('enabled', !c.enabled); }, 'Hourglass on', lock)));
             const tracking = h('div', { class: 'tile full' }, this.label('Tracking'),
                 this.slr('Idle timeout', 'Stop the clock after no mouse or keys', this.slider({ min: 1, max: 10, value: c.idle, label: 'Idle timeout in minutes', fmt: v => v + ' min', commit: v => upd('idle', v) })),
@@ -2027,15 +2046,19 @@ h1 span{color:var(--ink)}
                                 : 'Auto uses the phone layout on phones. Showing the ' + (MOBILE ? 'phone' : 'desktop') + ' layout.')),
                         this.seg([['auto', 'Auto'], ['desktop', 'Desktop'], ['phone', 'Phone']], want, v => { set('layout', v); this.render(); }, true, { style: 'width:230px' }));
                 })());
-            const armed = Date.now() - this.resetArm < 4000;
             const data = h('div', { class: 'tile full', style: 'margin-bottom:14px' }, this.label('Your data'),
                 h('div', { class: 'd', style: 'margin:-4px 0 12px', text: 'Saved only in Tampermonkey on this PC. Only site names are kept, never full addresses or page titles.' }),
                 h('div', { class: 'dbtns' },
                     h('button', { class: 'btn', onclick: () => exportCSV() }, icon(ICONS.down, 13, 2.2), 'Export CSV'),
                     h('button', { class: 'btn', onclick: () => exportSettings() }, icon(ICONS.down, 13, 2.2), 'Export settings'),
                     h('button', { class: 'btn', disabled: lock, title: lock ? 'Import after lockdown' : null, onclick: () => importSettings(m => { this.importMsg = m; this.render(); }) }, icon(ICONS.up, 13, 2.2), 'Import settings'),
-                    h('button', { class: 'btn danger', disabled: lock, text: armed ? 'Click again to erase' : 'Reset all stats',
-                        onclick: () => { if (inLockdown()) return; if (Date.now() - this.resetArm < 4000) { resetStats(); this.resetArm = 0; } else this.resetArm = Date.now(); this.render(); } })),
+                    h('button', { class: 'btn danger', disabled: lock, title: lock ? 'Reset after lockdown' : null, text: 'Reset all stats', onclick: () => { if (inLockdown()) return; this.resetAsk = true; this.render(); } })),
+                // resetting asks first, in words, and waits for OK
+                this.resetAsk && !lock ? h('div', { class: 'ask', role: 'alertdialog', 'aria-label': 'Reset all stats' },
+                    h('div', { class: 't', text: 'Reset all your stats?' }),
+                    h('div', { class: 'd', text: "Every day of screen time counted here is deleted. Your schedule, passes and settings stay. This can't be undone." }),
+                    h('div', { class: 'btns' }, h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: () => { this.resetAsk = false; this.render(); } }),
+                        h('button', { class: 'btn danger-fill', type: 'button', text: 'OK, reset', onclick: () => { if (inLockdown()) return; resetStats(); this.resetAsk = false; this.importMsg = 'Your stats were reset.'; this.render(); } }))) : null,
                 this.importMsg ? h('div', { class: 'd imp', role: 'status', style: 'margin-top:10px', text: this.importMsg }) : null);
             const look = h('div', { class: 'tile full' }, this.label('Appearance'),
                 h('div', { class: 'row' }, h('div', null, h('div', { class: 't', text: 'Match my device' }), h('div', { class: 'd', text: 'Light or dark follows your device until you flip the switch up top' })),

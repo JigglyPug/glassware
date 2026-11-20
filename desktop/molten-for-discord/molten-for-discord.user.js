@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.10
+// @version      1.0.11
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.10';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.11';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -601,6 +601,7 @@ html[data-mfd-still] :is(div.mfd-art,canvas.mfd-video,div.mfd-blobs){animation-p
     function checkViewer() {
         const v = lavaActive() && S.clearMedia ? findViewer() : null;
         if (v && viewerNow && v.bd === viewerNow.bd && v.media === viewerNow.media) return;
+        if (!v && !viewerNow) return;   // no viewer then or now: nothing to undo, and the lava's art stays as it is
         for (const n of qa('[data-mfd-vbd],[data-mfd-vunder],[data-mfd-vclr]')) { n.removeAttribute('data-mfd-vbd'); n.removeAttribute('data-mfd-vunder'); n.removeAttribute('data-mfd-vclr'); }
         viewerNow = v;
         document.documentElement.toggleAttribute('data-mfd-viewer', !!v);
@@ -1195,8 +1196,10 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
     const PRESETS_T = [
         ['20 min', () => Date.now() + 20 * 60e3],
         ['1 hour', () => Date.now() + 60 * 60e3],
-        ['Tonight', () => { const d = new Date(); d.setHours(20, 0, 0, 0); if (d <= Date.now() + 10 * 60e3) d.setDate(d.getDate() + 1); return +d; }],
-        ['Tomorrow', () => { const d = new Date(); d.setDate(d.getDate() + 1); return at9(d); }],
+        // Tonight is 8 PM, or 10 PM once 8 is close. Late in the evening it's left out, since Tomorrow is next anyway.
+        ['Tonight', () => { const d = new Date(), h = d.getHours() + d.getMinutes() / 60; if (h < 4 || h >= 21.5) return 0; d.setHours(h < 19.5 ? 20 : 22, 0, 0, 0); return +d; }],
+        // just after midnight, the morning coming up is "tomorrow", not the day after it
+        ['Tomorrow', () => { const d = new Date(); if (d.getHours() >= 4) d.setDate(d.getDate() + 1); return at9(d); }],
         ['Next week', () => { const d = new Date(); d.setDate(d.getDate() + 7); return at9(d); }],
     ];
     // the dial, scaled like a clock: 60 minutes or 24 hours in one turn, and 12 for days, weeks and months.
@@ -1892,7 +1895,7 @@ button{font:inherit;color:inherit;cursor:pointer}
             small.textContent = u.at ? 'at ' + clock(tod) : 'from now';
             cal.min = local(Date.now() + 60e3); cal.max = local(Date.now() + REMIND_MAX);
             out.textContent = !chosen ? 'No reminder' : exact ? fmtTime(exact) + ' · ' + countdown(exact) : fmtTime(due()) + ' · ' + countdown(due());
-            for (const b of units.children) { const on = chosen && !exact && b.dataset.u === unit; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
+            for (const b of units.children) { const on = chosen && b.dataset.u === unit; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
             box.classList.toggle('exact', !!exact);
             if (onPick) {
                 pres.forEach((b, i) => { const on = i === preset && chosen; b.classList.toggle('saved', on); b.setAttribute('aria-pressed', String(on)); });
@@ -1901,6 +1904,15 @@ button{font:inherit;color:inherit;cursor:pointer}
             }
         };
         const touch = () => { exact = 0; cal.value = ''; chosen = true; preset = -1; };
+        // a preset or an exact time turns the dial to match: minutes, hours, or days and weeks with the time of day
+        const mirror = t => {
+            const now = new Date(), d = new Date(t), m = Math.round((t - now) / 60e3);
+            const days = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
+            if (m < 60) { unit = 'min'; n = Math.max(1, m); }
+            else if (days < 1 || m < 24 * 60) { unit = 'hour'; n = Math.max(1, Math.round(m / 60)); }
+            else { unit = days % 7 ? 'day' : 'week'; n = days % 7 ? days : days / 7; tod = d.getHours() * 60 + d.getMinutes(); }
+            n = Math.min(n, top(UNITS[unit]));
+        };
         const setN = v => { n = Math.min(top(UNITS[unit]), Math.max(1, Math.round(v))); };
         // turning winds: the angle moved since the last step adds up, so going past the top keeps counting
         const angleAt = e => { const r = svg.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 180 - C, y = (e.clientY - r.top) / r.height * 180 - C; return { f: ((Math.atan2(x, -y) + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI), d: Math.hypot(x, y) }; };
@@ -1926,12 +1938,12 @@ button{font:inherit;color:inherit;cursor:pointer}
         // keys: arrows one step, Page Up / Page Down a whole turn
         outer.g.addEventListener('keydown', e => { const u = UNITS[unit], s = { ArrowUp: 1, ArrowRight: 1, ArrowDown: -1, ArrowLeft: -1, PageUp: u.turn, PageDown: -u.turn }[e.key]; if (!s) return; e.preventDefault(); touch(); setN(n + s); show(); });
         inner.g.addEventListener('keydown', e => { const s = { ArrowUp: 15, ArrowRight: 15, ArrowDown: -15, ArrowLeft: -15, PageUp: 180, PageDown: -180 }[e.key]; if (!s) return; e.preventDefault(); touch(); tod = (tod + s + 1440) % 1440; show(); });
-        cal.addEventListener('change', () => { const t = cal.value ? +new Date(cal.value) : 0; exact = t > Date.now() ? Math.min(t, Date.now() + REMIND_MAX) : 0; if (exact) { chosen = true; preset = -1; } show(); });
+        cal.addEventListener('change', () => { const t = cal.value ? +new Date(cal.value) : 0; exact = t > Date.now() ? Math.min(t, Date.now() + REMIND_MAX) : 0; if (exact) { chosen = true; preset = -1; mirror(exact); } show(); });
         const units = el('div', { class: 'rp-units', role: 'radiogroup', 'aria-label': 'Unit' }, Object.entries(UNITS).map(([k, u]) =>
             el('button', { type: 'button', role: 'radio', 'data-u': k, text: u.label, onclick: () => { unit = k; n = u.d; touch(); show(); } })));
         const noneBtn = el('button', { class: 'lp', type: 'button', text: 'No reminder', onclick: () => { chosen = false; preset = -1; exact = 0; cal.value = ''; show(); } });
-        const pres = PRESETS_T.map(([t, f], i) => el('button', { class: 'lp', type: 'button', text: t,
-            onclick: () => { if (!onPick) return onSet(f()); exact = Math.min(Date.now() + REMIND_MAX, f()); cal.value = ''; chosen = true; preset = i; show(); } }));
+        const pres = PRESETS_T.map(([t, f], i) => f() ? el('button', { class: 'lp', type: 'button', text: t,
+            onclick: () => { const at = f(); if (!at) return; if (!onPick) return onSet(at); exact = Math.min(Date.now() + REMIND_MAX, at); cal.value = ''; chosen = true; preset = i; mirror(exact); show(); } }) : null).filter(Boolean);
         const box = el('div', { class: 'rp' },
             el('div', { class: 'rp-pre' }, onPick ? noneBtn : null, pres),
             el('div', { class: 'rp-fine' }, units, dial, out,

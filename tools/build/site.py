@@ -83,7 +83,7 @@ a{color:inherit}
 nav{position:sticky;top:14px;z-index:5;margin:14px auto 0;max-width:1160px;padding:0 24px}
 nav .bar{display:flex;align-items:center;gap:14px;padding:10px 12px 10px 18px;border-radius:999px}
 nav .brand{font-weight:700;letter-spacing:-.01em;text-decoration:none;display:flex;align-items:center;gap:10px}
-nav .dot{width:22px;height:22px;border-radius:50%;background:conic-gradient(from 200deg,#ff8a3d,#ff2d6f,#7a2cff,#3db4f2,#9fe7d3,#ff8a3d);box-shadow:0 0 18px rgba(255,138,61,.6)}
+nav .dot{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#ffd27a,#ff5a1f 55%,#ff1e4d);box-shadow:0 0 18px rgba(255,106,31,.6)}
 nav .sp{flex:1}
 nav a.link{font-size:14px;color:var(--sub);text-decoration:none;padding:8px 12px;border-radius:999px}
 nav a.link:hover{color:var(--fg);background:var(--chip)}
@@ -91,11 +91,23 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .label::before{content:"";width:7px;height:7px;background:var(--acc);transform:rotate(45deg);border-radius:1px}
 .label .r{margin-left:auto;color:var(--sub);letter-spacing:.08em;text-transform:none;font-weight:500}
 /* hero */
-.hero{padding:96px 0 56px;text-align:center}
-.hero h1{font-size:clamp(44px,8vw,96px);line-height:.95;letter-spacing:-.045em;margin:0 0 18px;font-weight:800}
-.hero h1 span{background:linear-gradient(100deg,#ffd27a,#ff8a3d 30%,#ff2d6f 60%,#b98bff);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:640px;margin:0 auto 28px}
-.hero p.need{font-size:13px;margin:-16px auto 22px}.hero p.need a{color:var(--sub)}
+.hero{padding:72px 0 48px}
+.hero .top{display:flex;flex-wrap:wrap;align-items:center;gap:48px;margin-bottom:40px}
+.hero .words{flex:1 1 460px;min-width:0}
+.hero .tiles{flex:1 1 380px;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:26px;border-radius:32px}
+.hero .tiles img{width:100%;height:auto;display:block;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.hero .tiles img:nth-child(1){transform:rotate(-6deg)}.hero .tiles img:nth-child(2){transform:translateY(8px)}.hero .tiles img:nth-child(3){transform:rotate(5deg)}
+.hero .tiles img:nth-child(4){transform:translateY(-6px) rotate(3deg)}.hero .tiles img:nth-child(5){transform:scale(1.06)}.hero .tiles img:nth-child(6){transform:rotate(-4deg)}
+.hero .tiles img:nth-child(7){transform:rotate(6deg) translateY(6px)}.hero .tiles img:nth-child(8){transform:translateY(-4px)}.hero .tiles img:nth-child(9){transform:rotate(-3deg)}
+.hero .tiles a:hover img,.hero .tiles img:hover{transform:scale(1.1) rotate(0)}
+.hero .acts{flex-wrap:wrap;gap:10px;max-width:560px}.hero .acts .btn{flex:1 1 200px;white-space:nowrap}
+[data-mode=light] .hero h1 span{background:linear-gradient(100deg,#f08a00,#ff5a1f 50%,#e8123f);-webkit-background-clip:text;background-clip:text}
+.btn.warm{background:linear-gradient(135deg,#ffd27a,#ff5a1f 60%,#ff1e4d);color:#fff;text-shadow:0 1px 2px rgba(90,20,0,.45);box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 1px 0 rgba(255,255,255,.6),0 14px 34px -10px rgba(40,8,0,.75)}
+.hero .center{text-align:center}
+.hero h1{font-size:clamp(44px,7.4vw,88px);line-height:.95;letter-spacing:-.045em;margin:0 0 18px;font-weight:800}
+.hero h1 span{background:linear-gradient(100deg,#ffd27a,#ffb347 40%,#ff5a1f 75%,#ff1e4d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:560px;margin:0 0 26px}
+.hero p.need{font-size:13px;margin:14px 0 0}.hero p.need a{color:var(--sub)}
 .trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px;overflow:hidden;min-width:0}
 .trailer video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000;object-fit:cover}
 .trailer .play{position:absolute;inset:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:0;border-radius:16px;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.45));color:#fff;font:600 15px/1.2 inherit;letter-spacing:.01em;cursor:pointer;text-shadow:0 1px 8px rgba(0,0,0,.6)}
@@ -104,25 +116,31 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .trailer.on .play{display:none}
 .news{font-size:15px;line-height:1.55}.news p{margin:0}.news p+p{margin-top:8px}.news b{color:var(--fg)}.news .when{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;margin:0 6px}.news a{color:var(--fg)}
 .help{max-width:720px;margin:56px auto 0;text-align:center}.help summary{display:inline-block;cursor:pointer;font-size:13px;color:var(--sub);list-style:none;padding:4px 10px;border-radius:8px}.help summary::-webkit-details-marker{display:none}.help summary::after{content:' ▾'}.help[open] summary::after{content:' ▴'}.help summary:hover{color:var(--fg)}.help .note{margin-top:10px;text-align:left;font-size:14px;line-height:1.6}.help .note p{margin:0}.help .note p+p{margin-top:10px}.help b{color:var(--fg)}
-.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:28px}
 .chip{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:8px 11px;border-radius:999px;background:var(--chip);border:1px solid var(--edge);color:var(--sub)}
 /* grid */
 section{margin:0 0 64px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:22px}
-.card{padding:14px;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s}
+.grid{display:flex;flex-wrap:wrap;gap:22px}
+.grid>.card{flex:1 1 320px;min-width:0}
+.card{position:relative;overflow:hidden;padding:22px;display:flex;flex-direction:column;gap:16px;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s;
+box-shadow:inset 0 1px 0 var(--hi),0 0 0 1px color-mix(in srgb,var(--acc) 22%,transparent),0 26px 60px -34px var(--acc)}
+.card::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 55% at 0% 0%,color-mix(in srgb,var(--acc) 22%,transparent),transparent)}
+.card>*{position:relative}
+.card .head{display:flex;align-items:center;gap:16px}
+.card .head .appicon{width:76px;height:76px;margin:0}
+.card .head div{min-width:0}
 .card:hover{transform:translateY(-6px)}
 .card .shot{border-radius:16px;overflow:hidden;aspect-ratio:5/4;position:relative;-webkit-mask-image:linear-gradient(#000 72%,transparent);mask-image:linear-gradient(#000 72%,transparent)}
 .card .shot img{width:100%;height:100%;object-fit:cover;object-position:top;display:block;transition:transform .6s}
 .card:hover .shot img{transform:scale(1.035)}
 .card .shot::after{content:"";position:absolute;inset:0;border-radius:16px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
-.card .body{padding:16px 8px 6px;display:flex;flex-direction:column;flex:1}
-.card h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.card h3{margin:0 0 4px;font-size:21px;letter-spacing:-.02em}
 .appicon{width:40px;height:40px;flex:none;display:block;margin:-4px 0 -4px -4px}
-.heroicon{width:104px;height:104px;display:block;margin:0 0 14px -8px}
+.heroicon{width:200px;height:200px;display:block;flex:none;filter:drop-shadow(0 30px 50px color-mix(in srgb,var(--acc) 45%,transparent))}
 .more a .appicon{width:36px;height:36px;float:left;margin:-2px 10px 0 -4px}
 .card h3 a{text-decoration:none}
-.card p{margin:0 0 14px;color:var(--sub)}
-.card .meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.card p{margin:0;color:var(--sub);font-size:15px;line-height:1.45}
+.card .meta{display:flex;flex-wrap:wrap;gap:6px}
 .card .meta .chip{font-size:10.5px;padding:6px 9px}
 .acts{display:flex;gap:8px;margin-top:auto}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:650;font-size:14.5px;padding:11px 18px;border-radius:999px;text-decoration:none;border:1px solid transparent;transition:filter .2s,transform .2s}
@@ -130,34 +148,34 @@ section{margin:0 0 64px}
 .btn.pri{background:var(--acc);color:#fff;box-shadow:0 10px 30px -10px var(--acc)}
 .btn.sec{background:var(--chip);border-color:var(--edge)}
 .btn.big{font-size:16px;padding:14px 24px}
-.card .acts .btn{flex:1}
+.card .acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 /* product page */
-.phero{display:grid;grid-template-columns:1fr minmax(0,560px);gap:56px;align-items:start;padding:72px 0 56px}
-.phero>div{position:sticky;top:110px}
+.phero{display:flex;flex-wrap:wrap;gap:40px;align-items:center;padding:72px 0 56px}
+.phero>div{flex:1 1 460px;min-width:0}
 .phero h1{font-size:clamp(40px,6vw,68px);line-height:1;letter-spacing:-.04em;margin:0 0 14px}
 .phero .tag{font-size:clamp(18px,2vw,22px);color:var(--sub);margin:0 0 22px}
-.phero .intro{margin:0 0 26px;max-width:520px}
+.phero .intro{margin:0 0 26px;max-width:640px}
 .phero .chips{justify-content:flex-start;margin-bottom:28px}
-.phero .acts{gap:10px}
-.phero figure{margin:0;padding:12px}
-.phero figure img{width:100%;display:block;border-radius:16px}
-.phero.phone{grid-template-columns:1fr minmax(0,380px)}
-.feats{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.phero .acts{gap:10px;flex-wrap:wrap;max-width:560px}.phero .acts .btn{flex:1 1 220px;white-space:nowrap}
+.feats{display:flex;flex-wrap:wrap;gap:16px}
+.feats>.feat{flex:1 1 300px;min-width:0}
 .feat{padding:22px 22px 20px;border-radius:22px}
 .feat h4{margin:0 0 6px;font-size:16.5px;letter-spacing:-.01em;display:flex;gap:10px;align-items:baseline}
 .feat h4::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc);transform:translateY(-1px)}
 .feat p{margin:0;color:var(--sub);font-size:15px}
 .feat code{font-size:.9em;background:var(--chip);padding:1px 6px;border-radius:6px}
-.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:20px}
-.gal.phone{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;align-items:start}
+.gal.phone{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
 .gal figure{margin:0;padding:12px}
 .gal img{width:100%;display:block;border-radius:14px}
+.gal a{display:block;border-radius:14px}.gal a:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
 .gal figcaption{font:600 12px/1 ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--sub);padding:14px 6px 4px;text-align:center}
 .note{padding:18px 22px;border-radius:20px;color:var(--sub)}
 .note b{color:var(--fg)}
 .lede{color:var(--sub);max-width:720px;margin:-4px 0 18px}
-.more{display:flex;gap:12px;flex-wrap:wrap}
-.more a{flex:1;min-width:200px;padding:16px 18px;border-radius:20px;text-decoration:none}
+.more{display:flex;flex-wrap:wrap;gap:12px}
+.more>a{flex:1 1 240px;min-width:0}
+.more a{padding:16px 18px;border-radius:20px;text-decoration:none}
 .more a small{display:block;color:var(--sub)}
 /* platform filter */
 .seg{display:inline-flex;gap:4px;padding:5px;border-radius:999px;margin:30px auto 0}
@@ -172,7 +190,7 @@ a.chip{text-decoration:none;color:var(--fg)}a.chip:hover{background:var(--edge)}
 footer{padding:30px 0 60px;text-align:center;color:var(--sub);font-size:14px}
 footer a{color:var(--fg)}
 @media (max-width:560px){nav a.link.sec{display:none}.label .r{display:none}nav{top:10px}}
-@media (max-width:860px){.phero,.phero.phone{grid-template-columns:1fr;padding-top:48px}.phero>div{position:static}.gal{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero{padding-top:64px}}
+@media (max-width:860px){.phero{padding-top:40px;gap:24px}.pair{display:flex}.heroicon{width:140px;height:140px}.gal{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero{padding-top:48px}.hero .top{gap:28px}}
 """
 if not ONLY: open(f'{D}/style.css', 'w', encoding='utf-8').write(CSS.strip() + '\n')
 # pages link the stylesheet with a fingerprint of it, so a phone that cached the old one fetches the new
@@ -258,10 +276,9 @@ def pair_chip(p):
 def card(p):
     s = S[p]; slug = p.split('/')[1]; th, acc = THEME[p]
     return f"""<article class="card glass" style="--acc:{acc}">
-<a class="shot" href="{p}/">{shot(f'img/{slug}/card.webp', html.escape(s['name']) + ' settings panel', LAZY)}</a>
-<div class="body"><h3><img class="appicon" src="img/{slug}/icon.png" alt="" width="40" height="40"><a href="{p}/">{html.escape(s['name'])}</a></h3><p>{md_inline(s['tag'])}</p>
+<div class="head"><img class="appicon" src="img/{slug}/icon.png" alt="" width="76" height="76"><div><h3><a href="{p}/">{html.escape(s['name'])}</a></h3><p>{md_inline(s['tag'])}</p></div></div>
 <div class="meta"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">{s['platform']}</span><span class="chip">v{v_of(p)}</span>{pair_chip(p)}</div>
-<div class="acts"><a class="btn pri" href="{install_url(p)}">Install</a><a class="btn sec" href="{p}/">Details</a></div></div></article>"""
+<div class="acts"><a class="btn pri" href="{install_url(p)}">Install</a><a class="btn sec" href="{p}/">Details</a></div></article>"""
 
 NOTE = {'both': 'The same script, on your computer and your phone', 'desktop': 'For desktop browsers',
         'phone': 'Made for phone browsers like Edge on Android'}
@@ -283,14 +300,21 @@ var help=document.getElementById('help');function openHelp(){if(help&&location.h
 addEventListener('hashchange',openHelp);openHelp();
 [].forEach.call(document.querySelectorAll('a[href="#help"]'),function(a){a.addEventListener('click',function(){if(help)help.open=true})})})();
 </script>"""
+# the hero's icon panel: every script's icon as a link to its page, three by three, the phone twins kept apart
+ORDER = ['molten-tools', 'molten-for-discord', 'molten-for-reddit', 'hourglass', 'prism', 'looking-glass', 'kaleidoscope', 'molten-for-reddit-mobile', 'kaleidoscope-mobile']
+BY = {p.split('/')[1]: p for p in S}
+TILES = ''.join(f'<a href="{BY[k]}/" aria-label="{html.escape(S[BY[k]]["name"])}"><img src="img/{k}/icon.png" alt="" width="120" height="120"></a>' for k in ORDER if k in BY)
+TILES += ''.join(f'<a href="{p}/" aria-label="{html.escape(S[p]["name"])}"><img src="img/{p.split("/")[1]}/icon.png" alt="" width="120" height="120"></a>' for p in S if p.split('/')[1] not in ORDER)
 body = f"""<main class="wrap">
-<header class="hero"><h1>Glass for the <span>web.</span></h1>
+<header class="hero"><div class="top"><div class="words"><div class="label">Userscripts by JigglyPug</div><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>
-<p class="need"><a href="#help">Trouble installing?</a></p>
+<div class="acts"><a class="btn warm big" href="#scripts">See the scripts</a><a class="btn sec big" href="#trailer">Watch the trailer · 2:00</a></div>
+<p class="need"><a href="#help">Trouble installing?</a></p></div>
+<div class="tiles glass" aria-label="The scripts">{TILES}</div></div>
 <figure class="trailer glass" id="trailer"><video preload="none" playsinline poster="trailer/poster.webp" aria-label="Glassware trailer" width="1280" height="720" style="width:100%;height:auto;max-width:100%"><source src="trailer/glassware-trailer.mp4" type="video/mp4"></video>
 <button class="play" type="button"><svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M26 20v24l19-12z" fill="#fff"/></svg><span>Watch the trailer · 2:00</span></button></figure>
 <div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
-<div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></header>
+<div class="center" id="scripts"><div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></div></header>
 {sections}
 <details class="help" id="help"><summary>Help</summary><div class="note glass">
 <p><b>What you need.</b> <a href="https://www.tampermonkey.net/">Tampermonkey</a> 5 or later.</p>
@@ -303,13 +327,18 @@ body = f"""<main class="wrap">
 for p, s in S.items():
     if ONLY and p not in ONLY: continue
     slug = p.split('/')[1]; th, acc = THEME[p]; phone = bool(s.get('runs_on_phone'))
-    hero = HERO.get(p, s['shots'][0][0]); rest = [x for x in s['shots'] if x[0] != hero]
+    hero = HERO.get(p, s['shots'][0][0]); rest = [x for x in s['shots'] if x[0] == hero] + [x for x in s['shots'] if x[0] != hero]
     img = lambda f: f'../../img/{slug}/{f}.webp'
     feats = ''
     from features import F
     for t, b in F[p]:
         feats += f'<div class="feat glass">' + (f'<h4>{md_inline(t)}</h4>' if t else '') + f'<p>{md_inline(b)}</p></div>'
-    gal = ''.join(f'<figure class="glass">{shot(img(f), html.escape(c), LAZY)}<figcaption>{html.escape(c)}</figcaption></figure>' for f, c in rest)
+    def big(f, c):   # a screenshot that opens full size: the dark one, and the light twin when there is one
+        dark, light, alt = img(f), img(f)[:-5] + '-light.webp', html.escape(c)
+        a = f'<a href="{dark}"><img src="{dark}" alt="{alt}" {LAZY}></a>'
+        if not os.path.exists(os.path.join(D, 'img', slug, f + '-light.webp')): return a
+        return a.replace('<a href', '<a class="dk" href', 1) + f'<a class="lt" href="{light}"><img src="{light}" alt="{alt}" {LAZY}></a>'
+    gal = ''.join(f'<figure class="glass">{big(f, c)}<figcaption>{html.escape(c)}</figcaption></figure>' for f, c in rest)
     where = RUNS[p]
     if where == 'both': sib = [q for q in S if q != p and RUNS[q] == 'both']
     else: sib = sorted([q for q in S if q != p and runs_on(q, where)], key=lambda q: (RUNS[q] != 'both',))
@@ -327,16 +356,15 @@ for p, s in S.items():
         pg = ''.join(f'<figure class="glass">{shot(img(f), html.escape(c) + " on a phone", LAZY)}<figcaption>{html.escape(c)}</figcaption></figure>' for f, c in pshots)
         phone_sec = f'<section><div class="label">On your phone</div><p class="lede">{md_inline(ptxt)}</p><div class="gal phone">{pg}</div></section>'
     body = f"""<main class="wrap">
-<header class="phero{' phone' if phone else ''}"><div>
-<img class="heroicon" src="../../img/{slug}/icon.png" alt="{html.escape(s['name'])} icon" width="104" height="104">
+<header class="phero"><img class="heroicon" src="../../img/{slug}/icon.png" alt="{html.escape(s['name'])} icon" width="200" height="200"><div>
 <div class="label">{s['kicker']}</div>
 <h1>{html.escape(s['name'])}</h1><p class="tag">{md_inline(s['tag'])}</p><p class="intro">{md_inline(s['intro'])}</p>
 <div class="chips"><span class="chip">{html.escape(s['sites'])}</span><span class="chip">{s['platform']}</span><span class="chip">v{v_of(p)}</span></div>
 <div class="acts"><a class="btn pri big" href="{install_url(p)}">Install {html.escape(s['name'])}</a><a class="btn sec big" href="{REPO_URL}/blob/main/{p}/{slug}.user.js">View source</a></div>{pair}
-</div><figure class="glass">{shot(img(hero), html.escape(s['name']) + ' panel', LAZY)}</figure></header>
+</div></header>
 {start}
 <section><div class="label">Features</div><div class="feats">{feats}</div></section>
-{f'<section><div class="label">A closer look</div><div class="gal{" phone" if phone else ""}">{gal}</div></section>' if gal else ''}
+{f'<section><div class="label">The panel<span class="r">Click one to see it full size</span></div><div class="gal{" phone" if phone else ""}">{gal}</div></section>' if gal else ''}
 {phone_sec}
 {f'<section>{note}</section>' if note else ''}
 <section><div class="label">What's new</div><div class="note glass news">{news}<p><a href="{REPO_URL}/blob/main/{p}/CHANGES.md">Every change</a></p></div></section>

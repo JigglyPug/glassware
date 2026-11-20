@@ -96,10 +96,16 @@ grab = lambda start, end: src[src.index(start):src.index(end, src.index(start))]
 UNITS = grab('    const UNITS = {', '    };') + '    };'
 DUE = grab('    function dueFor(', '\n    }') + '\n    }'
 REMIND = grab('    function remind(', '\n    }\n') + '\n    }'
+PRESETS = grab('    const at9 = ', '    ];') + '    ];'
 node = UNITS + DUE + """
 const RealDate = Date; let fake = new RealDate(2027, 0, 31, 12).getTime();
 Date = class extends RealDate { constructor(...a) { a.length ? super(...a) : super(fake); } static now() { return fake; } };
 const m = new RealDate(dueFor('month', 1, 9 * 60));
+""" + PRESETS + """
+// Tonight and Tomorrow at different times of day: [hours, minutes] they land on, how many days ahead, or 0 when left out
+const at = (h, mi) => { fake = new RealDate(2027, 0, 13, h, mi).getTime(); const o = {}; for (const [k, f] of PRESETS_T) { const t = f(); o[k] = t ? [new RealDate(t).getDate() - 13, new RealDate(t).getHours()] : 0; } return o; };
+const times = { afternoon: at(15, 0), evening: at(19, 45), late: at(23, 26), night: at(1, 0) };
+fake = new RealDate(2027, 0, 31, 12).getTime();
 const D = { reminders: [] }, REMIND_CAP = 100, REMIND_MAX = 366 * 864e5; let ids = 0;
 const store = { reminders() {} }, refreshAll = () => {}, cleanSaved = x => Object.assign({}, x), newId = p => p + (ids++);
 """ + REMIND + """
@@ -107,12 +113,15 @@ for (let i = 0; i < 100; i++) remind({ mid: 'm' + i }, fake + (i + 10) * 864e5);
 remind({ mid: 'soon' }, fake + 2 * 864e5);                                            // the 101st, due in 2 days
 const kept = D.reminders.map(r => r.mid);
 D.reminders[0].done = true; remind({ mid: 'far' }, fake + 300 * 864e5);              // over the limit with one finished: the finished one goes
-console.log(JSON.stringify({ month: [m.getMonth(), m.getDate()], count: kept.length, soon: kept.includes('soon'), lastDropped: !kept.includes('m99'),
+console.log(JSON.stringify({ times, month: [m.getMonth(), m.getDate()], count: kept.length, soon: kept.includes('soon'), lastDropped: !kept.includes('m99'),
   far: D.reminders.some(r => r.mid === 'far'), doneGone: !D.reminders.some(r => r.done) }));"""
 u = subprocess.run(['node', '-e', node], capture_output=True, text=True)
 try: t = json.loads(u.stdout.strip().splitlines()[-1])
 except Exception: t = None; bad.append('the date and reminder pieces didn\'t run: ' + ((u.stderr.strip().splitlines() or ['no output'])[-1]))
 if t:
+    tm = t['times']
+    want(tm['afternoon']['Tonight'] == [0, 20] and tm['evening']['Tonight'] == [0, 22] and tm['late']['Tonight'] == 0, f'Tonight lands on {tm} (8 PM, then 10 PM once 8 is close, then left out)')
+    want(tm['afternoon']['Tomorrow'] == [1, 9] and tm['night']['Tomorrow'] == [0, 9], f'Tomorrow lands on {tm} (just after midnight it should be the morning coming up)')
     want(t['month'] == [1, 28], f'a month after Jan 31 lands on month {t["month"][0] + 1}, day {t["month"][1]}, not Feb 28')
     want(t['count'] == 100 and t['soon'] and t['lastDropped'], 'a reminder over the limit pushed out one due sooner (or the limit isn\'t 100)')
     want(t['far'] and t['doneGone'], 'over the limit, a finished reminder wasn\'t the one let go')
@@ -161,7 +170,12 @@ MENU = r"""(async () => {
   note.value = 'Test'; note.dispatchEvent(new Event('input', { bubbles: true })); note.dispatchEvent(new Event('change', { bubbles: true }));
   inMenu('Recipes').click(); await w(300);
   out.afterFolder = { open: !!menu(), saved: !!savedOf('888888888888888888'), pressed: inMenu('Recipes') && inMenu('Recipes').getAttribute('aria-pressed') };
+  inMenu('Next week').click(); await w(300);
+  const dialSays = () => ({ mid: ((__all(menu()).find(e => e.classList && e.classList.contains('dial-mid')) || {}).textContent || '').trim(),
+    unit: ((__all(menu()).find(e => e.getAttribute && e.getAttribute('role') === 'radio' && e.getAttribute('aria-checked') === 'true') || {}).textContent || '') });
+  out.dialWeek = dialSays();
   inMenu('1 hour').click(); await w(300);
+  out.dialHour = dialSays();
   out.afterRemind = { open: !!menu(), saved: !!savedOf('888888888888888888'), rems: remsOf('888888888888888888').length, pressed: inMenu('1 hour').getAttribute('aria-pressed') };
   out.sum = (__all(menu()).find(e => e.classList && e.classList.contains('sum')) || {}).textContent || '';
   out.hasRemindBtn = !!inMenu('Remind me');
@@ -187,6 +201,8 @@ if not isinstance(mv, dict) or not mv.get('opened'): bad.append('the message men
 else:
     want(mv['afterFolder'] == {'open': True, 'saved': False, 'pressed': 'true'}, f'picking a folder saved or closed the menu: {mv["afterFolder"]}')
     want(mv['afterRemind'] == {'open': True, 'saved': False, 'rems': 0, 'pressed': 'true'}, f'picking a reminder time set it or closed the menu: {mv["afterRemind"]}')
+    want(mv['dialWeek']['mid'].startswith('1 week') and mv['dialWeek']['unit'] == 'Weeks', f'Next week didn\'t turn the dial to 1 week: {mv["dialWeek"]}')
+    want(mv['dialHour']['mid'].startswith('1 hour') and mv['dialHour']['unit'] == 'Hours', f'1 hour didn\'t turn the dial to 1 hour: {mv["dialHour"]}')
     want(not mv['hasRemindBtn'], 'the menu still has a "Remind me" button (it should be "Save")')
     want(mv['sum'].startswith('Saves to Recipes') and 'reminds you' in mv['sum'], f'the line above Save says {mv["sum"]!r}')
     o = mv['one']; want(o['closed'] and o['folder'] == 'frecipes' and o['note'] == 'Test' and o['rems'] == 1 and o['remNote'] == 'Test' and o['inMin'] in (59, 60, 61), f'Save didn\'t do all three: {o}')

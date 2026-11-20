@@ -56,7 +56,7 @@ It checks, in order:
              Molten for Discord Activity card answers
              its question in a sentence that names the change, no figure on two cards, labelled
              axes; tools/tests/importtest.py: Import settings keeps any file it's given in range, skips what
-             it can't read and won't read one over 1 MB (when Hourglass changed)
+             it can't read and won't read one over 1 MB, and Reset all stats asks before it erases (when Hourglass changed)
   live       tools/tests/live.py: every control updates the panel on the spot, in the same tab and in a
              second open tab, with nothing waiting for a reopen (changed scripts)
   performance  tools/tests/perf.py: over a long session nothing a script leaves behind keeps growing
@@ -526,8 +526,8 @@ if 'hourglass' in dash:
     runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]
     for l in runs:
         if not l.endswith('clean'): ok(False, l[3:])
-    ok(len(runs) >= 9, f'the import test reported {len(runs)} of 9 cases: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
-    if len(runs) >= 9 and r.returncode == 0: print('  ✓ hourglass import: damaged, foreign, out-of-range and oversized files change nothing they shouldn\'t')
+    ok(len(runs) >= 10, f'the import test reported {len(runs)} of 10 cases: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+    if len(runs) >= 10 and r.returncode == 0: print('  ✓ hourglass import: damaged, foreign, out-of-range and oversized files change nothing they shouldn\'t; Reset all stats asks first')
 
 # ------------------------------------------------------------------ kaleidoscope
 # a board is AI-written code: tools/tests/boardtest.py proves a hostile one can't send anything out, and

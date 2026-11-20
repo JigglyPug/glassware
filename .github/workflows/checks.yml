@@ -45,7 +45,7 @@ jobs:
   # A job of its own, not part of "checks": a vulnerability published today shows up red here and
   # gets fixed, but can't hold back a release or a rollback (tools/push.py waits for "checks" only).
   audit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1

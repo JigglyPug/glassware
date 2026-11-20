@@ -2,6 +2,12 @@
 
 Newest first.
 
+## 1.5.14 · 2026-11-20
+
+- Under "How much are you online?", a short list fills the space below the chart: your busiest and quietest days and how many beat your average. The chart is a little taller too.
+- "Reset all stats" asks first, in words, and only erases when you press OK.
+- The main switch says "Everything is on. Turn off to stop every feature at once." and "Everything is off. Your settings are kept.", like the other scripts.
+
 ## 1.5.13 · 2026-11-19
 
 - A new icon in the family style: the sand is lava, falling through the neck in drops and piling up at the bottom. The header and block screen draw it too.

@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.4.15 · 2026-11-20
+
+- The vote, comment and share buttons no longer go blank after you scroll. When scrolling stops, the posts on screen are drawn again, so you don't have to tap to bring them back.
+
 ## 1.4.14 · 2026-11-19
 
 - A new icon in the family style: the speech bubble's tail has melted into a heavy drop.

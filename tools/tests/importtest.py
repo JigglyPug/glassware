@@ -13,6 +13,7 @@ and hands it a file:
   broken part is skipped (and the panel says which), the junk entries dropped, the rest imported
 - a file over 1 MB (here 3 MB): it isn't read at all, nothing changes, and the panel says it's too big
 - an export of the seed's own settings: imports back unchanged
+- Reset all stats: it asks first, in words; Cancel keeps every day, and OK erases them
 Every case also fails on an uncaught error or "undefined"/"NaN"/"[object" in the panel afterwards.
 Prints "clean" for each case, or what went wrong.
 """
@@ -45,6 +46,17 @@ DRIVE = """(async () => {
   await sleep(500); btn('Settings').click(); await sleep(400);
   const snap = () => JSON.parse(JSON.stringify(Object.fromEntries(['settings', 'schedule', 'sites', 'ignored'].map(k => [k, k in window.__gm ? window.__gm[k] : null]))));
   const before = snap();
+  if (C === 'reset') {
+    const days = () => (window.__gm.days || []).length, ask = () => root().querySelector('[role="alertdialog"]');
+    const out = { before, after: before, msg: '', read, errs: window.__errs, daysAtStart: days() };
+    btn('Reset all stats').click(); await sleep(300);
+    out.asked = ask() ? ask().textContent : ''; out.daysWhileAsking = days();
+    btn('Cancel').click(); await sleep(300);
+    out.goneAfterCancel = !ask(); out.daysAfterCancel = days();
+    btn('Reset all stats').click(); await sleep(300); btn('OK, reset').click(); await sleep(500);
+    const st = root().querySelector('[role="status"]');
+    return Object.assign(out, { daysAfterOk: days(), msg: st ? st.textContent : '', text: root().textContent });
+  }
   btn('Import settings').click(); await sleep(1200);
   const st = root().querySelector('[role="status"]');
   return { before, after: snap(),
@@ -124,6 +136,17 @@ def cases():
         if v['msg'] != 'Imported.': p.append(f'the panel says {v["msg"]!r}')
         return p
     yield 'an export of its own settings', {'text': 'export'}, round_trip
+
+    def reset_asks(v):
+        p = []
+        if not v['daysAtStart']: p.append('the seed has no days to reset')
+        if not v['asked'].startswith('Reset all your stats?'): p.append(f'Reset all stats didn\'t ask first (it shows {v["asked"]!r})')
+        if v['daysWhileAsking'] != v['daysAtStart'] or v['daysAfterCancel'] != v['daysAtStart']: p.append('stats were erased before OK')
+        if not v['goneAfterCancel']: p.append('Cancel didn\'t close the question')
+        if v['daysAfterOk'] != 0: p.append(f'OK left {v["daysAfterOk"]} days')
+        if v['msg'] != 'Your stats were reset.': p.append(f'the panel says {v["msg"]!r} after OK')
+        return p
+    yield 'Reset all stats', 'reset', reset_asks
 
 def run(script=JS):
     from par import pmap

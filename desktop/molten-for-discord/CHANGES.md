@@ -2,6 +2,12 @@
 
 Newest first.
 
+## 1.0.11 · 2026-11-20
+
+- In Remind me, picking Tonight, Tomorrow or Next week turns the dial to match, and so does picking an exact day and time.
+- Tonight is 8 PM, or 10 PM once 8 is close, and it's left out late in the evening, so it can never land after Tomorrow. Just after midnight, Tomorrow means the morning coming up.
+- Lighter on busy channels: with no picture viewer open, new images no longer trigger a sweep of the whole page.
+
 ## 1.0.10 · 2026-11-19
 
 - The bubbles card says it the way you'd say it ("Lava Lounge took a third of your Discord time"), and "What changed?" puts a big jump in words ("more than halved").

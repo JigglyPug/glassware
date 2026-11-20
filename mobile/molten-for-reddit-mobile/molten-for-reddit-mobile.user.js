@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Reddit Mobile
 // @namespace    molten-tools
-// @version      1.4.14
+// @version      1.4.15
 // @description  Molten glass for Reddit on your phone: a gentle lava-lamp background made from the post you're looking at, clear-glass posts and comments, best video quality, art-colored seek bar (and address bar, where the browser supports it), Arctic Shift profile lookup, and no "Open in app" nagging. Tap the lava button in the top bar for settings.
 // @match        https://www.reddit.com/*
 // @match        https://sh.reddit.com/*
@@ -2506,7 +2506,21 @@ div.lava-blobs {
       setTimeout(() => { if (ENABLED && glass.cleanup) GLASS.clean(); }, 900);
     }
   }, 500);
-  let scrollIdle = 0;
+  let scrollIdle = 0, settleT = 0;
+  /* Phone browsers can skip redrawing parts of the frosted posts after a scroll (short on graphics memory, they
+     drop what's inside Reddit's own components): the vote, comment and share buttons go blank until the next tap.
+     When scrolling stops, the posts on screen get a one-frame layer of their own, which makes the browser draw
+     them again. */
+  function redrawPosts() {
+    if (!ENABLED) return;
+    const h = innerHeight;
+    for (const p of document.querySelectorAll('shreddit-post, shreddit-ad-post')) {
+      const r = p.getBoundingClientRect();
+      if (r.bottom < -h / 2 || r.top > h * 1.5 || p.style.transform) continue;
+      p.style.transform = 'translateZ(0)';
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (p.style.transform === 'translateZ(0)') p.style.transform = ''; }));
+    }
+  }
   window.addEventListener('scroll', () => {
     if (!ENABLED) return;
     if (lava.followScroll && !isPostPage()) scheduleArt(450);
@@ -2515,7 +2529,10 @@ div.lava-blobs {
       clearTimeout(scrollIdle);
       scrollIdle = setTimeout(() => { scrolling = false; document.documentElement.removeAttribute('data-molten-scrolling'); }, 250);
     }
+    clearTimeout(settleT); settleT = setTimeout(redrawPosts, 300);
   }, { passive: true });
+  // and once the first posts have loaded in
+  setTimeout(redrawPosts, 1500);
   const startArt = () => {
     if (lavaActive()) { ensureLayers(); setArt(currentArt()); }
     // re-check once Reddit's images have loaded in

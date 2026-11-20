@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Hourglass: Screen time and lockdown for every site." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.5.13-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
+[![Install](https://img.shields.io/badge/Install-v1.5.14-5b5bd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/hourglass/hourglass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/hourglass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -48,8 +48,8 @@ The same script switches to a phone layout on its own: a bottom-sheet menu, the 
 
 ## What's new
 
+- **1.5.14** (2026-11-20): Under "How much are you online?", a short list fills the space below the chart: your busiest and quietest days and how many beat your average. The chart is a little taller too. "Reset all stats" asks first, in words, and only erases when you press OK. The main switch says "Everything is on. Turn off to stop every feature at once." and "Everything is off. Your settings are kept.", like the other scripts.
 - **1.5.13** (2026-11-19): A new icon in the family style: the sand is lava, falling through the neck in drops and piling up at the bottom. The header and block screen draw it too. On the block screen and the lockdown screen, the lava drips: a glob swells at the neck, stretches and drops onto the pile, twice before each flip. It stands still if your device asks for less motion.
 - **1.5.12** (2026-11-19): "Where does your time go?" says it the way you'd say it: "Socials took half your time in the past 7 days." When two categories are about even, it says so. "What changed?" puts a big jump in words ("more than doubled"), and "When do you drift?" starts with the hours: "8 PM to 11 PM was your busiest stretch." Blocked tries are whole numbers now ("about 3 times a lockdown day"). The bubble key, the table heading and a few hints are plain sentences. The line under the bubbles shows the biggest category until you point at one. The take-a-break switch is called Late-night nudge, as on the website. On phones, the day picker in Schedule spans the card's width, with the day's name on the left and its switch on the right.
-- **1.5.11** (2026-11-19): "Where does your time go?" shows a bubble per category now, sized by its share of your time. The faded part is how it was before. Point at or tap one for its numbers. The change on that card is in shares now ("from 14% to 9%"), so every figure adds up to 100%. It used to show the change in hours a day as a percentage, which looked wrong next to the shares. On phones, the stats under the charts fill the card's width: the right-hand column lines up on the right. The last date under the day charts no longer drops onto a second line when the range has a part-week at the end.
 
 [Every change](CHANGES.md)
