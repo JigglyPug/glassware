@@ -2,7 +2,7 @@
 
 <img src="assets/glassware-banner.svg" alt="Glassware: glass for the web, by JigglyPug" width="100%">
 
-[![Visit the site](https://img.shields.io/badge/Visit%20the%20site-jigglypug.github.io-ff8a3d?style=for-the-badge)](https://jigglypug.github.io/glassware/) [![Watch the trailer](https://img.shields.io/badge/Watch%20the%20trailer-2%3A51-222?style=for-the-badge)](https://jigglypug.github.io/glassware/#trailer)
+[![Visit the site](https://img.shields.io/badge/Visit%20the%20site-jigglypug.github.io-ff8a3d?style=for-the-badge)](https://jigglypug.github.io/glassware/) [![Watch the trailer](https://img.shields.io/badge/Watch%20the%20trailer-2%3A50-222?style=for-the-badge)](https://jigglypug.github.io/glassware/#trailer)
 
 Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates itself from this repo. [Trouble installing?](#help)
 

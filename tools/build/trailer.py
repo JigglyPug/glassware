@@ -13,6 +13,6 @@ def seconds(path=f'{R}/assets/trailer/glassware-trailer.mp4'):
     return dur / scale
 
 def length(path=None):
-    """m:ss, rounded to the nearest second."""
-    s = round(seconds(path) if path else seconds())
+    """m:ss, rounded down the way video players show it, so the label matches the player."""
+    s = int(seconds(path) if path else seconds())
     return f'{s // 60}:{s % 60:02d}'

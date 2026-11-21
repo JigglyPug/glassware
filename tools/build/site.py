@@ -115,7 +115,10 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:560px;margin:0 0 26px}
 .hero p.need{font-size:13px;margin:14px 0 0}.hero p.need a{color:var(--sub)}
 .trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px;overflow:hidden;min-width:0}
-.trailer video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000;object-fit:cover}
+.trailer video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000;object-fit:contain}
+/* full screen shows the whole frame (letterboxed on tall or notched phones), never cropped to fill */
+.trailer video:fullscreen{object-fit:contain;aspect-ratio:auto;width:100%;height:100%;border-radius:0}
+.trailer video:-webkit-full-screen{object-fit:contain;aspect-ratio:auto;width:100%;height:100%;border-radius:0}
 .trailer .play{position:absolute;inset:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:0;border-radius:16px;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.45));color:#fff;font:600 15px/1.2 inherit;letter-spacing:.01em;cursor:pointer;text-shadow:0 1px 8px rgba(0,0,0,.6)}
 .trailer .play svg{transition:transform .15s}.trailer .play:hover svg{transform:scale(1.08)}
 .trailer .play:focus-visible{outline:2px solid #ff8a3d;outline-offset:2px}
