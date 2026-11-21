@@ -308,7 +308,7 @@ function stubPage() {
       for (const e of __all()) { const cs = getComputedStyle(e); if (cs.position !== 'fixed' || cs.display === 'none' || cs.visibility === 'hidden') continue;
         const r = e.getBoundingClientRect(); const a = r.width * r.height; if (a < 40000 || a > vw * vh * (window.__maxFrac || 0.92)) continue; if (window.__sheet && r.top < 8) continue; if (a > ba) { ba = a; best = r; } }
       return best && { x: best.x, y: best.y, w: best.width, h: best.height }; };
-    window.__clickTab = t => { const c = __all().filter(e => e.children.length <= 2 && (e.textContent || '').trim() === t && e.getBoundingClientRect().width > 0 && (e.matches('button,[role=tab],a,[data-tab],li,div,span'))); 
+    window.__clickTab = t => { const c = __all().filter(e => e.children.length <= 2 && ((e.textContent || '').trim() === t || (e.matches('button,[role=tab]') && e.getAttribute('aria-label') === t)) && e.getBoundingClientRect().width > 0 && (e.matches('button,[role=tab],a,[data-tab],li,div,span'))); 
       const el = c.find(e => e.matches('button,[role=tab]')) || c[0]; if (el) { el.click(); return true; } return false; };
     window.__hideErr = () => { for (const e of __all()) if (/unreadable response|Couldn.t reach|returned an/i.test(e.textContent || '') && e.children.length === 0) e.style.visibility = 'hidden'; };`;
   await page.evaluate(helpers);

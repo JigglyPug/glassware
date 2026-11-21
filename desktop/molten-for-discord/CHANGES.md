@@ -2,6 +2,13 @@
 
 Newest first.
 
+## 1.0.12 · 2026-11-21
+
+- Removing a favorite, a saved message, a folder or a reminder asks first, right in the row: Cancel or Move to trash.
+- A trash can next to Channels, Messages and Reminders opens the trash. Put anything back, or delete it for good, which asks too. Empty trash clears it all at once.
+- Reminders you mark done show up there too, crossed off, and can go back on your list.
+- The trash and finished reminders clear on their own after 30 days.
+
 ## 1.0.11 · 2026-11-20
 
 - In Remind me, picking Tonight, Tomorrow or Next week turns the dial to match, and so does picking an exact day and time.

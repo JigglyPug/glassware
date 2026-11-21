@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.11
+// @version      1.0.12
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.11';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.12';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -170,6 +170,23 @@
         return Object.assign(c, { id: /^[a-z0-9]{1,20}$/.test(o.id) ? o.id : 'r' + due.toString(36), due, done: o.done === true, shown: +o.shown || 0 });
     }
     const readReminders = (src = get) => { const v = src('reminders', []); const out = []; for (const x of Array.isArray(v) ? v : []) { const c = cleanReminder(x); if (c) out.push(c); if (out.length >= REMIND_CAP) break; } return out; };
+    // The trash: what you removed (a favorite, a saved message, a folder, a reminder), kept for 30 days so it can
+    // come back. Each entry is read back through the same checker as the list it came from.
+    const TRASH_CAP = 200, TRASH_DAYS = 30;
+    function cleanTrash(o) {
+        if (!o || typeof o !== 'object' || !/^[a-z0-9]{1,20}$/.test(o.id)) return null;
+        const at = +o.at; if (!isFinite(at) || at <= 0) return null;
+        let item = null, extra = {};
+        if (o.kind === 'fav') item = cleanPlace(o.item);
+        else if (o.kind === 'saved') item = cleanSaved(o.item);
+        else if (o.kind === 'reminder') item = cleanReminder(o.item);
+        else if (o.kind === 'folder') {
+            const f = o.item; if (f && /^[a-z0-9]{1,20}$/.test(f.id) && typeof f.name === 'string' && f.name.trim()) item = { id: f.id, name: f.name.trim().slice(0, 30) };
+            extra = { mids: (Array.isArray(o.mids) ? o.mids : []).filter(x => ID.test(x)).slice(0, SAVED_CAP) };
+        }
+        return item ? Object.assign({ id: o.id, kind: o.kind, at, item }, extra) : null;
+    }
+    const readTrash = (src = get) => { const v = src('trash', []), old = Date.now() - TRASH_DAYS * 864e5, out = []; for (const x of Array.isArray(v) ? v : []) { const c = cleanTrash(x); if (c && c.at > old) out.push(c); if (out.length >= TRASH_CAP) break; } return out; };
     function readMap(k, cleanVal, cap, src = get) {
         const v = src(k, {}), out = {}; let n = 0;
         if (v && typeof v === 'object' && !Array.isArray(v)) for (const [id, x] of Object.entries(v)) { const c = cleanVal(x); if (GID.test(id) && c && n++ < cap) out[id] = c; }
@@ -181,9 +198,9 @@
     // names Screenshot safe found for your account (never printed or sent anywhere)
     const readFound = () => { const v = get('found', []); return (Array.isArray(v) ? v : []).filter(x => typeof x === 'string' && x.trim().length >= 2).map(x => x.slice(0, 40)).slice(0, 8); };
 
-    const D = { favs: readFavs(), recent: readRecent(), saved: readSaved(), reminders: readReminders(), colors: readColors(), notes: readNotes(), blurCh: readBlurChannels(), found: readFound() };
+    const D = { favs: readFavs(), recent: readRecent(), saved: readSaved(), reminders: readReminders(), trash: readTrash(), colors: readColors(), notes: readNotes(), blurCh: readBlurChannels(), found: readFound() };
     const store = {
-        favs: () => set('favorites', D.favs), recent: () => set('recent', D.recent), saved: () => set('saved', D.saved), reminders: () => set('reminders', D.reminders),
+        favs: () => set('favorites', D.favs), recent: () => set('recent', D.recent), saved: () => set('saved', D.saved), reminders: () => set('reminders', D.reminders), trash: () => set('trash', D.trash),
         colors: () => set('serverColors', D.colors), notes: () => set('notes', D.notes), blurCh: () => set('blurChannels', D.blurCh), found: () => set('found', D.found),
     };
 
@@ -1107,9 +1124,48 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
     function toggleFav(p) {
         if (!p) return;
         const i = D.favs.findIndex(f => keyOf(f) === keyOf(p));
-        if (i >= 0) D.favs.splice(i, 1); else if (D.favs.length < FAV_CAP) D.favs.push(cleanPlace(p));
+        if (i >= 0) toTrash('fav', D.favs.splice(i, 1)[0]); else if (D.favs.length < FAV_CAP) D.favs.push(cleanPlace(p));
         store.favs(); refreshAll();
     }
+    // Removed things wait in the trash for TRASH_DAYS: restore puts them back where they were, if there's room.
+    function toTrash(kind, item, extra) {
+        const c = cleanTrash(Object.assign({ id: newId('t').slice(0, 20), kind, at: Date.now(), item }, extra)); if (!c) return;
+        D.trash.unshift(c); D.trash = D.trash.slice(0, TRASH_CAP); store.trash();
+    }
+    function removeSaved(mid) {
+        const x = D.saved.items.find(y => y.mid === mid); if (!x) return;
+        D.saved.items = D.saved.items.filter(y => y !== x); toTrash('saved', x); store.saved(); refreshAll();
+    }
+    function removeFolder(id) {
+        const f = D.saved.folders.find(y => y.id === id); if (!f) return;
+        const mids = []; for (const x of D.saved.items) if (x.folder === id) { x.folder = ''; mids.push(x.mid); }
+        D.saved.folders = D.saved.folders.filter(y => y !== f); toTrash('folder', f, { mids }); store.saved(); refreshAll();
+    }
+    function cancelReminder(id) {
+        const r = D.reminders.find(x => x.id === id); if (!r) return;
+        D.reminders = D.reminders.filter(x => x !== r); toTrash('reminder', r); store.reminders(); refreshAll();
+    }
+    function restoreTrash(id) {
+        const t = D.trash.find(x => x.id === id); if (!t) return;
+        const x = t.item;
+        if (t.kind === 'fav') { if (!isFav(x.gid, x.cid)) { if (D.favs.length >= FAV_CAP) return; D.favs.push(x); } store.favs(); }
+        else if (t.kind === 'saved') {
+            if (!D.saved.items.some(y => y.mid === x.mid)) { if (D.saved.items.length >= SAVED_CAP) return; if (!D.saved.folders.some(f => f.id === x.folder)) x.folder = ''; D.saved.items.unshift(x); }
+            store.saved();
+        } else if (t.kind === 'folder') {
+            if (!D.saved.folders.some(f => f.id === x.id)) { if (D.saved.folders.length >= 30) return; D.saved.folders.push(x); }
+            for (const y of D.saved.items) if (!y.folder && t.mids.includes(y.mid)) y.folder = x.id;
+            store.saved();
+        } else if (t.kind === 'reminder') {
+            if (!D.reminders.some(y => y.id === x.id)) { if (D.reminders.filter(y => !y.done).length >= REMIND_CAP) return; x.done = false; x.shown = 0; D.reminders.push(x); D.reminders.sort((a, b) => a.due - b.due); while (D.reminders.length > REMIND_CAP) D.reminders.splice(D.reminders.findIndex(r => r.done), 1); }
+            store.reminders();
+        }
+        D.trash = D.trash.filter(y => y !== t); store.trash(); refreshAll();
+    }
+    function forget(id) { D.trash = D.trash.filter(y => y.id !== id); store.trash(); refreshAll(); }
+    // a finished reminder back on the list (as missed, if its time has passed), or gone for good
+    function unfinish(id) { const r = D.reminders.find(x => x.id === id); if (!r) return; r.done = false; r.shown = 0; store.reminders(); refreshAll(); }
+    function dropReminder(id) { D.reminders = D.reminders.filter(x => x.id !== id); store.reminders(); refreshAll(); }
     function moveFav(i, to) {
         if (to < 0 || to >= D.favs.length || i === to) return;
         const [f] = D.favs.splice(i, 1); D.favs.splice(to, 0, f); store.favs(); refreshAll();
@@ -1254,7 +1310,7 @@ html[data-mfd-bc] [role="article"]:hover [id^="message-content-"]{filter:none}
     function finishReminder(id, snooze) {
         const r = D.reminders.find(x => x.id === id); if (!r) return;
         if (snooze) { r.due = Date.now() + snooze; r.shown = 0; } else r.done = true;
-        D.reminders = D.reminders.filter(x => !x.done || Date.now() - x.due < 7 * 864e5);
+        D.reminders = D.reminders.filter(x => !x.done || Date.now() - x.due < TRASH_DAYS * 864e5);
         store.reminders(); refreshAll();
     }
 
@@ -1727,6 +1783,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .menu input[type=text]{width:100%;height:30px;padding:0 9px;border-radius:10px;border:1px solid var(--line);background:var(--field);color:var(--text);font:inherit;font-size:12px}
 .menu input[type=text]:focus{outline:2px solid var(--a);outline-offset:1px}
 .menu .gone{border:0;background:none;color:var(--sub);font-size:11.5px;text-align:left;padding:0;text-decoration:underline}
+.menu .goneask{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px;font-size:11.5px;color:var(--text)}
+.menu .goneask .btn{padding:5px 9px;font-size:11.5px}
+.menu .goneask .danger-fill{background:#d22d39;color:#fff;font-weight:600}
 /* reminders */
 .pop{width:300px;padding:14px;overflow:hidden}
 .pop .t{position:relative;font-weight:600;margin:8px 0 2px}
@@ -2135,7 +2194,14 @@ button{font:inherit;color:inherit;cursor:pointer}
                 el('div', { class: 'lbl', text: 'Note' }), noteIn,
                 el('div', { class: 'lbl', text: s ? 'Saved in ' + folderOf(s.folder).name + ' · move to' : 'Save to' }),
                 pills, newIn,
-                s ? el('button', { class: 'gone', type: 'button', text: 'Remove from saved', onclick: () => { D.saved.items = D.saved.items.filter(x => x.mid !== item.mid); store.saved(); refreshAll(); closeMenu(true); } }) : null,
+                s ? el('button', { class: 'gone', type: 'button', text: 'Remove from saved', onclick: e => {
+                    // asks first, in the menu: Cancel or Move to trash
+                    const b = e.currentTarget, ask = el('div', { class: 'goneask', role: 'group', 'aria-label': 'Remove from saved' },
+                        el('span', { text: 'Move it to the trash?' }),
+                        el('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: () => ask.replaceWith(b) }),
+                        el('button', { class: 'btn danger-fill', type: 'button', text: 'Move to trash', onclick: () => { removeSaved(item.mid); closeMenu(true); } }));
+                    b.replaceWith(ask);
+                } }) : null,
                 el('div', { class: 'lbl', text: 'Remind me' }),
                 remindPicker(null, d => { due = d; summary(); }),
                 sum, el('button', { class: 'rp-set', type: 'button', text: 'Save', onclick: commit }));
@@ -2579,10 +2645,13 @@ button{cursor:pointer}
             if (!S.enabled) out.push(this.offNote());
             const up = D.reminders.filter(x => !x.done).length;
             const views = [['channels', 'Channels', D.favs.length], ['messages', 'Messages', D.saved.items.length], ['reminders', 'Reminders', up]];
+            const binN = D.trash.length + D.reminders.filter(x => x.done).length, go = k => { this.sub = k; this.edit = null; this.folder = null; this.asking = null; this.render(); };
             out.push(h('div', { class: 'subs', role: 'tablist', 'aria-label': 'Favorites' }, views.map(([k, t, n]) =>
-                h('button', { class: k === this.sub ? 'on' : null, role: 'tab', 'aria-selected': String(k === this.sub), onclick: () => { this.sub = k; this.edit = null; this.folder = null; this.render(); } },
-                    h('span', { text: t }), n ? h('i', { text: String(n) }) : null))));
-            return out.concat(this.sub === 'messages' ? this.messages() : this.sub === 'reminders' ? this.reminders() : this.channels());
+                h('button', { class: k === this.sub ? 'on' : null, role: 'tab', 'aria-selected': String(k === this.sub), onclick: () => go(k) },
+                    h('span', { text: t }), n ? h('i', { text: String(n) }) : null)),
+                h('button', { class: 'bin' + (this.sub === 'trash' ? ' on' : ''), role: 'tab', 'aria-selected': String(this.sub === 'trash'), 'aria-label': 'Trash', title: 'Trash and finished reminders', onclick: () => go('trash') },
+                    icon(ICONS.trash, 15), binN ? h('i', { text: String(binN) }) : null)));
+            return out.concat(this.sub === 'messages' ? this.messages() : this.sub === 'reminders' ? this.reminders() : this.sub === 'trash' ? this.trash() : this.channels());
         },
         channels() {
             const here = DC.here(), r = DC.route(), out = [];
@@ -2640,7 +2709,9 @@ button{cursor:pointer}
                     h('button', { class: 'back', type: 'button', 'aria-label': 'All folders', title: 'All folders', onclick: () => { this.folder = null; this.edit = null; this.render(); } }, icon(['m15 6-6 6 6 6'], 16)),
                     h('span', { class: 'ficon' }, icon(f.id ? ICONS.folder : ICONS.inbox, 17)), h('div', { class: 'tx' }, h('div', { class: 'fn', text: f.name }), h('div', { class: 'd', text: items.length + (items.length === 1 ? ' message' : ' messages') })),
                     f.id ? h('button', { class: 'ib', type: 'button', 'aria-label': 'Rename folder', title: 'Rename', 'aria-expanded': String(renaming), onclick: () => { this.edit = renaming ? null : 'rename'; this.render(); } }, icon(['M4 20h4L19 9l-4-4L4 16z'], 13)) : null,
-                    f.id ? h('button', { class: 'ib', type: 'button', 'aria-label': 'Delete folder', title: 'Delete folder (its messages move to Unsorted)', onclick: () => { for (const x of D.saved.items) if (x.folder === f.id) x.folder = ''; D.saved.folders = F.filter(y => y.id !== f.id); this.folder = null; store.saved(); this.render(); } }, icon(['M5 7h14', 'M10 11v6', 'M14 11v6', 'M6 7l1 12h10l1-12', 'M9 7V4h6v3'], 13)) : null));
+                    f.id ? h('button', { class: 'ib', type: 'button', 'aria-label': 'Delete folder', title: 'Delete folder (its messages move to Unsorted)', onclick: () => { this.asking = 'f:' + f.id; this.render(); } }, icon(['M5 7h14', 'M10 11v6', 'M14 11v6', 'M6 7l1 12h10l1-12', 'M9 7V4h6v3'], 13)) : null));
+                const askF = this.askRow('f:' + f.id, 'Move this folder to the trash? Its messages go to Unsorted.', 'Move to trash', () => { this.folder = null; removeFolder(f.id); });
+                if (askF) out.push(h('div', { class: 'sec' }, askF));
                 if (renaming) out.push(h('div', { class: 'sec' }, this.text(f.name, 'Folder name', v => { if (v) { f.name = v.slice(0, 30); store.saved(); } this.edit = null; this.render(); }, 'Folder name', 30)));
                 out.push(this.sec(null, items.length ? h('div', { class: 'list' }, items.map(x => this.savedRow(x))) : this.note('Nothing in here yet. Point at a message, click its lava drop and pick ' + f.name + '.')));
             }
@@ -2657,14 +2728,27 @@ button{cursor:pointer}
                 this.tgl('msgDrops', 'Lava drop on messages', 'Point at a message and click its drop to save it or set a reminder'))));
             return out;
         },
+        // Removing asks first, in the row itself: the question, Cancel, and the action (to the trash, or for good)
+        askRow(key, question, yes, fn) {
+            if (this.asking !== key) return null;
+            return h('div', { class: 'item asking', role: 'group', 'aria-label': question },
+                h('span', { class: 'q', text: question }),
+                h('button', { class: 'btn sm', type: 'button', text: 'Cancel', onclick: () => { this.asking = null; this.render(); } }),
+                h('button', { class: 'btn sm danger-fill', type: 'button', text: yes, onclick: () => { this.asking = null; fn(); } }));
+        },
+        askBtn(key, label) {
+            return h('button', { class: 'ib', type: 'button', 'aria-label': label, title: label, onclick: () => { this.asking = key; this.render(); } }, gwCloseIcon());
+        },
         savedRow(x, showFolder) {
+            const asked = this.askRow('s' + x.mid, 'Move this message to the trash?', 'Move to trash', () => removeSaved(x.mid));
+            if (asked) return asked;
             const editing = this.edit === 's' + x.mid, f = folderOf(x.folder);
             const row = h('div', { class: 'item' + (editing ? ' open' : '') },
                 h('button', { class: 'go', type: 'button', title: 'Jump to the message', onclick: () => DC.go(pathOf(x)) }, placeIcon(x),
                     h('span', { class: 'tx' }, h('div', { class: 't wrap', text: x.title }),
                         h('div', { class: 'd wrap', text: [x.note, showFolder ? f.name : '', sigil(x) + x.name, new Date(x.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })].filter(Boolean).join(' · ') }))),
                 h('button', { class: 'ib', type: 'button', 'aria-label': 'Edit', title: 'Rename, add a note, move or set a reminder', 'aria-expanded': String(editing), onclick: () => { this.edit = editing ? null : 's' + x.mid; this.render(); } }, icon(['M4 20h4L19 9l-4-4L4 16z'], 13)),
-                h('button', { class: 'ib', type: 'button', 'aria-label': 'Remove', title: 'Remove', onclick: () => { D.saved.items = D.saved.items.filter(y => y !== x); store.saved(); refreshAll(); } }, gwCloseIcon()));
+                this.askBtn('s' + x.mid, 'Remove'));
             if (!editing) return row;
             return h('div', {}, row, h('div', { class: 'editor' },
                 this.text(x.title, 'Title', v => { x.title = v || x.title; store.saved(); this.render(); }, 'Title', 120),
@@ -2679,6 +2763,8 @@ button{cursor:pointer}
             const now = Date.now(), live = D.reminders.filter(x => !x.done).sort((a, b) => a.due - b.due);
             const missed = live.filter(x => x.due <= now), up = live.filter(x => x.due > now);
             const row = (x, late) => {
+                const asked = this.askRow('r' + x.id, 'Cancel this reminder? It goes to the trash.', 'Move to trash', () => cancelReminder(x.id));
+                if (asked) return asked;
                 const editing = this.edit === 'r' + x.id;
                 const line = h('div', { class: 'item' + (editing ? ' open' : '') },
                     h('button', { class: 'go', type: 'button', title: 'Jump to the message', onclick: () => DC.go(pathOf(x)) }, placeIcon(x),
@@ -2686,7 +2772,8 @@ button{cursor:pointer}
                     h('span', { class: 'cd' + (late ? ' late' : ''), 'data-due': String(x.due), text: countdown(x.due) }),
                     h('button', { class: 'ib', type: 'button', 'aria-label': 'Edit reminder', title: 'Add a note or change the time', 'aria-expanded': String(editing), onclick: () => { this.edit = editing ? null : 'r' + x.id; this.render(); } }, icon(['M4 20h4L19 9l-4-4L4 16z'], 13)),
                     late ? h('button', { class: 'ib', type: 'button', 'aria-label': 'Snooze an hour', title: 'Snooze an hour', onclick: () => finishReminder(x.id, 36e5) }, icon(['M12 7v5l3 2', 'M12 21a9 9 0 1 0 0-18a9 9 0 0 0 0 18z'], 13)) : null,
-                    h('button', { class: 'ib', type: 'button', 'aria-label': late ? 'Done' : 'Cancel reminder', title: late ? 'Done' : 'Cancel', onclick: () => finishReminder(x.id) }, gwCloseIcon()));
+                    late ? h('button', { class: 'ib', type: 'button', 'aria-label': 'Done', title: 'Done', onclick: () => finishReminder(x.id) }, icon(['m5 12.5 4.5 4.5L19 7.5'], 14))
+                        : this.askBtn('r' + x.id, 'Cancel reminder'));
                 if (!editing) return line;
                 return h('div', {}, line, h('div', { class: 'editor' },
                     this.text(x.note, 'What\'s this for? (optional)', v => { x.note = v; store.reminders(); this.render(); }, 'Note', 200),
@@ -2699,8 +2786,50 @@ button{cursor:pointer}
                 this.sec(null, this.note('Reminders pop up in Discord when they\'re due. Any that come due while Discord is closed show up the next time it opens. Up to a year ahead.')),
             ];
         },
+        // Trash: what you removed, to restore or delete for good, and finished reminders, struck through
+        trash() {
+            const day = t => new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+            const restoreI = icon(['M4 12a8 8 0 1 0 2.4-5.7', 'M4 4v4.5h4.5'], 14);
+            const what = t => t.kind === 'fav' ? ['Favorite', sigil(t.item) + ' ' + t.item.name]
+                : t.kind === 'saved' ? ['Saved message', t.item.title]
+                : t.kind === 'folder' ? ['Folder', t.item.name + (t.mids.length ? ' · ' + t.mids.length + (t.mids.length === 1 ? ' message' : ' messages') : '')]
+                : ['Reminder for ' + fmtTime(t.item.due), t.item.note || t.item.title];
+            const row = t => {
+                const asked = this.askRow('t' + t.id, 'Delete this for good? It can\'t come back.', 'Delete', () => forget(t.id));
+                if (asked) return asked;
+                const [kind, name] = what(t);
+                return h('div', { class: 'item' },
+                    h('span', { class: 'go still' }, t.kind === 'folder' ? h('span', { class: 'ficon' }, icon(ICONS.folder, 15)) : placeIcon(t.item),
+                        h('span', { class: 'tx' }, h('div', { class: 't wrap', text: name }), h('div', { class: 'd wrap', text: kind + ' · removed ' + day(t.at) }))),
+                    h('button', { class: 'ib', type: 'button', 'aria-label': 'Restore', title: 'Put it back', onclick: () => restoreTrash(t.id) }, restoreI.cloneNode(true)),
+                    h('button', { class: 'ib', type: 'button', 'aria-label': 'Delete permanently', title: 'Delete permanently', onclick: () => { this.asking = 't' + t.id; this.render(); } }, icon(ICONS.trash, 13)));
+            };
+            const fin = D.reminders.filter(x => x.done).sort((a, b) => b.due - a.due);
+            const finRow = x => {
+                const asked = this.askRow('d' + x.id, 'Delete this finished reminder for good?', 'Delete', () => dropReminder(x.id));
+                if (asked) return asked;
+                return h('div', { class: 'item done' },
+                    h('button', { class: 'go', type: 'button', title: 'Jump to the message', onclick: () => DC.go(pathOf(x)) }, placeIcon(x),
+                        h('span', { class: 'tx' }, x.note ? h('div', { class: 'rn wrap', text: x.note }) : null, h('div', { class: 't wrap', text: x.title }), h('div', { class: 'd wrap', text: 'Was due ' + fmtTime(x.due) + ' · ' + sigil(x) + x.name }))),
+                    h('button', { class: 'ib', type: 'button', 'aria-label': 'Bring back', title: 'Back to your reminders', onclick: () => unfinish(x.id) }, restoreI.cloneNode(true)),
+                    h('button', { class: 'ib', type: 'button', 'aria-label': 'Delete permanently', title: 'Delete permanently', onclick: () => { this.asking = 'd' + x.id; this.render(); } }, icon(ICONS.trash, 13)));
+            };
+            const emptyAsk = this.emptyAsk ? h('div', { class: 'ask', role: 'alertdialog', 'aria-label': 'Empty the trash' },
+                h('div', { class: 't', text: 'Empty the trash?' }),
+                h('div', { class: 'd', text: 'Everything in it is deleted for good. Finished reminders stay.' }),
+                h('div', { class: 'btns' }, h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: () => { this.emptyAsk = false; this.render(); } }),
+                    h('button', { class: 'btn danger-fill', type: 'button', text: 'OK, empty', onclick: () => { this.emptyAsk = false; D.trash = []; store.trash(); refreshAll(); } }))) : null;
+            return [
+                this.sec('Trash', D.trash.length ? h('div', { class: 'list' }, D.trash.map(row)) : this.note('Nothing in the trash. Favorites, saved messages, folders and reminders you remove wait here.'),
+                    D.trash.length && !this.emptyAsk ? this.btns(['Empty trash', () => { this.emptyAsk = true; this.render(); }]) : null, emptyAsk),
+                this.sec('Finished reminders', fin.length ? h('div', { class: 'list' }, fin.map(finRow)) : this.note('Reminders you mark done show up here, crossed off.')),
+                this.sec(null, this.note('Both clear on their own after ' + TRASH_DAYS + ' days.')),
+            ];
+        },
         // one favorite: a grip to drag it (as in Prism's source list), the place, and edit / remove
         favRow(f) {
+            const asked = this.askRow('v' + keyOf(f), 'Move ' + sigil(f) + f.name + ' to the trash?', 'Move to trash', () => toggleFav(f));
+            if (asked) return h('div', { class: 'fw', 'data-k': keyOf(f) }, asked);
             const editing = this.edit === 'f' + keyOf(f);
             const grip = h('button', { class: 'grip', type: 'button', 'aria-label': 'Move ' + f.name, title: 'Drag to reorder' }, icon(ICONS.grip, 15, 3));
             const wrap = h('div', { class: 'fw', 'data-k': keyOf(f) },
@@ -2708,7 +2837,7 @@ button{cursor:pointer}
                     h('button', { class: 'go', type: 'button', onclick: () => DC.go(pathOf(f)) }, placeIcon(f),
                         h('span', { class: 'tx' }, h('div', { class: 't', text: sigil(f) + ' ' + f.name }), h('div', { class: 'd', text: (f.note ? f.note + ' · ' : '') + f.server }))),
                     h('button', { class: 'ib', type: 'button', 'aria-label': 'Edit ' + f.name, title: 'Rename or add a note', 'aria-expanded': String(editing), onclick: () => { this.edit = editing ? null : 'f' + keyOf(f); this.render(); } }, icon(['M4 20h4L19 9l-4-4L4 16z'], 13)),
-                    h('button', { class: 'ib', type: 'button', 'aria-label': 'Remove ' + f.name, title: 'Remove', onclick: () => toggleFav(f) }, gwCloseIcon())),
+                    h('button', { class: 'ib', type: 'button', 'aria-label': 'Remove ' + f.name, title: 'Remove', onclick: () => { this.asking = 'v' + keyOf(f); this.render(); } }, gwCloseIcon())),
                 editing ? h('div', { class: 'editor' },
                     this.text(f.name, 'Name', v => { f.name = v || describe(f.gid, f.cid).name; f.named = !!v; store.favs(); refreshAll(); }, 'Name', 80),
                     this.text(f.note, 'Note (optional)', v => { f.note = v; store.favs(); refreshAll(); }, 'Note', 200)) : null);
@@ -3118,11 +3247,18 @@ button{cursor:pointer}
 .names .nl{filter:blur(5px);transition:filter .2s;word-break:break-word}
 .names:hover .nl{filter:none}
 /* Favorites' views: lava sub-tabs, folder tiles, countdown chips */
-.subs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:0 14px 6px;padding:4px;border-radius:12px;background:var(--ctl)}
+.subs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:4px;margin:0 14px 6px;padding:4px;border-radius:12px;background:var(--ctl)}
 .subs button{display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:9px;padding:7px 4px;background:none;color:var(--sub);font-size:12.5px;font-weight:550}
 .subs button i{font-style:normal;min-width:18px;padding:1px 5px;border-radius:9px;background:var(--ctl-hi);font-size:10.5px;font-weight:700;color:var(--text)}
 .subs button.on{color:#fff;background:var(--a);box-shadow:0 1px 4px rgba(0,0,0,.14),0 0 14px -4px rgba(var(--a-rgb),.8)}
 .subs button.on i{background:rgba(255,255,255,.25);color:#fff}
+.subs .bin{padding:7px 9px}
+.item.asking{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;padding:6px 6px 6px 10px;box-shadow:inset 0 0 0 1px var(--danger)}
+.item.asking .q{font-size:12.5px;font-weight:550;overflow-wrap:anywhere}
+.item .go.still{cursor:default}
+.item .go.still:hover{background:none}
+.item.done .t{text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--text) 55%,transparent);color:var(--sub)}
+.item.done .rn{text-decoration:line-through;opacity:.75}
 .subs button:focus-visible,.tile:focus-visible,.back:focus-visible,.lp:focus-visible{outline:2px solid var(--a);outline-offset:2px}
 .addcard{margin:6px 14px 4px;padding:12px;border-radius:16px;background:var(--ctl);display:grid;gap:8px}
 .addcard .label{margin-bottom:0}
@@ -3390,6 +3526,7 @@ button{cursor:pointer}
     watch('recent', () => { D.recent = readRecent(); if (ui.host && ui.tab === 2 && !ui.typing() && !ui.dragging) ui.render(); });
     watch('saved', () => { D.saved = readSaved(); refreshAll(); });
     watch('reminders', () => { D.reminders = readReminders(); if (ui.host && ui.tab === 2 && !ui.typing()) ui.render(); });
+    watch('trash', () => { D.trash = readTrash(); if (ui.host && ui.tab === 2 && !ui.typing()) ui.render(); });
     watch('serverColors', () => { D.colors = readColors(); refreshAll(); scheduleArt(0); });
     watch('notes', () => { D.notes = readNotes(); refreshAll(); });
     watch('blurChannels', () => { D.blurCh = readBlurChannels(); refreshAll(); });

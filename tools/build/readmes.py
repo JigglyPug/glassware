@@ -140,7 +140,7 @@ S['desktop/molten-for-discord'] = dict(name='Molten for Discord', tag='Molten gl
   "**Lava from what you're looking at**: The background comes from the image, video or stream in the middle of the chat, or the profile you open. With nothing on screen it takes the server's icon colors, or Discord purple.",
   '**Glass over the lava**: The server list, channels, chat and member list turn to frosted glass, with Calm, User and Crazy profiles that each keep their own look.',
   '**Favorites on the lava button**: Point at the lava button and your favorite channels, threads and DMs drip down from it. Reorder them, color them by server and see Recent in the panel.',
-  '**Saved messages and reminders**: Point at a message and click its lava drop to save it to a folder of your own, or to be reminded later, with a note saying why. Reminders you missed while Discord was closed show up when it opens.',
+  '**Saved messages and reminders**: Point at a message and click its lava drop to save it to a folder of your own, or to be reminded later, with a note saying why. Reminders you missed while Discord was closed show up when it opens. Anything you remove waits in the trash for 30 days, and done reminders stay there crossed off.',
   '**Your activity, at a glance**: Where your Discord time goes as a cluster of bubbles, one per server or DM: point at one and it swells, click it to go there. Daily time, messages and busy hours sit beside it, compared with your own history, and none of it leaves your browser.',
   '**Voice in the lava**: In a call, the lava takes the avatar of whoever is talking.',
   '**Mentions and keywords that glow**: Messages that mention you, or use words you pick, get a lava glow instead of a flat bar, with lava blobs around them if you like.',
@@ -148,7 +148,7 @@ S['desktop/molten-for-discord'] = dict(name='Molten for Discord', tag='Molten gl
   '**Screenshot safe and privacy blur**: Hide your own name and avatar, and blur images, DMs, server icons or whole channels until you point at them.',
   "**Easy on your GPU**: The lava pauses while you scroll and when Discord isn't the active window, and calms down during calls and streams.",
  ],
- shots=[('main', 'Settings panel'), ('lava', 'Lava'), ('favorites', 'Favorites'), ('quick-favorites', 'Favorites on hover'), ('messages', 'Saved messages'), ('reminders', 'Reminders'), ('activity', 'Activity'), ('privacy', 'Privacy')])
+ shots=[('main', 'Settings panel'), ('lava', 'Lava'), ('favorites', 'Favorites'), ('quick-favorites', 'Favorites on hover'), ('messages', 'Saved messages'), ('reminders', 'Reminders'), ('trash', 'Trash'), ('activity', 'Activity'), ('privacy', 'Privacy')])
 
 # Where each script runs. This, not the folder, decides the platform labels, the landing filter,
 # the README sections, the "Also on" links and the "More for..." links. Folders only fix the

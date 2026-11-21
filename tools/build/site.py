@@ -102,6 +102,10 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero .tiles img:nth-child(4){transform:translateY(-6px) rotate(3deg)}.hero .tiles img:nth-child(5){transform:scale(1.06)}.hero .tiles img:nth-child(6){transform:rotate(-4deg)}
 .hero .tiles img:nth-child(7){transform:rotate(6deg) translateY(6px)}.hero .tiles img:nth-child(8){transform:translateY(-4px)}.hero .tiles img:nth-child(9){transform:rotate(-3deg)}
 .hero .tiles a:hover img,.hero .tiles img:hover{transform:scale(1.1) rotate(0)}
+.hero .tiles a{position:relative;display:block}
+.hero .tiles .phone{position:absolute;inset:0;pointer-events:none;transform:rotate(-6deg);transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.hero .tiles a:hover .phone{transform:scale(1.1) rotate(0)}
+.hero .tiles .phone svg{position:absolute;right:13%;bottom:12%;width:11%;height:auto;color:rgba(255,255,255,.82);filter:drop-shadow(0 0 3px rgba(255,255,255,.7)) drop-shadow(0 0 8px rgba(255,255,255,.35)) drop-shadow(0 1px 1px rgba(0,0,0,.3))}
 .hero .acts{flex-wrap:wrap;gap:10px;max-width:560px}.hero .acts .btn{flex:1 1 200px;white-space:nowrap}
 [data-mode=light] .hero h1 span{background:linear-gradient(100deg,#f08a00,#ff5a1f 50%,#e8123f);-webkit-background-clip:text;background-clip:text}
 .btn.warm{background:linear-gradient(135deg,#ffd27a,#ff5a1f 60%,#ff1e4d);color:#fff;text-shadow:0 1px 2px rgba(90,20,0,.45);box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),inset 0 1px 0 rgba(255,255,255,.6),0 14px 34px -10px rgba(40,8,0,.75)}
@@ -305,8 +309,16 @@ addEventListener('hashchange',openHelp);openHelp();
 # the hero's icon panel: every script's icon as a link to its page, three by three, the phone twins kept apart
 ORDER = ['molten-tools', 'molten-for-discord', 'molten-for-reddit', 'hourglass', 'prism', 'looking-glass', 'kaleidoscope', 'molten-for-reddit-mobile', 'kaleidoscope-mobile']
 BY = {p.split('/')[1]: p for p in S}
-TILES = ''.join(f'<a href="{BY[k]}/" aria-label="{html.escape(S[BY[k]]["name"])}"><img src="img/{k}/icon.png" alt="" width="120" height="120"></a>' for k in ORDER if k in BY)
-TILES += ''.join(f'<a href="{p}/" aria-label="{html.escape(S[p]["name"])}"><img src="img/{p.split("/")[1]}/icon.png" alt="" width="120" height="120"></a>' for p in S if p.split('/')[1] not in ORDER)
+# phone-only scripts get a small phone in the corner: the icons are the same as their desktop twins'
+PHONE_MARK = ('<span class="phone" aria-hidden="true"><svg viewBox="0 0 72.93 122.88" width="11" height="18"><path fill="currentColor" fill-rule="evenodd" '
+              'd="M10.94 0h51.04C68 0 72.93 4.93 72.93 10.94v100.99c0 6.02-4.93 10.94-10.94 10.94H10.94C4.93 122.88 0 117.95 0 111.94V10.95C0 4.93 4.93 0 10.94 0z'
+              'M36.46 100.1a7.09 7.09 0 1 1 0 14.18a7.09 7.09 0 0 1 0-14.18zM25.17 8.86h22.59c.16 0 .3.14.3.3v3.3c0 .16-.14.3-.3.3H25.17c-.16 0-.3-.13-.3-.3v-3.3c0-.17.13-.3.3-.3z'
+              'M9.65 21.53h53.63c.98 0 1.78.81 1.78 1.78v70.01c0 .97-.81 1.78-1.78 1.78H9.65c-.97 0-1.78-.8-1.78-1.78V23.3c0-.97.8-1.77 1.78-1.77z"/></svg></span>')
+def tile(p):
+    k = p.split('/')[1]
+    return (f'<a href="{p}/" aria-label="{html.escape(S[p]["name"])}"><img src="img/{k}/icon.png" alt="" width="120" height="120">'
+            f'{PHONE_MARK if RUNS[p] == "phone" else ""}</a>')
+TILES = ''.join(tile(BY[k]) for k in ORDER if k in BY) + ''.join(tile(p) for p in S if p.split('/')[1] not in ORDER)
 body = f"""<main class="wrap">
 <header class="hero"><div class="top"><div class="words"><div class="label">Userscripts by JigglyPug</div><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>

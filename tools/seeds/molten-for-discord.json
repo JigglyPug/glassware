@@ -104,6 +104,50 @@
    "author": "Sam",
    "due": 1793840400000,
    "id": "r1"
+  },
+  {
+   "gid": "101010101010101010",
+   "cid": "111111111111111111",
+   "mid": "600000000000000003",
+   "name": "general",
+   "server": "Lava Lounge",
+   "kind": "channel",
+   "title": "bring the board games saturday",
+   "author": "Lin",
+   "due": 1793541600000,
+   "id": "r9",
+   "done": true
+  }
+ ],
+ "trash": [
+  {
+   "id": "t1",
+   "kind": "saved",
+   "at": 1793675700000,
+   "item": {
+    "gid": "202020202020202020",
+    "cid": "222222222222222222",
+    "mid": "600000000000000009",
+    "name": "weeknight-dinners",
+    "server": "Pug Pals",
+    "kind": "channel",
+    "title": "tacos again? i'm in",
+    "author": "Rae",
+    "folder": "frecipes",
+    "at": 1793228700000
+   }
+  },
+  {
+   "id": "t2",
+   "kind": "fav",
+   "at": 1793558400000,
+   "item": {
+    "gid": "101010101010101010",
+    "cid": "111111111111111113",
+    "name": "memes",
+    "server": "Lava Lounge",
+    "kind": "channel"
+   }
   }
  ],
  "serverColors": {
