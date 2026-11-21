@@ -12,6 +12,8 @@ REPO_URL = f'https://github.com/{OWNER}/glassware'
 
 sys_path = __import__('sys').path; sys_path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from site_themes import THEME
+from trailer import length as trailer_length
+TRAILER_LEN = trailer_length()
 HERO = {'desktop/molten-tools': 'general', 'desktop/molten-for-reddit': 'general', 'mobile/molten-for-reddit-mobile': 'lava'}
 
 def md_inline(t):
@@ -308,11 +310,11 @@ TILES += ''.join(f'<a href="{p}/" aria-label="{html.escape(S[p]["name"])}"><img 
 body = f"""<main class="wrap">
 <header class="hero"><div class="top"><div class="words"><div class="label">Userscripts by JigglyPug</div><h1>Glass for the <span>web.</span></h1>
 <p>Glassware is a set of frosted-glass, lava-lit tools that make the sites you live on look and work better. Install in one click. Updates arrive on their own.</p>
-<div class="acts"><a class="btn warm big" href="#scripts">See the scripts</a><a class="btn sec big" href="#trailer">Watch the trailer · 2:00</a></div>
+<div class="acts"><a class="btn warm big" href="#scripts">See the scripts</a><a class="btn sec big" href="#trailer">Watch the trailer · {TRAILER_LEN}</a></div>
 <p class="need"><a href="#help">Trouble installing?</a></p></div>
 <div class="tiles glass" aria-label="The scripts">{TILES}</div></div>
 <figure class="trailer glass" id="trailer"><video preload="none" playsinline poster="trailer/poster.webp" aria-label="Glassware trailer" width="1280" height="720" style="width:100%;height:auto;max-width:100%"><source src="trailer/glassware-trailer.mp4" type="video/mp4"></video>
-<button class="play" type="button"><svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M26 20v24l19-12z" fill="#fff"/></svg><span>Watch the trailer · 2:00</span></button></figure>
+<button class="play" type="button"><svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M26 20v24l19-12z" fill="#fff"/></svg><span>Watch the trailer · {TRAILER_LEN}</span></button></figure>
 <div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
 <div class="center" id="scripts"><div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></div></header>
 {sections}

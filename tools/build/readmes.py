@@ -2,6 +2,7 @@ import os
 import re, sys
 ONLY = [x for x in os.environ.get('ONLY', '').split(',') if x]
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); from features import F
+from trailer import length as trailer_length
 OWNER = sys.argv[1] if len(sys.argv) > 1 else 'JigglyPug'
 REPO = 'glassware'; R = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RAW = f'https://raw.githubusercontent.com/{OWNER}/{REPO}/main'
@@ -251,7 +252,7 @@ root = f"""<div align="center">
 
 <img src="assets/glassware-banner.svg" alt="Glassware: glass for the web, by JigglyPug" width="100%">
 
-[![Visit the site]({badge("Visit the site", "jigglypug.github.io", "ff8a3d")})]({SITE}) [![Watch the trailer]({badge("Watch the trailer", "2:00", "222")})]({SITE}#trailer)
+[![Visit the site]({badge("Visit the site", "jigglypug.github.io", "ff8a3d")})]({SITE}) [![Watch the trailer]({badge("Watch the trailer", trailer_length(), "222")})]({SITE}#trailer)
 
 Built for [Tampermonkey](https://www.tampermonkey.net/). Every script updates itself from this repo. [Trouble installing?](#help)
 
