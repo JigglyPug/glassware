@@ -264,6 +264,10 @@ and keep existing ones on it.
   re-renders when another tab saves, unless someone is typing in it. `tools/tests/live.py` tests this:
   it changes every control there and back, compares the panel with a freshly opened one, then does
   the same from a second tab. No new keyboard shortcuts (Prism's Alt+Shift+P is the only one).
+- **Full motion, always.** No script reads the device's reduce-motion setting (`prefers-reduced-motion`, Windows'
+  Animation effects): every animation, drip, burst and transition plays for everyone. It used to hide features (Molten
+  for Discord's burst and drips, Hourglass's dripping block-screen icon) from people who never knew the setting was on.
+  `tools/check.py` fails if a script or the kit's template reads it.
 - **Light and dark.** Every panel follows the device's light or dark setting by default. The header
   switch picks one and keeps it; turning "Match my device" back on returns to following the device.
   The choice is saved as `appearance` (`auto`, `light` or `dark`, default `auto`), follows device

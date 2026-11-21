@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 2.2.14 · 2026-11-21
+
+- Every animation plays whatever your device's motion setting says. With Windows' Animation effects off, the panel opened without its pop, and switches and color dots didn't move.
+
 ## 2.2.13 · 2026-11-19
 
 - A new icon in the family style: white light hits the prism and comes out the other side as a spectrum.

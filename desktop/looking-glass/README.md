@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Looking-Glass: Open any video on its own." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.2.13-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
+[![Install](https://img.shields.io/badge/Install-v1.2.14-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/looking-glass/looking-glass.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/looking-glass/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop%20%2B%20phone-555?style=flat-square)
 
@@ -26,8 +26,8 @@ Looking-Glass puts a small circle in the corner of every video, in the site's ow
 
 ## What's new
 
+- **1.2.14** (2026-11-21): Every animation plays whatever your device's motion setting says. With Windows' Animation effects off, the badges didn't pop, the loading ring didn't spin, and the menu and panel appeared without moving.
 - **1.2.13** (2026-11-19): A new icon in the family style: a video with its play button sits behind the lens.
 - **1.2.12** (2026-11-19): The description under "Switch to the new tab" reads as a sentence.
-- **1.2.11** (2026-11-17): The badge no longer sits on top of a picture viewer or a dialog opened over the page (Discord's viewer, a site's lightbox): it belongs to the video underneath, so it waits until that closes.
 
 [Every change](CHANGES.md)

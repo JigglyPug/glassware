@@ -175,7 +175,6 @@ __APPLY__
   --edge:__D_EDGE__;--hl:__D_HIGHLIGHT__;--drop:__D_DROP__;--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);
   --sw-off:rgba(255,255,255,.2);--field:rgba(255,255,255,.06);--field-hi:rgba(255,255,255,.12);--knob:#55555f;--ink:${APP.inkDark};color-scheme:dark}
 @keyframes in{from{opacity:0;transform:translateY(-6px) scale(.98)}}
-@media (prefers-reduced-motion:reduce){.panel,.panel *{animation:none!important;transition:none!important}}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
 .top{flex:none}

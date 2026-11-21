@@ -32,7 +32,7 @@ JS = r"""    // The app-icon glyph as glass tubing (same shapes as tools/icons.j
     const GLASS_GLYPHS = __GLYPHS__;
     let glassGlyphN = 0;
     // flip: { cycle (s), hold (the share of the cycle before the glass turns over) } draws the dripping lava, timed to
-    // a CSS flip of that length; without it (or when the device asks for less motion) the lava stands still
+    // a CSS flip of that length; without it the lava stands still. It always moves when asked to (CLAUDE.md: full motion, always)
     function glassGlyph(kind, flip) {
         const NS = 'http://www.w3.org/2000/svg', G = GLASS_GLYPHS[kind], id = 'gg-blur-' + (++glassGlyphN);
         const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
@@ -42,7 +42,7 @@ JS = r"""    // The app-icon glyph as glass tubing (same shapes as tools/icons.j
         const defs = mk('defs', {}); defs.append(f); svg.append(defs);
         const g = mk('g', { class: 'gg-g' }); svg.append(g);
         const line = 'fill:none;stroke-linecap:round;stroke-linejoin:round;';
-        const moving = flip && G.drip && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+        const moving = !!(flip && G.drip);
         for (const [d, o, c] of G.fills || []) if (!(moving && c)) g.append(mk('path', { d, style: 'fill:' + (c || '#fff') + ';fill-opacity:' + o + ';stroke:none' }));
         if (moving) {
             const goo = mk('filter', { id: id + 'g', x: '-50%', y: '-50%', width: '200%', height: '200%' });

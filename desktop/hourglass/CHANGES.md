@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.5.15 · 2026-11-21
+
+- Every animation plays whatever your device's motion setting says. With Windows' Animation effects off, the lava on the block screen and lockdown screen stood still, and pop-ups and switches appeared without moving.
+
 ## 1.5.14 · 2026-11-20
 
 - Under "How much are you online?", a short list fills the space below the chart: your busiest and quietest days and how many beat your average. The chart is a little taller too.

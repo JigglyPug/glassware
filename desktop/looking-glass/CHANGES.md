@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.2.14 · 2026-11-21
+
+- Every animation plays whatever your device's motion setting says. With Windows' Animation effects off, the badges didn't pop, the loading ring didn't spin, and the menu and panel appeared without moving.
+
 ## 1.2.13 · 2026-11-19
 
 - A new icon in the family style: a video with its play button sits behind the lens.

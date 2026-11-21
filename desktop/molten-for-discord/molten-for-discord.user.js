@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Molten for Discord
 // @namespace    jigglypug
-// @version      1.0.12
+// @version      1.0.13
 // @description  Molten glass for Discord: a lava-lamp background made from the image, video, stream or profile you're looking at (or the server's icon), frosted glass over it, favorite channels on the lava button, saved messages and reminders with notes, your own activity at a glance, glowing mentions and keywords, art-colored title bar and seek bar, Screenshot safe and privacy blur. Click the lava button in the top bar for settings.
 // @match        https://discord.com/*
 // @grant        GM_getValue
@@ -64,7 +64,7 @@
         master: true,
     };
     const ICON_SRC = 'data:image/webp;base64,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'; // app icon (assets/icons), embedded by tools/panel_icons.py
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.12';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.0.13';
     const HOST = location.hostname;
     const PAGE = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
     const PURPLE = [88, 101, 242];
@@ -958,10 +958,9 @@ html[data-mfd-mg][data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{conte
     radial-gradient(circle closest-side,rgb(var(--mfd-glow) / .72) 56%,transparent),radial-gradient(circle closest-side,rgb(255 255 255 / .22) 40%,transparent);
   background-size:58px 58px,38px 38px,48px 48px,30px 30px;background-repeat:no-repeat;filter:blur(3.5px);opacity:min(1,calc(.55 * var(--mfd-ms)));
   clip-path:inset(0 round 0 10px 10px 0);animation:mfd-mblob var(--mbd,11s) ease-in-out var(--mbo,0s) infinite alternate;
-  /* at rest (reduced motion, or paused) each message's blobs sit halfway along their own paths, not all in one corner */
+  /* at rest (paused) each message's blobs sit halfway along their own paths, not all in one corner */
   background-position:calc(var(--mbx1,6%) + 9%) var(--mbm1,30%),calc(var(--mbx2,24%) + 7%) var(--mbm2,85%),calc(var(--mbx3,52%) - 7%) var(--mbm3,15%),calc(var(--mbx4,74%) - 8%) var(--mbm4,70%)}
 html[data-mfd-still][data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{animation-play-state:paused}
-@media (prefers-reduced-motion:reduce){html[data-mfd-mb] :is(${C('mentioned')},[data-mfd-kw])::after{animation:none}}
 `);
     let KW = null;
     function keywordRe() {
@@ -1743,7 +1742,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes bl{0%{transform:translate(-20%,-30%) scale(.8)}50%{transform:translate(90%,40%) scale(1.15)}100%{transform:translate(20%,110%) scale(.9)}}
 .in{opacity:0;animation:rin .22s ease forwards;animation-delay:calc(.34s + var(--i,0) * .03s)}
 @keyframes rin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.drop,.bub,.ring,.spit,.goo{display:none}.erupt,.sink,.in,.blobs::before,.blobs::after{animation:none!important;opacity:1;clip-path:none}}
 /* favorites flyout */
 .fly{width:290px;padding:12px 8px 8px;overflow:hidden}
 .fly .head{position:relative;display:flex;align-items:center;gap:4px;padding:0 6px 8px}
@@ -1857,7 +1855,6 @@ button{font:inherit;color:inherit;cursor:pointer}
         return e;
     };
     const lavaColors = () => ({ c1: TITLE.seek() || css(PURPLE), c2: APP.accent });
-    const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     /* A lava burst: a bubble swells at (x, y) and pops, droplets sputter out, molten blobs swell toward the
        box's corners, and the glass box erupts out of the same spot. sink() pulls it back in. */
@@ -1867,7 +1864,6 @@ button{font:inherit;color:inherit;cursor:pointer}
             box.style.setProperty('--ox', Math.round(x - r.left) + 'px'); box.style.setProperty('--oy', Math.round(y - r.top) + 'px');
             box.style.setProperty('--c1', c1); box.style.setProperty('--c2', c2);
             box.classList.add('erupt');
-            if (calm()) return;
             const bits = [el('div', { class: 'bub', style: `left:${x}px;top:${y}px;--c1:${c1};--c2:${c2}` }), el('div', { class: 'ring', style: `left:${x}px;top:${y}px;--c1:${c1}` })];
             for (let i = 0; i < 8; i++) {
                 const a = -Math.PI / 2 + (i - 3.5) * 0.42 + rnd(-0.2, 0.2), d = rnd(26, 52), s = rnd(4, 8);
@@ -1881,7 +1877,6 @@ button{font:inherit;color:inherit;cursor:pointer}
         },
         sink(box, done) {
             if (!box || !box.isConnected) { if (done) done(); return; }
-            if (calm()) { box.remove(); if (done) done(); return; }
             box.classList.remove('erupt'); box.classList.add('sink');
             setTimeout(() => { box.remove(); if (done) done(); }, 230);
         },
@@ -2041,7 +2036,7 @@ button{font:inherit;color:inherit;cursor:pointer}
             box = el('div', { class: 'glass fly', role: 'menu', 'aria-label': 'Favorites', style: `left:${left}px;top:${top}px`,
                 onmouseenter: () => { inside = true; clearTimeout(closeT); }, onmouseleave: () => { inside = false; hover(false); } });
             first = true; fill(); first = false;
-            if (!calm()) wrap.append(drop);
+            wrap.append(drop);
             wrap.append(box);
             BURST.open(box, x, top + 4);
             setTimeout(() => drop.remove(), 320);
@@ -2089,7 +2084,6 @@ button{font:inherit;color:inherit;cursor:pointer}
         }
         // a little sputter when something lands in your favorites
         function spark(x, y) {
-            if (calm()) return;
             const { c1, c2 } = lavaColors(), wrap = LAYER.ensure(), bits = [el('div', { class: 'ring', style: `left:${x}px;top:${y}px;--c1:${c2}` })];
             for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + (i - 2.5) * 0.55, d = rnd(16, 28); bits.push(el('i', { class: 'spit', style: `left:${x}px;top:${y}px;--s:5px;--dx:${(Math.cos(a) * d).toFixed(1)}px;--dy:${(Math.sin(a) * d).toFixed(1)}px;--c:${i % 2 ? c2 : c1}` })); }
             wrap.append(...bits); setTimeout(() => { for (const b of bits) b.remove(); }, 800);
@@ -2236,7 +2230,7 @@ button{font:inherit;color:inherit;cursor:pointer}
             const top = 56 + open.reduce((h, x) => h + x.offsetHeight + 10, 0), right = 16, x = innerWidth - right - 150;
             const drop = el('div', { class: 'drop', style: `left:${x}px;top:${top - 14}px;--c1:${c1};--c2:${c2}` });
             const box = el('div', { class: 'glass pop', role: 'alertdialog', 'aria-label': label, style: `right:${right}px;top:${top}px` }, el('div', { class: 'blobs' }), kids);
-            if (!calm()) wrap.append(drop);
+            wrap.append(drop);
             wrap.append(box); open.push(box);
             BURST.open(box, x, top + 6);
             setTimeout(() => drop.remove(), 320);
@@ -2358,7 +2352,6 @@ button{font:inherit;color:inherit;cursor:pointer}
   --danger:#f2575f;--edge:rgba(255,255,255,.12);--hl:rgba(255,255,255,.1);--drop:rgba(0,0,0,.6);--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);
   --sw-off:rgba(255,255,255,.2);--field:rgba(255,255,255,.06);--field-hi:rgba(255,255,255,.12);--knob:#55555f;--ink:${APP.inkDark};color-scheme:dark}
 @keyframes in{from{opacity:0;transform:translateY(-6px) scale(.98)}}
-@media (prefers-reduced-motion:reduce){.panel,.panel *{animation:none!important;transition:none!important}}
 button,input{font:inherit;color:inherit}
 button{cursor:pointer}
 .top{flex:none}
@@ -3372,7 +3365,6 @@ button{cursor:pointer}
 .body.bd .who{filter:blur(5px)}
 .body.bd .who:hover,.body.bd .bb.hot .who{filter:none}
 .body.bs .bf.srv img{filter:blur(6px)}
-@media (prefers-reduced-motion:reduce){.bb{transition:none}}
 .btn.warn{background:var(--a);color:#fff}
 .dbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
 .dbtns .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px}

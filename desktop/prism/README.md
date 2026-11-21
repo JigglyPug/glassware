@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Prism: Every app title bar, in its site's own color." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v2.2.13-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/prism/)
+[![Install](https://img.shields.io/badge/Install-v2.2.14-3b6fd6?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/prism/prism.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/prism/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-Every%20site-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -26,8 +26,8 @@ Prism colors the title bar of installed web apps (PWAs) to match the site you ar
 
 ## What's new
 
+- **2.2.14** (2026-11-21): Every animation plays whatever your device's motion setting says. With Windows' Animation effects off, the panel opened without its pop, and switches and color dots didn't move.
 - **2.2.13** (2026-11-19): A new icon in the family style: white light hits the prism and comes out the other side as a spectrum.
 - **2.2.12** (2026-11-19): The Bright tone's description and the hint in the hex box read more plainly.
-- **2.2.11** (2026-11-11): A redirect is checked before it's followed: a site's manifest or icon that redirects to your own computer or home network is now never asked for there. Before, the request was made and only its answer thrown away. Redirects to other public addresses still work.
 
 [Every change](CHANGES.md)

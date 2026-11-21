@@ -4,7 +4,7 @@
 
 <img src="images/banner.svg" alt="Molten for Discord: Molten glass for Discord." width="100%">
 
-[![Install](https://img.shields.io/badge/Install-v1.0.12-5865f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-discord/molten-for-discord.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-discord/)
+[![Install](https://img.shields.io/badge/Install-v1.0.13-5865f2?style=for-the-badge)](https://raw.githubusercontent.com/JigglyPug/glassware/main/desktop/molten-for-discord/molten-for-discord.user.js) [![Website](https://img.shields.io/badge/Website-product%20page-222?style=for-the-badge)](https://jigglypug.github.io/glassware/desktop/molten-for-discord/)
 
 ![Runs on](https://img.shields.io/badge/runs%20on-discord.com-555?style=flat-square) ![Platform](https://img.shields.io/badge/platform-Desktop-555?style=flat-square)
 
@@ -38,8 +38,8 @@ Molten for Discord puts a lava-lamp background made from what you're looking at 
 
 ## What's new
 
+- **1.0.13** (2026-11-21): Every animation plays whatever your device's motion setting says. With Windows' Animation effects off, the burst when the save and remind menu opens, the drips from the lava button, the drop on messages and the blobs around mentions were all hidden.
 - **1.0.12** (2026-11-21): Removing a favorite, a saved message, a folder or a reminder asks first, right in the row: Cancel or Move to trash. A trash can next to Channels, Messages and Reminders opens the trash. Put anything back, or delete it for good, which asks too. Empty trash clears it all at once. Reminders you mark done show up there too, crossed off, and can go back on your list. The trash and finished reminders clear on their own after 30 days.
 - **1.0.11** (2026-11-20): In Remind me, picking Tonight, Tomorrow or Next week turns the dial to match, and so does picking an exact day and time. Tonight is 8 PM, or 10 PM once 8 is close, and it's left out late in the evening, so it can never land after Tomorrow. Just after midnight, Tomorrow means the morning coming up. Lighter on busy channels: with no picture viewer open, new images no longer trigger a sweep of the whole page.
-- **1.0.10** (2026-11-19): The bubbles card says it the way you'd say it ("Lava Lounge took a third of your Discord time"), and "What changed?" puts a big jump in words ("more than halved"). The bubble key is in plain sentences, and the line under the bubbles shows the biggest one until you point at one. Settings descriptions say what happens when a switch is off in a sentence, and a few read more clearly. The last date under the day charts no longer drops onto a second line when the range ends in a part-week.
 
 [Every change](CHANGES.md)

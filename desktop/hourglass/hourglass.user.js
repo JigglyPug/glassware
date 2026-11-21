@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Hourglass
 // @namespace    jigglypug
-// @version      1.5.14
+// @version      1.5.15
 // @description  Screen time for every site, plus a lockdown schedule that blocks distractions. Frosted dashboard with charts, schedule sliders, passes, Music mode, listening time and a late-night nudge. Works on phones too.
 // @match        *://*/*
 // @grant        GM_getValue
@@ -25,7 +25,7 @@
 
     /* ───────────────────────── constants ───────────────────────── */
 
-    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.14';
+    const VERSION = (typeof GM_info !== 'undefined' && GM_info.script && GM_info.script.version) || '1.5.15';
     const CAT = {
         social: { n: 'Socials',  c: '#5E5CE6' },
         shop:   { n: 'Shopping', c: '#32ADE6' },
@@ -432,7 +432,7 @@
     const GLASS_GLYPHS = {"hourglass":{"fills":[["M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 L63.5 66 C63.5 57 53.5 54 53.5 50 C53.5 46 63.5 43 63.5 34 Z",0.08],["M41.2 39.4 C44 39 46 40.4 50 39.6 C54 40.4 56 39 58.8 39.4 C57.6 43.6 52 45.6 50 48.4 C48 45.6 42.4 43.6 41.2 39.4 Z",1,"#ffb347"],["M48.85 51.6 a1.15 1.15 0 1 0 2.30 0 a1.15 1.15 0 1 0 -2.30 0",1,"#ffb347"],["M49.15 54.8 a0.85 0.85 0 1 0 1.70 0 a0.85 0.85 0 1 0 -1.70 0",1,"#ff9f43"],["M40.6 63.6 C41.4 60.2 44 58.6 46.6 59.6 C47.8 57.4 52 57 53.6 59.2 C56 58.4 58.6 60.2 59.4 63.6 Z",1,"#ff7a5a"]],"tubes":[["M36.5 34 C36.5 43 46.5 46 46.5 50 C46.5 54 36.5 57 36.5 66 M63.5 34 C63.5 43 53.5 46 53.5 50 C53.5 54 63.5 57 63.5 66",3.6],["M32 31 H68 M32 69 H68",4.6]],"drip":[{"tag":"path","attrs":{},"long":true,"anims":[{"a":"d","v":["M40.6 38.6 C44 38.2 46 39.6 50 38.8 C54 39.6 56 38.2 59.4 38.6 C58 43.6 52 45.8 50 48.6 C48 45.8 42 43.6 40.6 38.6 Z","M43.6 42.6 C46 42.4 47.6 43 50 42.6 C52.4 43 54 42.4 56.4 42.6 C55.4 45 51.6 46.6 50 48.6 C48.4 46.6 44.6 45 43.6 42.6 Z","M40.6 38.6 C44 38.2 46 39.6 50 38.8 C54 39.6 56 38.2 59.4 38.6 C58 43.6 52 45.8 50 48.6 C48 45.8 42 43.6 40.6 38.6 Z"]}]},{"tag":"ellipse","attrs":{"cx":"50"},"anims":[{"a":"cy","kt":"0;.45;.62;.7;1","v":"48.6;49.4;51.4;52.2;52.2"},{"a":"rx","kt":"0;.45;.62;.7;1","v":".7;2.2;1.7;0;0"},{"a":"ry","kt":"0;.45;.62;.7;1","v":".7;2.3;3.6;0;0"}]},{"tag":"circle","attrs":{"cx":"50","r":"0"},"anims":[{"a":"cy","kt":"0;.66;.86;1","v":"52;52;61.5;61.5","spl":"0 0 1 1;.55 0 1 .6;0 0 1 1"},{"a":"r","kt":"0;.65;.67;.84;.88;1","v":"0;0;1.8;1.65;0;0"}]},{"tag":"path","attrs":{},"long":true,"anims":[{"a":"d","v":["M42.6 63.6 C43.4 61.6 45.6 60.6 47.6 61.2 C48.6 60.2 51.4 60 52.6 61 C54.6 60.6 56.8 61.6 57.4 63.6 Z","M40.4 63.6 C41.2 59.6 44 57.8 46.6 58.8 C47.8 56.4 52.2 56 53.6 58.4 C56.2 57.6 58.8 59.6 59.6 63.6 Z","M42.6 63.6 C43.4 61.6 45.6 60.6 47.6 61.2 C48.6 60.2 51.4 60 52.6 61 C54.6 60.6 56.8 61.6 57.4 63.6 Z"]}]},{"tag":"ellipse","attrs":{"cx":"50","cy":"61"},"anims":[{"a":"rx","kt":"0;.86;.92;1","v":"0;0;3.4;0"},{"a":"ry","kt":"0;.86;.92;1","v":"0;0;1.2;0"}]}]},"prism":{"view":"14 14 72 72","fills":[["M50 31 L70 65.6 H30 Z",0.09],["M37.9 51.4 L59.4 47.2 L60.4 50.6 L37.9 52.6 Z",0.4]],"rays":[["M59.40 47.40 L81 36.5","#ff4d5e",1.8],["M59.70 47.95 L81 41.7","#ff9f43",1.8],["M60.00 48.50 L81 46.9","#ffe066",1.8],["M60.30 49.05 L81 52.1","#5ee38a",1.8],["M60.60 49.60 L81 57.3","#4dabff",1.8],["M60.90 50.15 L81 62.5","#9b6bff",1.8],["M17 58.6 L37.9 52","#ffffff",2.6]],"tubes":[["M50 31 L70 65.6 H30 Z",4]]},"magnifier":{"fills":[["M45 30 A15 15 0 1 1 44.99 30 Z",0.12],["M33.40 45 a11.6 11.6 0 1 0 23.20 0 a11.6 11.6 0 1 0 -23.20 0",0.6,"#a36cff"],["M41.6 39.6 Q41.6 37.8 43.2 38.7 L51 43.6 Q52.6 44.6 51 45.6 L43.2 50.5 Q41.6 51.4 41.6 49.6 Z",0.95]],"tubes":[["M45 30 A15 15 0 1 1 44.99 30 Z",4.2],["M56.2 56.2 L69 69",5.6]],"shine":["M35.6 40.6 A10 10 0 0 1 41.6 34.2"]}};
     let glassGlyphN = 0;
     // flip: { cycle (s), hold (the share of the cycle before the glass turns over) } draws the dripping lava, timed to
-    // a CSS flip of that length; without it (or when the device asks for less motion) the lava stands still
+    // a CSS flip of that length; without it the lava stands still. It always moves when asked to (CLAUDE.md: full motion, always)
     function glassGlyph(kind, flip) {
         const NS = 'http://www.w3.org/2000/svg', G = GLASS_GLYPHS[kind], id = 'gg-blur-' + (++glassGlyphN);
         const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
@@ -442,7 +442,7 @@
         const defs = mk('defs', {}); defs.append(f); svg.append(defs);
         const g = mk('g', { class: 'gg-g' }); svg.append(g);
         const line = 'fill:none;stroke-linecap:round;stroke-linejoin:round;';
-        const moving = flip && G.drip && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+        const moving = !!(flip && G.drip);
         for (const [d, o, c] of G.fills || []) if (!(moving && c)) g.append(mk('path', { d, style: 'fill:' + (c || '#fff') + ';fill-opacity:' + o + ';stroke:none' }));
         if (moving) {
             const goo = mk('filter', { id: id + 'g', x: '-50%', y: '-50%', width: '200%', height: '200%' });
@@ -618,7 +618,6 @@ button:disabled{cursor:not-allowed}
 .pill.warn{background:rgba(var(--a-rgb),.22);color:var(--ink)}
 .link{border:0;background:none;padding:0;color:var(--ink);font-size:11.5px;font-weight:500}
 .link:hover{text-decoration:underline}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .vars[data-theme=dark]{--guide:rgba(235,235,245,.42);--faint:rgba(255,255,255,.3);--text:#f2f2f5;--sub:rgba(235,235,245,.62);--line:rgba(255,255,255,.09);
   --edge:rgba(255,255,255,.12);--hl:rgba(255,255,255,.1);--drop:rgba(0,0,0,.6);--ctl:rgba(255,255,255,.08);--ctl-hi:rgba(255,255,255,.14);--sw-off:rgba(255,255,255,.2);
   --field:rgba(255,255,255,.06);--field-hi:rgba(255,255,255,.12);--track:rgba(255,255,255,.16);--knob:#55555f;--danger:#ff8a80;--warn-ink:#ffb3c1;--good:#5fd38a;--music-ink:#ff8fab;

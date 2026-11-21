@@ -2,6 +2,10 @@
 
 Newest first.
 
+## 1.0.13 · 2026-11-21
+
+- Every animation plays whatever your device's motion setting says. With Windows' Animation effects off, the burst when the save and remind menu opens, the drips from the lava button, the drop on messages and the blobs around mentions were all hidden.
+
 ## 1.0.12 · 2026-11-21
 
 - Removing a favorite, a saved message, a folder or a reminder asks first, right in the row: Cancel or Move to trash.

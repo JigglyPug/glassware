@@ -119,6 +119,8 @@ for p, src in S.items():
         ok(vtuple(v) > vtuple(ov), f'{slug} changed but @version {v} is not higher than the live {ov}')
     # settings under a switch fold away while it's off (data-fold), never just dimmed (tools/tests/live.py checks the panels)
     n += 1; ok(not re.search(r"\? '' : '[\w-]*off'\)|\? '[\w-]*off' : ''\)", src), f"{slug}: a group is dimmed with an 'off' class by its switch: fold it away instead (data-fold; CLAUDE.md, the panel frame)")
+    # full motion always: the device's reduce-motion setting hid features people didn't know were there (CLAUDE.md, Behaviour)
+    n += 1; ok(not re.search(r'reduced?-motion', src), f"{slug}: reads the device's reduce-motion setting; Glassware runs with full motion everywhere (CLAUDE.md, Behaviour)")
     # CHANGES.md: every release says what changed, in words a person reads; the newest is this @version
     cf = f'{R}/{plat}/{slug}/CHANGES.md'; n += 1
     if not os.path.exists(cf): ok(False, f'{slug}: no CHANGES.md'); continue
@@ -132,6 +134,7 @@ for p, src in S.items():
     ok(all(a[1] >= b[1] for a, b in zip(heads, heads[1:])), f'{slug}: CHANGES.md dates should go newest first')
     bodies = re.split(r'(?m)^## .*$', ct)[1:]
     ok(all(re.search(r'(?m)^- \S', b) for b in bodies), f'{slug}: every CHANGES.md entry needs at least one "- " line')
+n += 1; ok(not re.search(r'reduced?-motion', open(f'{R}/tools/kit/template.js', encoding='utf-8').read()), "the kit's template reads the device's reduce-motion setting; new scripts run with full motion (CLAUDE.md, Behaviour)")
 done(n)
 
 # The new-script kit (tools/new_script.py) must keep producing scripts that pass every rule below,
