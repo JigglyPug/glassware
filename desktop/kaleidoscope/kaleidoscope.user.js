@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Kaleidoscope
 // @namespace    jigglypug.anime.clipboard
-// @version      2.10.14
+// @version      2.10.15
 // @description  AI recommendations from your AniList list. Pick a mode (recent, top rated, wildcard, airing now, backlog) and Kaleidoscope has Claude build a recommendation board in the background, then opens it for you. Also finds sequels you haven't watched. Click the ✦ button on AniList.
 // @match        https://anilist.co/*
 // @match        https://claude.ai/*
@@ -45,6 +45,10 @@
   const TAB_KEY = 'kaleidoscope.tab'; // (per tab, in sessionStorage) the id of the hand-off this claude.ai tab was opened for
   const newTabId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
   const tagged = (url, tab) => url + '#kaleidoscope-tab=' + tab;
+  // A follow-up: the board's chat opened in a tab of its own (its one-time id in the address). That tab watches the
+  // chat, and when Claude replies with a new or edited board, it comes back into Kaleidoscope like an update does.
+  const FOLLOW_KEY = 'kaleidoscope.follow';
+  const FOLLOW_TTL = 12 * 60 * 60 * 1000; // a follow-up tab keeps bringing changes back for 12 hours
   const RESULT_KEY = 'kaleidoscope.result';
   const BOARDS_KEY = 'kaleidoscope.boards';
   const TIMES_KEY = 'kaleidoscope.times';
@@ -84,6 +88,22 @@
     if (isObj(v)) for (const k in v) if (Array.isArray(v[k])) o[k] = v[k].filter(n => typeof n === 'number' && isFinite(n) && n > 0);
     return o;
   };
+  // the follow-up record: usable, or nothing (the tab id, the board, its chat and when it started, each the right kind)
+  function cleanFollow(d) {
+    if (!isObj(d)) return null;
+    const tab = asStr(d.tab), board = asStr(d.board), convId = asStr(d.convId), ts = asNum(d.ts);
+    if (!/^[\w-]{1,40}$/.test(tab) || !/^[\w-]{1,40}$/.test(board) || !UUID_RE.test(convId) || !ts || ts > Date.now() + 60000) return null;
+    return { tab, board, convId, ts };
+  }
+  // The address to open for a follow-up on a board: its chat, tagged for the tab that will watch it. A board without a
+  // chat link gets its plain link (nothing to watch).
+  function followUrl(board) {
+    const convId = (asStr(board && board.conv).match(/^https:\/\/claude\.ai\/chat\/([0-9a-f-]{36})$/) || [])[1];
+    if (!convId) return board && board.conv;
+    const tab = newTabId();
+    GM_setValue(FOLLOW_KEY, { tab, board: board.id, convId, ts: Date.now() });
+    return tagged(board.conv, tab);
+  }
   // the waiting prompt: usable, or (when its shape is broken) cleared
   function handoffOk(d) {
     if (!isObj(d) || !asStr(d.text) || !asNum(d.ts) || d.ts > Date.now() + 60000) return false;
@@ -110,6 +130,26 @@
     s.textContent = css;
     (document.head || document.documentElement).appendChild(s);
     return s;
+  }
+  const TOAST_CSS =
+    '#kaleidoscope-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483647;' +
+    'background:#151F2E;color:#EDF1F5;border:1px solid rgba(61,180,242,.35);border-radius:12px;padding:10px 16px;' +
+    'font:13px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);' +
+    'transition:opacity .3s;max-width:calc(100vw - 40px)}' +
+    '#kaleidoscope-toast b{color:#3DB4F2}' +
+    '#kaleidoscope-toast.err{border-color:rgba(232,93,117,.5)}' +
+    '#kaleidoscope-toast button{margin-left:10px;border:0;border-radius:8px;padding:4px 10px;background:#3DB4F2;color:#0B1622;font:600 12px/1.4 inherit;cursor:pointer}';
+  // a message at the bottom of a claude.ai tab
+  function kToast(msg, err, sticky) {
+    if (!document.getElementById('kaleidoscope-toast-css')) { const st = rawStyle(TOAST_CSS); st.id = 'kaleidoscope-toast-css'; }
+    let t = document.getElementById('kaleidoscope-toast');
+    if (!t) { t = document.createElement('div'); t.id = 'kaleidoscope-toast'; document.body.appendChild(t); }
+    t.className = err ? 'err' : '';
+    t.innerHTML = '<b>Kaleidoscope</b> · ';
+    t.append(msg);
+    t.style.opacity = '1';
+    clearTimeout(t._h);
+    if (!sticky) t._h = setTimeout(() => { t.style.opacity = '0'; }, err ? 9000 : 5000);
   }
   const onReady = fn => {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn, { once: true });
@@ -170,6 +210,14 @@
       else console.log('[Kaleidoscope] a board link outside AniList was not opened');
     });
     frame.srcdoc = prepareBoard(b.html);
+    // A follow-up changed this board in its Claude chat: show the new version here too.
+    if (typeof GM_addValueChangeListener === 'function') GM_addValueChangeListener(BOARDS_KEY, (name, oldV, v, remote) => {
+      const nb = (Array.isArray(v) ? v.map(cleanBoard).filter(Boolean) : []).find(x => x.id === b.id);
+      if (!nb || nb.html === b.html) return;
+      b.html = nb.html; b.updated = nb.updated; b.ts = nb.ts;
+      frame.srcdoc = prepareBoard(b.html);
+      document.title = frame.title = new DOMParser().parseFromString(b.html, 'text/html').title || 'Kaleidoscope';
+    });
     fetchRecent(b).then(x => showRecent(document.querySelector('.krecent'), x, A), e => console.log('[Kaleidoscope] recent strip skipped: ' + (e && e.message)));
     {
       // Save + follow-up buttons, bottom right
@@ -191,18 +239,18 @@
         fu.href = b.conv;
         fu.target = '_blank';
         fu.rel = 'noopener';
-        fu.title = 'Opens the chat this board came from, so a follow-up doesn\'t rebuild everything';
+        fu.title = 'Opens the chat this board came from. Changes Claude makes to the board there come back here.';
         fu.style.cssText = pill;
         fu.innerHTML = '<span style="color:#3DB4F2;font-size:16px">✦</span>Ask a follow-up in Claude';
         const gone = () => { markBoardGone(b.id); fu.remove(); pageNotice(GONE_TITLE, GONE_TEXT); };
         fu.addEventListener('click', async e => {
-          if (state && state !== 'gone') return; // answer ready and the chat exists: let the link open it
           e.preventDefault();
+          if (state && state !== 'gone') return window.open(followUrl(b), '_blank'); // answer ready and the chat exists
           if (state === 'gone') return gone();
           // answer not ready yet: wait a moment for it before opening anything
           const st = await Promise.race([check, sleep(3000).then(() => 'unknown')]);
           if (st === 'gone') return gone();
-          GM_openInTab(b.conv, { active: true }); // the browser blocks normal pop-ups after a wait
+          GM_openInTab(followUrl(b), { active: true }); // the browser blocks normal pop-ups after a wait
         });
         bar.append(fu);
       }
@@ -478,6 +526,9 @@
     }
     let mine = tagged || null;
     try { mine = mine || sessionStorage.getItem(TAB_KEY); } catch (e) { /* ignore */ }
+    // A follow-up tab: watch the board's chat and bring a new or edited board back into Kaleidoscope.
+    const fol = cleanFollow(GM_getValue(FOLLOW_KEY, null));
+    if (fol && mine && fol.tab === mine && Date.now() - fol.ts < FOLLOW_TTL) { watchFollow(fol, mine); return; }
     let data = GM_getValue(HANDOFF_KEY, null);
     if (data === null || data === undefined) return;
     if (!handoffOk(data)) {
@@ -532,24 +583,7 @@
     const capture = !!data.capture;
     const t0 = asNum(data.started) || Date.now();
 
-    rawStyle(
-      '#kaleidoscope-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2147483647;' +
-      'background:#151F2E;color:#EDF1F5;border:1px solid rgba(61,180,242,.35);border-radius:12px;padding:10px 16px;' +
-      'font:13px/1.45 Overpass,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.45);' +
-      'transition:opacity .3s;max-width:calc(100vw - 40px)}' +
-      '#kaleidoscope-toast b{color:#3DB4F2}' +
-      '#kaleidoscope-toast.err{border-color:rgba(232,93,117,.5)}'
-    );
-    const toast = (msg, err, sticky) => {
-      let t = document.getElementById('kaleidoscope-toast');
-      if (!t) { t = document.createElement('div'); t.id = 'kaleidoscope-toast'; document.body.appendChild(t); }
-      t.className = err ? 'err' : '';
-      t.innerHTML = '<b>Kaleidoscope</b> · ';
-      t.append(msg);
-      t.style.opacity = '1';
-      clearTimeout(t._h);
-      if (!sticky) t._h = setTimeout(() => { t.style.opacity = '0'; }, err ? 9000 : 5000);
-    };
+    const toast = kToast;
     const report = r => GM_setValue(RESULT_KEY, Object.assign({ job: data.job, ts: Date.now(), fellBack: !!data.fellBack }, r));
     const fail = (msg, conv) => {
       toast(msg, true, true);
@@ -759,6 +793,69 @@
       await sleep(1500);
       console.log('[Kaleidoscope] this tab is still open, so closing it was blocked here. The AniList tab will try too.');
       toast('Board ready and opened on AniList. You can close this tab.', false, true);
+    }
+
+    // Follow-up: nothing is pasted or sent; you talk to Claude as usual. Each time a reply finishes, a complete new
+    // board in it, or edits to the board (Claude's artifact edits or Kaleidoscope's edit list), are applied to the
+    // saved board. Plain answers leave it alone. Replies to "Update board" are left to the update, which handles them.
+    async function watchFollow(fol, mine) {
+      let org;
+      try { org = await getOrg(); } catch (e) { return console.log('[Kaleidoscope] follow-up: couldn\'t find your Claude account, so this chat isn\'t watched'); }
+      const url = '/api/organizations/' + org + '/chat_conversations/' + fol.convId + '?tree=True&rendering_mode=messages&render_all_tools=true';
+      const read = async () => {
+        try {
+          const r = await fetch(url, { credentials: 'include', headers: { Accept: 'application/json' } });
+          if (!r.ok) return null;
+          const j = await r.json();
+          return j && Array.isArray(j.chat_messages) ? j.chat_messages.filter(m => isObj(m)) : null;
+        } catch (e) { return null; }
+      };
+      const said = m => [asStr(m.text)].concat(Array.isArray(m.content) ? m.content.map(c => isObj(c) ? asStr(c.text) : '') : []).join('\n').trim();
+      const fromUpdate = t => /^UPDATE THE BOARD YOU MADE ABOVE|^Some of those edits didn't match the page exactly/.test(t);
+      let msgs = await read();
+      if (!msgs) return console.log('[Kaleidoscope] follow-up: couldn\'t read this chat, so it isn\'t watched');
+      let base = msgs.filter(m => m.sender === 'assistant').length, sig = '', stable = 0;
+      console.log('[Kaleidoscope] follow-up: watching this chat for changes to the board');
+      for (;;) {
+        await sleep(document.hidden ? 8000 : 4000);
+        const now = cleanFollow(GM_getValue(FOLLOW_KEY, null));
+        if (!now || now.tab !== mine || Date.now() - now.ts > FOLLOW_TTL) return console.log('[Kaleidoscope] follow-up: no longer watching this chat');
+        if (!location.pathname.startsWith('/chat/' + fol.convId)) continue; // on another chat in this tab: wait in case you come back
+        msgs = await read();
+        if (!msgs) continue;
+        const replies = msgs.filter(m => m.sender === 'assistant');
+        if (replies.length <= base) continue;
+        const reply = replies[replies.length - 1], s2 = JSON.stringify(reply);
+        if (s2 === sig) stable++; else { sig = s2; stable = 0; }
+        if (stable < 1) continue; // wait until the reply stops growing
+        base = replies.length; sig = ''; stable = 0;
+        const i = msgs.lastIndexOf(reply), asked = msgs.slice(0, i).reverse().find(m => m.sender === 'human');
+        if (asked && fromUpdate(said(asked))) continue;
+        const board = readBoards().find(b => b.id === fol.board);
+        if (!board) return console.log('[Kaleidoscope] follow-up: a newer board replaced this one, so this chat isn\'t watched anymore');
+        let html = '';
+        const full = findHtml(reply);
+        if (full && /<\/html>\s*$/i.test(full) && full.length > 2000) html = full;
+        else {
+          const edits = findEdits(reply);
+          if (!edits.length) continue; // a plain answer
+          const res = applyEdits(board.html, edits);
+          console.log('[Kaleidoscope] follow-up reply: ' + edits.length + ' edits, ' + res.missed + ' didn\'t match exactly one spot');
+          if (res.missed) { kToast('Claude\'s changes didn\'t fit the saved board, so it\'s unchanged. Ask Claude for the complete page to bring it in.', true); continue; }
+          html = res.html;
+        }
+        if (html === board.html) continue;
+        GM_setValue(BOARDS_KEY, readBoards().map(b => b.id === board.id ? Object.assign({}, b, { html, updated: true, ts: Date.now() }) : b));
+        const msg = document.createElement('span');
+        msg.append('Board updated from this chat.');
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.textContent = 'Open board';
+        open.addEventListener('click', () => GM_openInTab(BOARD_URL(board.id), { active: true }));
+        msg.append(open);
+        kToast(msg, false);
+        console.log('[Kaleidoscope] follow-up: board updated (' + html.length + ' chars)');
+      }
     }
 
     async function getOrg() {
@@ -1633,7 +1730,7 @@
       const c = chatCheck && chatCheck.id === board.id ? chatCheck : checkLastBoardChat();
       if (c.state) {
         if (c.state === 'gone') return boardGone(board);
-        return window.open(board.conv, '_blank'); // answer was ready: open right away
+        return window.open(followUrl(board), '_blank'); // answer was ready: open right away
       }
       // answer not ready yet: wait a moment for it before opening anything
       say('Checking the board\'s chat…', 'wait');
@@ -1641,7 +1738,7 @@
       say('');
       if (st === 'gone') return boardGone(board);
       // opened through Tampermonkey, since the browser blocks normal pop-ups after a wait
-      GM_openInTab(board.conv, { active: true });
+      GM_openInTab(followUrl(board), { active: true });
     }
 
     // Small confirm dialog inside the menu.
@@ -1911,7 +2008,7 @@
         const b = el('div', 'kld-btns');
         b.style.margin = '0';
         btn(b, 'Open', () => window.open(BOARD_URL(lastB.id), '_blank'), true);
-        if (lastB.conv && !lastB.chatGone) btn(b, 'Follow-up', () => followUp(lastB));
+        if (lastB.conv && !lastB.chatGone) btn(b, 'Follow-up', () => followUp(lastB)).title = 'Opens the board\'s chat. Changes Claude makes to the board there come back here.';
         btn(b, 'Save', () => saveBoardFile(lastB)).title = 'Download this board as an HTML file to keep';
         row.append(b);
         card.append(row);
@@ -2162,13 +2259,17 @@
         : res.error || 'Something went wrong.'));
       const btns = el('div', 'kld-btns');
       if (res.ok && done) btn(btns, 'Open board', () => window.open(BOARD_URL(done.id), '_blank'), true);
-      if (res.conv) btn(btns, res.ok ? 'Ask a follow-up' : res.limit ? 'Open Claude' : 'Open the chat', () => window.open(res.conv, '_blank'), !res.ok);
+      if (res.conv) btn(btns, res.ok ? 'Ask a follow-up' : res.limit ? 'Open Claude' : 'Open the chat', () => {
+        const last = readBoards().slice(-1)[0];
+        window.open(res.ok && last && last.conv === res.conv ? followUrl(last) : res.conv, '_blank');
+      }, !res.ok);
       box.append(btns);
       if (res.ok) jobTimer = setTimeout(hideJob, 20000);
       if (panelEl) render();
     }
 
     if (typeof GM_addValueChangeListener === 'function') {
+      GM_addValueChangeListener(BOARDS_KEY, () => { if (panelEl && cfg.tab === 'rec') render(); }); // a follow-up updated the board
       GM_addValueChangeListener(RESULT_KEY, (name, oldV, v) => {
         if (!isObj(v) || !job || v.job !== job.id) return;
         if (v.signin === true) { job.signin = true; GM_setValue(JOB_KEY, job); return showJob(); }

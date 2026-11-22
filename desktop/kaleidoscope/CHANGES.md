@@ -2,6 +2,11 @@
 
 Newest first.
 
+## 2.10.15 · 2026-11-21
+
+- Follow-up now keeps your board in step. Ask Claude for changes in the board's chat, and when it edits the board or sends a new one, your saved board updates and the open board page shows it. Plain answers leave it alone.
+- Claude's tab says when the board was updated, with a button to open it, or that the changes didn't fit and the board is unchanged.
+
 ## 2.10.14 · 2026-11-19
 
 - A new icon in the family style: the gem with each facet in a soft color.

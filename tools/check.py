@@ -540,7 +540,8 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kal
     for tool, goods in (('boardtest.py', ["a hostile board gets nothing out; covers, the API and AniList links still work"]),
                         ('handofftest.py', ["a prompt goes only to the claude.ai tab opened for it",
                                             "a blocked or closed Claude tab ends cleanly, with a message",
-                                            "damaged hand-off storage is cleared or skipped, never breaks a page"])):
+                                            "damaged hand-off storage is cleared or skipped, never breaks a page",
+                                            "a follow-up brings Claude's changes back to the board, and only those"])):
         r = subprocess.run([sys.executable, f'{HERE}/tests/{tool}'], capture_output=True, text=True)
         lines = [l for l in r.stdout.splitlines() if l.strip()]
         runs = [l for l in lines if l.startswith('== ')]

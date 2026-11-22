@@ -64,6 +64,7 @@ F = {
  ('Five ways to find your next show', 'More like my recent, more like my top rated, wildcard, what\'s airing now and clear my backlog. For anime and manga.'),
  ('Built from your actual list', 'Your AniList history drives every recommendation, with an optional mood like "short" or "no isekai".'),
  ('Hands it to Claude', 'Claude builds a recommendation board in the background and Kaleidoscope opens it for you. Or just copy the prompt.'),
+ ('Follow-ups land on the board', 'Talk the board over in its Claude chat. When Claude changes it there, your saved board changes too.'),
  ('Sequel finder', 'Finds sequels to things you\'ve finished but haven\'t started, straight from AniList.'),
  ('Your standing preferences', 'Taste notes added to every prompt, if you want them.'),
 ],

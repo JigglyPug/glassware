@@ -26,6 +26,11 @@ or "undefined"/"NaN"/"[object" on screen):
 - a running job or past board times that are junk: they're dropped and a new board still starts
 - a result from the Claude tab with fields of the wrong kind: the job ends with a plain message, and a
   chat link that isn't on claude.ai gets no button
+And that a follow-up keeps the board in step (Follow-up opens the board's chat in a tab tagged for it):
+- that tab watches the chat: a reply with edits to the board updates the saved board and says so; a plain answer
+  leaves it alone; a reply to "Update board" is left to the update; edits that don't fit leave the board as it was
+  and say so
+- a tab of the same chat without the follow-up's id watches nothing
 Prints "clean" or the problems.
 """
 import json, os, subprocess, sys, tempfile
@@ -229,9 +234,75 @@ def run(script=JS):
         if want and 'kaleidoscope-tab' in after: bad.append(f'{name}: the one-time id stayed in the address ({after})')
     return bad
 
+# ------------------------------------------------------------------ follow-up
+CONV = '0b7f3c2e-1d4a-4c55-9e1f-6a2b8c9d0e11'
+# claude.ai's answers, faked before the script starts: your account, and the chat as the test writes it
+FAKE_API = """(() => {
+  window.__msgs = [{ sender: 'human', text: 'make me a board' }, { sender: 'assistant', text: 'Here is your board.' }];
+  const real = window.fetch, json = v => Promise.resolve(new Response(JSON.stringify(v), { status: 200, headers: { 'content-type': 'application/json' } }));
+  window.fetch = function (u) {
+    const s = String(u && u.url || u);
+    if (/\\/api\\/organizations$/.test(s)) return json([{ uuid: '11111111-2222-3333-4444-555555555555', capabilities: ['chat'] }]);
+    if (/\\/chat_conversations\\//.test(s)) return json({ chat_messages: window.__msgs });
+    return real.apply(this, arguments);
+  };
+})();"""
+FOLLOW_BOARD = dict(BOARD, html='<!DOCTYPE html><html><head><title>Board</title></head><body><p>PICK-ONE</p><p>PICK-TWO</p></body></html>')
+EDITS = lambda find, rep: '```json\n' + json.dumps({'edits': [{'find': find, 'replace': rep}]}) + '\n```'
+FOLLOW = """(async () => {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const html = () => ((window.__gm['kaleidoscope.boards'] || [])[0] || {}).html || '';
+  const said = () => (document.getElementById('kaleidoscope-toast') || {}).textContent || '';
+  const until = async (fn, ms) => { for (let t = 0; t < ms; t += 300) { if (fn()) return true; await sleep(300); } return false; }; // the page's clock is fixed: count instead
+  const say = (human, reply) => { window.__msgs = window.__msgs.concat([{ sender: 'human', text: human }, { sender: 'assistant', text: reply }]); };
+  const out = {};
+  await sleep(1500);
+  say('what is the second pick about?', 'It follows a chef who time travels.');
+  await sleep(10000); out.plain = html();
+  say('swap the first pick', EDITS1);
+  out.editsCame = await until(() => html().includes('PICK-NEW'), 14000); out.editsSaid = said(); out.updated = ((window.__gm['kaleidoscope.boards'] || [])[0] || {}).updated === true;
+  say('UPDATE THE BOARD YOU MADE ABOVE (don\\'t rebuild it)', EDITS2);
+  await sleep(10000); out.fromUpdate = html();
+  say('change it again', EDITS3);
+  out.missSaid = await until(() => /didn't fit/.test(said()), 14000); out.miss = html();
+  out.errs = window.__errs;
+  return out;
+})()"""
+
+def run_follow(script=JS):
+    bad = []
+    init = tempfile.NamedTemporaryFile('w', suffix='.js', delete=False); init.write(FAKE_API); init.close()
+    gm = lambda tab: {'kaleidoscope.boards': [FOLLOW_BOARD], 'kaleidoscope.follow': {'tab': 'fol123', 'board': 'b1', 'convId': CONV, 'ts': NOW}}
+    js = (FOLLOW.replace('EDITS1', json.dumps(EDITS('PICK-ONE', 'PICK-NEW'))).replace('EDITS2', json.dumps(EDITS('PICK-TWO', 'FROM-UPDATE')))
+          .replace('EDITS3', json.dumps(EDITS('NOT-ON-THE-PAGE', 'X'))))
+    plain_tab = """(async () => { await new Promise(r => setTimeout(r, 1500));
+      window.__msgs = window.__msgs.concat([{ sender: 'human', text: 'swap it' }, { sender: 'assistant', text: EDITS1 }]);
+      await new Promise(r => setTimeout(r, 10000)); return { html: ((window.__gm['kaleidoscope.boards'] || [])[0] || {}).html || '', errs: window.__errs }; })()""".replace('EDITS1', json.dumps(EDITS('PICK-ONE', 'PICK-NEW')))
+    from par import ptry
+    def go(url, js_):
+        try: return shot(url, gm('fol123'), js_, ['--init', init.name], script)
+        except subprocess.TimeoutExpired: raise RuntimeError('the page took over 2 minutes')
+    a, b = ptry([lambda: go(f'https://claude.ai/chat/{CONV}#kaleidoscope-tab=fol123', js), lambda: go(f'https://claude.ai/chat/{CONV}', plain_tab)])
+    os.unlink(init.name)
+    if isinstance(a, RuntimeError): bad.append(f'follow-up tab: could not run: {a}')
+    else:
+        if a['plain'] != FOLLOW_BOARD['html']: bad.append('follow-up tab: a plain answer changed the board')
+        if not a['editsCame']: bad.append('follow-up tab: a reply with edits didn\'t update the saved board')
+        elif not a['updated']: bad.append('follow-up tab: the board was changed but isn\'t marked updated')
+        if a['editsCame'] and 'Board updated' not in a['editsSaid']: bad.append(f'follow-up tab: nothing said the board was updated ({a["editsSaid"]!r})')
+        if 'FROM-UPDATE' in a['fromUpdate']: bad.append('follow-up tab: it applied a reply to "Update board" too (the update does that)')
+        if not a['missSaid']: bad.append('follow-up tab: edits that didn\'t fit weren\'t mentioned')
+        if 'X' in a['miss'].replace('<!DOCTYPE', '').replace('html>', ''): bad.append('follow-up tab: edits that didn\'t fit changed the board')
+        bad += [f'follow-up tab: uncaught: {e[:120]}' for e in a['errs']]
+    if isinstance(b, RuntimeError): bad.append(f'the same chat without the follow-up\'s id: could not run: {b}')
+    else:
+        if 'PICK-NEW' in b['html']: bad.append('the same chat without the follow-up\'s id: it changed the board')
+        bad += [f'the same chat without the follow-up\'s id: uncaught: {e[:120]}' for e in b['errs']]
+    return bad
+
 if __name__ == '__main__':
     for title, fn in (('kaleidoscope hand-off', run), ('kaleidoscope hand-off, the Claude tab blocked or closed', run_send),
-                      ('kaleidoscope hand-off, damaged storage', run_malformed)):
+                      ('kaleidoscope hand-off, damaged storage', run_malformed), ('kaleidoscope follow-up', run_follow)):
         bad = fn(*sys.argv[1:2])
         print(f'== {title}: ' + ('clean' if not bad else f'{len(bad)} problem' + 's' * (len(bad) > 1)))
         for b in bad: print('  ' + b)
