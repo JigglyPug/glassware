@@ -560,6 +560,20 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or touch_tool o
     for l in runs: ok(l.endswith('clean'), 'touch: ' + l[3:]) if not l.endswith('clean') else print('  ✓ ' + l[3:].replace(': clean', ': taps, scrolling, the handle; nothing reaches the page'))
     ok(len(runs) == len(TOUCHES), f'the touch test reported {len(runs)} of {len(TOUCHES)} sheets: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
 
+# ------------------------------------------------------------------ site links
+# tools/tests/sitelinks.js: every jump link on the site (Desktop, Phone, See the scripts, Watch the trailer, Trouble
+# installing?, the product pages' links back) stops with its target below the floating top bar, in a browser window,
+# a taller installed-app window and on a phone
+site_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/sitelinks.js', 'tools/build/site.py').returncode != 0
+if '--ci' in args or ('--quick' not in args and ('--all' in args or site_tool)):
+    head('site links')
+    r = subprocess.run(['node', f'{HERE}/tests/sitelinks.js'], capture_output=True, text=True)
+    runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]
+    for l in runs:
+        if ': clean' in l: print('  ✓ ' + l[3:].replace(': clean', ': every jump stops below the top bar'))
+        else: ok(False, 'site links: ' + l[3:])
+    ok(len(runs) == 9, f'the site links test reported {len(runs)} of 9 runs: ' + (r.stderr.strip().splitlines() or ['no output'])[-1])
+
 # ------------------------------------------------------------------ network
 # tools/tests/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope when requests hang, fail, return junk or drop
 NETS = ['desktop/prism', 'desktop/looking-glass', 'desktop/kaleidoscope', 'mobile/kaleidoscope-mobile']

@@ -330,9 +330,13 @@ function set(v,push){b.dataset.for=v;bs.forEach(function(x){x.setAttribute('aria
 if(push)history.replaceState(null,'',v==='all'?location.pathname:'#'+v)}
 function fromHash(){var h=location.hash.slice(1);if(h==='mobile')h='phone';return h==='desktop'||h==='phone'?h:null}
 bs.forEach(function(x){x.addEventListener('click',function(){set(x.dataset.v,true)})});
-addEventListener('hashchange',function(){var h=fromHash();if(h){set(h);scrollTo({top:0})}});
+// Desktop and Phone in the top bar pick that filter and bring the list up under the bar, filter switch first
+function go(h,now){set(h,true);var t=document.getElementById('scripts');if(t)t.scrollIntoView({behavior:now?'auto':'smooth',block:'start'})}
+[].slice.call(document.querySelectorAll('nav a.link.sec')).forEach(function(a){a.addEventListener('click',function(e){var h=a.hash.slice(1);
+if(a.pathname===location.pathname&&(h==='desktop'||h==='phone')){e.preventDefault();go(h)}})});
+addEventListener('hashchange',function(){var h=fromHash();if(h)go(h)});
 var phone=matchMedia('(pointer:coarse) and (max-width:860px)').matches;
-set(fromHash()||(phone?'phone':'all'));
+var h0=fromHash();set(h0||(phone?'phone':'all'));if(h0)addEventListener('load',function(){go(h0,true)});
 var tr=document.getElementById('trailer');if(tr){var v=tr.querySelector('video');tr.querySelector('.play').addEventListener('click',function(){tr.classList.add('on');v.controls=true;v.play()})}
 var help=document.getElementById('help');function openHelp(){if(help&&location.hash==='#help')help.open=true}
 addEventListener('hashchange',openHelp);openHelp();

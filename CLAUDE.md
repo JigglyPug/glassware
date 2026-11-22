@@ -511,6 +511,13 @@ python3 tools/check.py              # release check: everything below, plus the 
   `docs/manifest.webmanifest` and `docs/sw.js` (pages from the network, the last copy of each when offline; nothing
   else is cached) and links them from every page. The app icon is the top bar's lava orb, drawn by
   `python3 tools/build/app_icon.py` into `assets/app/`; run it again only to change the icon.
+- **Every jump link lands below the top bar.** The site's top bar floats over the page, so a link to a spot on a page
+  (Desktop and Phone in the bar, See the scripts, Watch the trailer, Trouble installing?, the product pages' links back
+  to the lists) must stop with its target fully under the bar: `html{scroll-padding-top}` covers anchors and
+  `scrollIntoView`, and Desktop and Phone pick their filter and bring up the list with its filter switch first. A new
+  jump link or a taller bar is checked the same way: `node tools/tests/sitelinks.js` presses every one in a browser
+  window, a taller installed-app window and on a phone, served the way GitHub Pages serves the site, and fails if a
+  target stops under the bar or off screen. `tools/check.py` runs it whenever the site's builder or the test changes.
 - Link preview addresses carry a fingerprint of what they're made from (`og.png?v=…`), so Discord,
   Slack and others fetch the new image instead of a cached old one.
 - **Look at every changed screenshot before pushing** (`python3 tools/build/sheet.py`), dark and light,
