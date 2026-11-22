@@ -39,6 +39,32 @@ for p in S:
     shutil.copy(f'{R}/assets/icons/{p.split("/")[1]}.png', f'{dst}/icon.png')   # the app icon
 shutil.copytree(f'{R}/assets/trailer', f'{D}/trailer', dirs_exist_ok=True)   # the trailer and its still frame
 open(f'{D}/.nojekyll', 'w').close()
+# The site installs as an app (Chrome and Edge's Install, Add to Home Screen on phones): a manifest, the icon drawn by
+# tools/build/app_icon.py, and a small service worker so pages you've opened still show when you're offline.
+shutil.copytree(f'{R}/assets/app', f'{D}/img/app', dirs_exist_ok=True)
+open(f'{D}/manifest.webmanifest', 'w', encoding='utf-8').write(json.dumps({
+    'id': './', 'name': 'Glassware by JigglyPug', 'short_name': 'Glassware',
+    'description': 'Frosted-glass, lava-lit tools for Tampermonkey.',
+    'start_url': './', 'scope': './', 'display': 'standalone',
+    'background_color': '#120d18', 'theme_color': '#ff8a3d',
+    'icons': [{'src': 'img/app/icon-192.png', 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},
+              {'src': 'img/app/icon-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'any'},
+              {'src': 'img/app/maskable-512.png', 'sizes': '512x512', 'type': 'image/png', 'purpose': 'maskable'}],
+}, indent=1) + '\n')
+open(f'{D}/sw.js', 'w', encoding='utf-8').write("""// Glassware's site as an installed app. Pages come from the network as usual and a copy of each one you open is
+// kept, so it still shows when you're offline. Everything else (the trailer, images, the scripts) goes straight to the network.
+const CACHE = 'glassware-pages';
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch', e => {
+  const r = e.request;
+  if (r.method !== 'GET' || r.mode !== 'navigate') return;
+  e.respondWith(fetch(r).then(res => {
+    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(r, copy)); }
+    return res;
+  }).catch(() => caches.match(r).then(m => m || caches.match(new URL('./', self.registration.scope)))));
+});
+""")
 
 CSS = r"""
 :root{--acc:#ff8a3d;--fg:#f4f1ee;--sub:rgba(244,241,238,.66);--glass:rgba(22,18,20,.48);--edge:rgba(255,255,255,.12);--hi:rgba(255,255,255,.07);
@@ -262,7 +288,7 @@ def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=Non
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}">
-<meta name="theme-color" content="{acc}">{meta}<meta name="color-scheme" content="light dark"><link rel="stylesheet" href="{up}style.css?v={CSS_V}">
+<meta name="theme-color" content="{acc}">{meta}<link rel="manifest" href="{up}manifest.webmanifest"><link rel="apple-touch-icon" href="{up}img/app/apple-touch-icon.png"><meta name="color-scheme" content="light dark"><link rel="stylesheet" href="{up}style.css?v={CSS_V}">
 {MODE_HEAD}
 {('<link rel="icon" type="image/png" href="' + up + favicon + '">') if favicon else '''<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff8a3d'/%3E%3Cstop offset='.55' stop-color='%23ff2d6f'/%3E%3Cstop offset='1' stop-color='%237a2cff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='url(%23g)'/%3E%3C/svg%3E">'''}
 </head><body data-theme="{theme}" style="--acc:{acc}">
@@ -272,6 +298,7 @@ def page(title, desc, theme, acc, body, depth, path='', og='og.png', favicon=Non
 {body}
 <footer>Made by <b>JigglyPug</b> · Built for <a href="https://www.tampermonkey.net/">Tampermonkey</a> · <a href="{REPO_URL}">Source on GitHub</a><span class="matchwrap" hidden> · <button class="match" type="button">Match my device</button></span></footer>
 {MODE_SCRIPT}
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('{up}sw.js').catch(() => {{}});</script>
 </body></html>
 """
 

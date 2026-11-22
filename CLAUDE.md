@@ -507,6 +507,10 @@ python3 tools/check.py              # release check: everything below, plus the 
   `tools/build/prismcut.py`), and every link preview (`docs/img/<script>/og.png` and the landing
   `docs/og.png`). The README galleries further down use `<picture>` and follow GitHub's theme. The
   site itself never uses the cut: its switch shows both.
+- The site installs as an app (Install in Chrome and Edge, Add to Home Screen on phones): `tools/build/site.py` writes
+  `docs/manifest.webmanifest` and `docs/sw.js` (pages from the network, the last copy of each when offline; nothing
+  else is cached) and links them from every page. The app icon is the top bar's lava orb, drawn by
+  `python3 tools/build/app_icon.py` into `assets/app/`; run it again only to change the icon.
 - Link preview addresses carry a fingerprint of what they're made from (`og.png?v=…`), so Discord,
   Slack and others fetch the new image instead of a cached old one.
 - **Look at every changed screenshot before pushing** (`python3 tools/build/sheet.py`), dark and light,
