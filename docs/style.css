@@ -26,12 +26,12 @@ body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,
 a{color:inherit}
 /* lava lamp */
 .lava{position:fixed;inset:-10vmax;z-index:-1;filter:blur(70px) saturate(1.25);overflow:hidden}
-.lava i{position:absolute;border-radius:50%;opacity:.85;mix-blend-mode:normal;animation:drift 26s ease-in-out infinite alternate}
-.lava i:nth-child(1){width:52vmax;height:52vmax;left:-6%;top:-8%;background:var(--b1)}
-.lava i:nth-child(2){width:46vmax;height:46vmax;right:-8%;top:8%;background:var(--b2);animation-duration:32s;animation-delay:-8s}
-.lava i:nth-child(3){width:40vmax;height:40vmax;left:22%;bottom:-18%;background:var(--b3);animation-duration:29s;animation-delay:-14s}
-.lava i:nth-child(4){width:34vmax;height:34vmax;right:14%;bottom:-6%;background:var(--b4);animation-duration:35s;animation-delay:-4s}
-.lava::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,transparent 0,var(--bg) 85%);opacity:.55}
+.lava i{position:absolute;border-radius:50%;opacity:.85;mix-blend-mode:normal;animation:drift 26s ease-in-out infinite alternate;transition:background-color 1.4s ease}
+.lava i:nth-child(1){width:52vmax;height:52vmax;left:-6%;top:-8%;background-color:var(--b1)}
+.lava i:nth-child(2){width:46vmax;height:46vmax;right:-8%;top:8%;background-color:var(--b2);animation-duration:32s;animation-delay:-8s}
+.lava i:nth-child(3){width:40vmax;height:40vmax;left:22%;bottom:-18%;background-color:var(--b3);animation-duration:29s;animation-delay:-14s}
+.lava i:nth-child(4){width:34vmax;height:34vmax;right:14%;bottom:-6%;background-color:var(--b4);animation-duration:35s;animation-delay:-4s}
+.lava::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,transparent 0,var(--bg) 85%);opacity:.55;transition:opacity 2s ease}
 [data-theme=frost] .lava::after{opacity:.25}
 @keyframes drift{0%{transform:translate(0,0) scale(1) rotate(0)}33%{transform:translate(9vmax,6vmax) scale(1.12) rotate(40deg)}66%{transform:translate(-6vmax,10vmax) scale(.9) rotate(-30deg)}100%{transform:translate(4vmax,-7vmax) scale(1.06) rotate(20deg)}}
 @media (prefers-reduced-motion:reduce){.lava i{animation:none}}
@@ -73,7 +73,7 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ffb347 40%,#ff5a1f 75%,#ff1e4d);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:560px;margin:0 0 26px}
 .hero p.need{font-size:13px;margin:14px 0 0}.hero p.need a{color:var(--sub)}
-.trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px;overflow:hidden;min-width:0}
+.trailer{position:relative;max-width:880px;margin:0 auto;padding:8px;border-radius:24px;overflow:hidden;min-width:0}
 .trailer video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000;object-fit:contain}
 /* full screen shows the whole frame (letterboxed on tall or notched phones), never cropped to fill */
 .trailer video:fullscreen{object-fit:contain;aspect-ratio:auto;width:100%;height:100%;border-radius:0}
@@ -82,6 +82,14 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .trailer .play svg{transition:transform .15s}.trailer .play:hover svg{transform:scale(1.08)}
 .trailer .play:focus-visible{outline:2px solid #ff8a3d;outline-offset:2px}
 .trailer.on .play{display:none}
+/* the melt: while the trailer plays, its colors run into the page. The lava takes the film's colors, the veil over it
+   thins, and a glow of the picture spreads behind the player. When the film ends it all settles back. */
+.tw{position:relative;max-width:880px;margin:0 auto 32px}
+.tw .ambi{position:absolute;inset:-14% -10%;width:120%;height:128%;z-index:-1;pointer-events:none;filter:blur(60px) saturate(1.6);opacity:0;transform:scale(.92);transition:opacity 1.6s ease,transform 1.6s ease}
+body.melt .tw .ambi{opacity:.95;transform:none}
+body.melt .lava i:nth-child(1){background-color:var(--m1,var(--b1))}body.melt .lava i:nth-child(2){background-color:var(--m2,var(--b2))}
+body.melt .lava i:nth-child(3){background-color:var(--m3,var(--b3))}body.melt .lava i:nth-child(4){background-color:var(--m4,var(--b4))}
+body.melt .lava::after{opacity:.18}
 .news{font-size:15px;line-height:1.55}.news p{margin:0}.news p+p{margin-top:8px}.news b{color:var(--fg)}.news .when{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;margin:0 6px}.news a{color:var(--fg)}
 .help{max-width:720px;margin:56px auto 0;text-align:center}.help summary{display:inline-block;cursor:pointer;font-size:13px;color:var(--sub);list-style:none;padding:4px 10px;border-radius:8px}.help summary::-webkit-details-marker{display:none}.help summary::after{content:' ▾'}.help[open] summary::after{content:' ▴'}.help summary:hover{color:var(--fg)}.help .note{margin-top:10px;text-align:left;font-size:14px;line-height:1.6}.help .note p{margin:0}.help .note p+p{margin-top:10px}.help b{color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:28px}

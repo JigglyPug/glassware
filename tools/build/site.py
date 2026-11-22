@@ -95,12 +95,12 @@ body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,
 a{color:inherit}
 /* lava lamp */
 .lava{position:fixed;inset:-10vmax;z-index:-1;filter:blur(70px) saturate(1.25);overflow:hidden}
-.lava i{position:absolute;border-radius:50%;opacity:.85;mix-blend-mode:normal;animation:drift 26s ease-in-out infinite alternate}
-.lava i:nth-child(1){width:52vmax;height:52vmax;left:-6%;top:-8%;background:var(--b1)}
-.lava i:nth-child(2){width:46vmax;height:46vmax;right:-8%;top:8%;background:var(--b2);animation-duration:32s;animation-delay:-8s}
-.lava i:nth-child(3){width:40vmax;height:40vmax;left:22%;bottom:-18%;background:var(--b3);animation-duration:29s;animation-delay:-14s}
-.lava i:nth-child(4){width:34vmax;height:34vmax;right:14%;bottom:-6%;background:var(--b4);animation-duration:35s;animation-delay:-4s}
-.lava::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,transparent 0,var(--bg) 85%);opacity:.55}
+.lava i{position:absolute;border-radius:50%;opacity:.85;mix-blend-mode:normal;animation:drift 26s ease-in-out infinite alternate;transition:background-color 1.4s ease}
+.lava i:nth-child(1){width:52vmax;height:52vmax;left:-6%;top:-8%;background-color:var(--b1)}
+.lava i:nth-child(2){width:46vmax;height:46vmax;right:-8%;top:8%;background-color:var(--b2);animation-duration:32s;animation-delay:-8s}
+.lava i:nth-child(3){width:40vmax;height:40vmax;left:22%;bottom:-18%;background-color:var(--b3);animation-duration:29s;animation-delay:-14s}
+.lava i:nth-child(4){width:34vmax;height:34vmax;right:14%;bottom:-6%;background-color:var(--b4);animation-duration:35s;animation-delay:-4s}
+.lava::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,transparent 0,var(--bg) 85%);opacity:.55;transition:opacity 2s ease}
 [data-theme=frost] .lava::after{opacity:.25}
 @keyframes drift{0%{transform:translate(0,0) scale(1) rotate(0)}33%{transform:translate(9vmax,6vmax) scale(1.12) rotate(40deg)}66%{transform:translate(-6vmax,10vmax) scale(.9) rotate(-30deg)}100%{transform:translate(4vmax,-7vmax) scale(1.06) rotate(20deg)}}
 @media (prefers-reduced-motion:reduce){.lava i{animation:none}}
@@ -142,7 +142,7 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .hero h1 span{background:linear-gradient(100deg,#ffd27a,#ffb347 40%,#ff5a1f 75%,#ff1e4d);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p{font-size:clamp(17px,2.1vw,21px);color:var(--sub);max-width:560px;margin:0 0 26px}
 .hero p.need{font-size:13px;margin:14px 0 0}.hero p.need a{color:var(--sub)}
-.trailer{position:relative;max-width:880px;margin:0 auto 32px;padding:8px;border-radius:24px;overflow:hidden;min-width:0}
+.trailer{position:relative;max-width:880px;margin:0 auto;padding:8px;border-radius:24px;overflow:hidden;min-width:0}
 .trailer video{display:block;width:100%;aspect-ratio:16/9;border-radius:16px;background:#000;object-fit:contain}
 /* full screen shows the whole frame (letterboxed on tall or notched phones), never cropped to fill */
 .trailer video:fullscreen{object-fit:contain;aspect-ratio:auto;width:100%;height:100%;border-radius:0}
@@ -151,6 +151,14 @@ nav a.link:hover{color:var(--fg);background:var(--chip)}
 .trailer .play svg{transition:transform .15s}.trailer .play:hover svg{transform:scale(1.08)}
 .trailer .play:focus-visible{outline:2px solid #ff8a3d;outline-offset:2px}
 .trailer.on .play{display:none}
+/* the melt: while the trailer plays, its colors run into the page. The lava takes the film's colors, the veil over it
+   thins, and a glow of the picture spreads behind the player. When the film ends it all settles back. */
+.tw{position:relative;max-width:880px;margin:0 auto 32px}
+.tw .ambi{position:absolute;inset:-14% -10%;width:120%;height:128%;z-index:-1;pointer-events:none;filter:blur(60px) saturate(1.6);opacity:0;transform:scale(.92);transition:opacity 1.6s ease,transform 1.6s ease}
+body.melt .tw .ambi{opacity:.95;transform:none}
+body.melt .lava i:nth-child(1){background-color:var(--m1,var(--b1))}body.melt .lava i:nth-child(2){background-color:var(--m2,var(--b2))}
+body.melt .lava i:nth-child(3){background-color:var(--m3,var(--b3))}body.melt .lava i:nth-child(4){background-color:var(--m4,var(--b4))}
+body.melt .lava::after{opacity:.18}
 .news{font-size:15px;line-height:1.55}.news p{margin:0}.news p+p{margin-top:8px}.news b{color:var(--fg)}.news .when{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;margin:0 6px}.news a{color:var(--fg)}
 .help{max-width:720px;margin:56px auto 0;text-align:center}.help summary{display:inline-block;cursor:pointer;font-size:13px;color:var(--sub);list-style:none;padding:4px 10px;border-radius:8px}.help summary::-webkit-details-marker{display:none}.help summary::after{content:' ▾'}.help[open] summary::after{content:' ▴'}.help summary:hover{color:var(--fg)}.help .note{margin-top:10px;text-align:left;font-size:14px;line-height:1.6}.help .note p{margin:0}.help .note p+p{margin-top:10px}.help b{color:var(--fg)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:28px}
@@ -337,7 +345,21 @@ if(a.pathname===location.pathname&&(h==='desktop'||h==='phone')){e.preventDefaul
 addEventListener('hashchange',function(){var h=fromHash();if(h)go(h)});
 var phone=matchMedia('(pointer:coarse) and (max-width:860px)').matches;
 var h0=fromHash();set(h0||(phone?'phone':'all'));if(h0)addEventListener('load',function(){go(h0,true)});
-var tr=document.getElementById('trailer');if(tr){var v=tr.querySelector('video');tr.querySelector('.play').addEventListener('click',function(){tr.classList.add('on');v.controls=true;v.play()})}
+var tr=document.getElementById('trailer');if(tr){var v=tr.querySelector('video');tr.querySelector('.play').addEventListener('click',function(){tr.classList.add('on');v.controls=true;v.play()});melt(v)}
+// The melt: while the trailer plays, the page's lava takes the film's colors (a corner of the picture for each blob) and a
+// blurred copy of the picture glows behind the player. Paused, it holds; when the film ends it settles back.
+function melt(v){var amb=document.querySelector('.tw .ambi'),ax=amb&&amb.getContext('2d'),lava=document.querySelector('.lava');
+var c=document.createElement('canvas');c.width=8;c.height=6;var cx=c.getContext('2d',{willReadFrequently:true}),run=0,last=0,lastC=0;
+function vivid(r,g,b){r/=255;g/=255;b/=255;var mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn,h=0,s=0;
+if(d){s=d/(1-Math.abs(2*l-1));h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}
+s=Math.min(1,s*1.5+.12);l=Math.max(.16,Math.min(.6,l*1.15));return 'hsl('+Math.round(h)+' '+Math.round(s*100)+'% '+Math.round(l*100)+'%)'}
+function avg(d,x0,y0){var r=0,g=0,b=0,n=0;for(var y=y0;y<y0+3;y++)for(var x=x0;x<x0+4;x++){var i=(y*8+x)*4;r+=d[i];g+=d[i+1];b+=d[i+2];n++}return vivid(r/n,g/n,b/n)}
+function tick(t){if(!run)return;requestAnimationFrame(tick);if(t-last<66)return;last=t;
+try{if(ax)ax.drawImage(v,0,0,amb.width,amb.height);if(lava&&t-lastC>350){lastC=t;cx.drawImage(v,0,0,8,6);var d=cx.getImageData(0,0,8,6).data;
+lava.style.setProperty('--m1',avg(d,0,0));lava.style.setProperty('--m2',avg(d,4,0));lava.style.setProperty('--m3',avg(d,0,3));lava.style.setProperty('--m4',avg(d,4,3))}}catch(e){}}
+v.addEventListener('playing',function(){document.body.classList.add('melt');if(!run){run=1;requestAnimationFrame(tick)}});
+v.addEventListener('pause',function(){run=0});
+v.addEventListener('ended',function(){run=0;document.body.classList.remove('melt')})}
 var help=document.getElementById('help');function openHelp(){if(help&&location.hash==='#help')help.open=true}
 addEventListener('hashchange',openHelp);openHelp();
 [].forEach.call(document.querySelectorAll('a[href="#help"]'),function(a){a.addEventListener('click',function(){if(help)help.open=true})})})();
@@ -361,8 +383,8 @@ body = f"""<main class="wrap">
 <div class="acts"><a class="btn warm big" href="#scripts">See the scripts</a><a class="btn sec big" href="#trailer">Watch the trailer · {TRAILER_LEN}</a></div>
 <p class="need"><a href="#help">Trouble installing?</a></p></div>
 <div class="tiles glass" aria-label="The scripts">{TILES}</div></div>
-<figure class="trailer glass" id="trailer"><video preload="none" playsinline poster="trailer/poster.webp" aria-label="Glassware trailer" width="1280" height="720" style="width:100%;height:auto;max-width:100%"><source src="trailer/glassware-trailer.mp4" type="video/mp4"></video>
-<button class="play" type="button"><svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M26 20v24l19-12z" fill="#fff"/></svg><span>Watch the trailer · {TRAILER_LEN}</span></button></figure>
+<div class="tw"><canvas class="ambi" width="96" height="54" aria-hidden="true"></canvas><figure class="trailer glass" id="trailer"><video preload="none" playsinline poster="trailer/poster.webp" aria-label="Glassware trailer" width="1280" height="720" style="width:100%;height:auto;max-width:100%"><source src="trailer/glassware-trailer.mp4" type="video/mp4"></video>
+<button class="play" type="button"><svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="31" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.7)" stroke-width="2"/><path d="M26 20v24l19-12z" fill="#fff"/></svg><span>Watch the trailer · {TRAILER_LEN}</span></button></figure></div>
 <div class="chips"><span class="chip">{len(S)} scripts</span><span class="chip">Desktop + phone</span><span class="chip">Auto-updating</span><span class="chip">Tampermonkey</span></div>
 <div class="center" id="scripts"><div class="seg glass" role="group" aria-label="Show scripts for"><button data-v="all" aria-pressed="true">All</button><button data-v="desktop" aria-pressed="false">Desktop</button><button data-v="phone" aria-pressed="false">Phone</button></div></div></header>
 {sections}
