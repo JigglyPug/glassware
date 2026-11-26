@@ -1,7 +1,8 @@
 # Runs the release check on every push, so it doesn't depend on someone remembering to run it
 # (CLAUDE.md, Committing): the rules, the security tests, settings carry-over, live updates and the
-# generated pages and the screenshots, for whatever changed. The glitch check and the performance test
-# stay local. Actions are pinned to exact commits.
+# generated pages and the screenshots, for whatever changed; every test on the weekly run, on a run
+# started by hand and when tools/ or this workflow changed. The glitch check and the performance test
+# stay local (tools/push.py runs them while this runs). Actions are pinned to exact commits.
 name: Checks
 on:
   push:
@@ -24,9 +25,18 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
           node-version: 22
+          cache: npm   # npm ci still checks every package against the lockfile's hashes
+          cache-dependency-path: tools/package-lock.json
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version: '3.12'
+          cache: pip   # pip still checks every package against requirements.txt's hashes
+          cache-dependency-path: tools/requirements.txt
+      # the test browser, kept between runs for as long as the Playwright pin stays the same
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25  # v5.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tools/package-lock.json') }}
       - name: Install the pinned tools
         working-directory: tools   # the pins (package.json, requirements.txt) live with the tools
         run: |

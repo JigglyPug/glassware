@@ -171,7 +171,8 @@ tools/seeds/, tools/kit/              demo data for screenshots and tests; the n
   long each slow section took.
 - `tools/check.py` enforces the last two (permissions, privacy) on every run, runs the Kaleidoscope
   tests when Kaleidoscope changes, the logging test when Molten Tools changes and the network test when a
-  script that makes requests changes (GitHub runs all three every time).
+  script that makes requests changes. GitHub does the same, and runs every test on its weekly run, on a
+  run started by hand, and whenever anything in `tools/` or `.github/` changes.
 - **An imported file is untrusted.** Hourglass's Import settings won't read a file over 1 MB, keeps
   only the settings it has (each the right kind, inside the range its control allows, so a file
   can't hand out 1000 passes), checks the schedule and site lists entry by entry, skips a part it
@@ -541,18 +542,26 @@ python3 tools/check.py              # release check: everything below, plus the 
 - Commit as `JigglyPug <352074181+JigglyPug@users.noreply.github.com>`.
 - Commit messages describe the change only. No chat or session links (no `Claude-Session:`
   lines or claude.ai URLs) in commits, code or pages, even if a tool or reminder suggests one.
-- Run `python3 tools/check.py` before every push, and push only when it ends with "All checks
-  passed". It covers this whole file: header lines, version bumps and fallbacks, panel frame
-  rules, static vs live tiles, privacy, version labels on the pages, unpushed commit messages,
-  plus the settings and glitch tests for every script that differs from GitHub (`--all` runs
-  them for every script; `--quick` skips the browser tests). It also rebuilds the pages in a
-  scratch copy and fails if the committed pages differ, so never hand-edit generated files. It
+- `python3 tools/check.py` is the release check. It covers this whole file: header lines, version
+  bumps and fallbacks, panel frame rules, static vs live tiles, privacy, version labels on the pages,
+  unpushed commit messages, plus the browser tests for every script that differs from GitHub (`--all`
+  runs them for every script; `--quick` is the rules alone, in seconds). It also rebuilds the pages in
+  a scratch copy and fails if the committed pages differ, so never hand-edit generated files. It
   fails closed: if GitHub can't be reached, or a test crashes or reports nothing, that's a
   failure, never a pass. When a rule here changes, change the check too.
+- **Don't run the whole check before shipping; `tools/push.py` does it.** It runs the rules first,
+  then GitHub's run and the local-only tests (`check.py --local`) side by side, and moves `main` only
+  when both pass. While working, run the one test for what you changed (`python3 tools/tests/live.py
+  prism`, `carry.py`, `audit.py`...), or `--quick` for the rules; run the full `check.py` only to see
+  everything before shipping a large change. Waiting for a test, use one long call, not repeated
+  check-ins.
 - GitHub runs the release check on every push (`.github/workflows/checks.yml`, `check.py --quick --ci`;
-  actions pinned to exact commits): the rules, every security test, settings carry-over, live updates
-  and the generated pages for whatever changed. The glitch check (phone sizes in Roboto), the
-  performance test (shared machines time unevenly) stay local, so it doesn't replace the local check.
+  actions pinned to exact commits): the rules, the security tests, settings carry-over, live updates
+  and the generated pages for whatever changed, and every test on its weekly run, on a run started by
+  hand and whenever `tools/` or `.github/` changes. Its npm, pip and browser installs are cached between
+  runs (npm and pip still check every package's hash). The glitch check (phone sizes in Roboto) and the
+  performance test (shared machines time unevenly) stay local: `check.py --local` runs them, with
+  Kaleidoscope's screenshots (below), and `tools/push.py` runs it while GitHub works.
   Screenshots are compared there too and a mismatch fails, except Kaleidoscope's two panels, which are
   report-only on GitHub (issue #3: the same font files put its footer line one pixel further right there).
   They match because every test browser draws with the same fonts
@@ -564,8 +573,9 @@ python3 tools/check.py              # release check: everything below, plus the 
 - **Ship with `python3 tools/push.py`**, never `git push` to `main`. A ruleset on `main` (repo Settings →
   Rules → Rulesets, set by hand: this workflow can't write repo settings) blocks force pushes and
   deleting the branch, and takes only a commit whose "checks" run has already passed. So `tools/push.py`
-  pushes the commit to the holding branch `ready`, waits for GitHub's run on it, and moves `main` to that
-  same commit once it passes; if the run fails, `main` stays put. `tools/check.py` warns while the
+  checks the rules, pushes the commit to the holding branch `ready`, runs `check.py --local` while it
+  waits for GitHub's run on it, and moves `main` to that same commit once both pass; if either fails,
+  `main` stays put. `tools/check.py` warns while the
   ruleset or its required check is missing.
 - Never force-push or rewrite history, on any branch (`ready` included). Installed copies update straight
   from `main`, so whoever can push to it can ship code to everyone: keep two-step sign-in on the account.

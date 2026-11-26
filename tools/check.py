@@ -5,8 +5,12 @@
     python3 tools/check.py --all     # glitch and settings tests for every script too (slow)
     python3 tools/check.py --quick   # rules only, no browser tests
     python3 tools/check.py --quick --ci   # what GitHub runs on every push (.github/workflows/checks.yml):
-                                     # everything but the glitch check, the performance test and the
-                                     # screenshot comparison
+                                     # everything but the glitch check and the performance test, for
+                                     # the scripts that changed; every test on the weekly run, on a run
+                                     # started by hand and when tools/ or .github/ changed
+    python3 tools/check.py --local   # rules plus only what GitHub doesn't run (the glitch check, the
+                                     # performance test, Kaleidoscope's screenshots): tools/push.py runs
+                                     # it while GitHub runs the rest
 
 Everything fails closed: if GitHub can't be reached, or a test crashes or reports nothing,
 that's a failure, never a pass.
@@ -72,6 +76,7 @@ import glob, json, os, re, subprocess, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); R = os.path.dirname(HERE)
 sys.path[:0] = [HERE] + [os.path.join(HERE, d) for d in ('lib', 'build', 'tests')]
 args = sys.argv[1:]
+LOCAL = '--local' in args   # only what GitHub doesn't run (tools/push.py runs this while GitHub works)
 RAW = 'https://raw.githubusercontent.com/JigglyPug/glassware/main'
 HISTORY = re.compile(r'(?i)\b(before|from|since|until|earlier|older|used to|renamed|migrat\w*)\b')
 STATIC = {'molten-for-discord', 'molten-tools', 'molten-for-reddit', 'molten-for-reddit-mobile', 'kaleidoscope', 'kaleidoscope-mobile'}
@@ -100,6 +105,12 @@ except carry.GitError as e:
 print(f'Comparing against GitHub at {LIVE_SHA[:7]}')
 def live(plat, slug): return carry.live_source(f'{plat}/{slug}')
 changed = [f'{info(p)[0]}/{info(p)[1]}' for p in paths if live(*info(p)) != S[p]]
+# The browser tests below run for what changed. GitHub runs every one of them on its weekly run, on a run
+# started by hand, and whenever the tools or the workflow changed (a test or a shared helper may have broken).
+CI_ALL = '--ci' in args and (os.environ.get('GITHUB_EVENT_NAME') in ('schedule', 'workflow_dispatch')
+                             or git('diff', '--quiet', 'origin/main', '--', 'tools', '.github').returncode != 0)
+BROWSER = '--ci' in args or ('--quick' not in args and not LOCAL)   # the browser tests GitHub runs too
+def wants(*why): return CI_ALL or (BROWSER and ('--all' in args or any(why)))
 
 # ------------------------------------------------------------------ scripts
 head('scripts'); n = 0
@@ -463,7 +474,7 @@ print('  ✓ nothing waiting to push') if n == 0 else done(n)
 # ------------------------------------------------------------------ settings + glitches
 # GitHub (--ci) runs these too: settings carry-over, live updates and the generated pages.
 # The glitch check and the performance test stay here (Roboto for phones; shared machines time unevenly).
-FULL = '--quick' not in args or '--ci' in args
+FULL = ('--quick' not in args and not LOCAL) or '--ci' in args
 targets = [p for p in (list(RUNS) if '--all' in args else changed)]
 if FULL:
     head('settings')
@@ -514,7 +525,7 @@ ok(dcdemo == json.loads(json.dumps(dcseed.make('habit'))),
    'the activity in tools/seeds/molten-for-discord.json differs from what tools/seeds/discord.py writes (run python3 tools/seeds/discord.py)')
 if not any(f.startswith('dashboard:') for f in fails): print('  ✓ the demo histories match their generators')
 dash = [n for n, d in (('hourglass', 'desktop/hourglass'), ('molten-for-discord', 'desktop/molten-for-discord'))
-        if '--ci' in args or ('--quick' not in args and ('--all' in args or d in changed))]
+        if wants(d in changed)]
 if dash:
     r = subprocess.run([sys.executable, f'{HERE}/tests/dash.py', *dash], capture_output=True, text=True)
     runs = 0
@@ -535,7 +546,7 @@ if 'hourglass' in dash:
 # ------------------------------------------------------------------ kaleidoscope
 # a board is AI-written code: tools/tests/boardtest.py proves a hostile one can't send anything out, and
 # tools/tests/handofftest.py that a prompt only goes to the claude.ai tab Kaleidoscope opened for it
-if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kaleidoscope' in changed)):
+if wants('desktop/kaleidoscope' in changed):
     head('kaleidoscope')
     for tool, goods in (('boardtest.py', ["a hostile board gets nothing out; covers, the API and AniList links still work"]),
                         ('handofftest.py', ["a prompt goes only to the claude.ai tab opened for it",
@@ -554,7 +565,7 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/kal
 # tools/tests/touchtest.py: every phone sheet with real touches (taps, a scroll inside, the handle), none reaching the page
 TOUCHES = list(touchtest.PHONE)
 touch_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/touchtest.py', 'tools/tests/touch_drive.js', 'tools/frame.py').returncode != 0
-if '--ci' in args or ('--quick' not in args and ('--all' in args or touch_tool or any(p in changed for p in TOUCHES))):
+if wants(touch_tool, any(p in changed for p in TOUCHES)):
     head('touch')
     r = subprocess.run([sys.executable, f'{HERE}/tests/touchtest.py'], capture_output=True, text=True)
     runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]
@@ -566,7 +577,7 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or touch_tool o
 # installing?, the product pages' links back) stops with its target below the floating top bar, in a browser window,
 # a taller installed-app window and on a phone
 site_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/sitelinks.js', 'tools/build/site.py').returncode != 0
-if '--ci' in args or ('--quick' not in args and ('--all' in args or site_tool)):
+if wants(site_tool):
     head('site links')
     r = subprocess.run(['node', f'{HERE}/tests/sitelinks.js'], capture_output=True, text=True)
     runs = [l for l in r.stdout.splitlines() if l.startswith('== ')]
@@ -579,7 +590,7 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or site_tool)):
 # tools/tests/nettest.py: Prism, Looking-Glass and Kaleidoscope (both) cope when requests hang, fail, return junk or drop
 NETS = ['desktop/prism', 'desktop/looking-glass', 'desktop/kaleidoscope', 'mobile/kaleidoscope-mobile']
 net_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/nettest.py').returncode != 0
-if '--ci' in args or ('--quick' not in args and ('--all' in args or net_tool or any(p in changed for p in NETS))):
+if wants(net_tool, any(p in changed for p in NETS)):
     head('network')
     r = subprocess.run([sys.executable, f'{HERE}/tests/nettest.py'], capture_output=True, text=True)
     seen = 0
@@ -597,7 +608,7 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or net_tool or 
 # tools/tests/ownertest.py: Prism stands by while another script holds the title bar, also after being
 # switched off and back on (everywhere or for the site), and takes it back once the other lets go
 owner_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/ownertest.py').returncode != 0
-if '--ci' in args or ('--quick' not in args and ('--all' in args or owner_tool or 'desktop/prism' in changed)):
+if wants(owner_tool, 'desktop/prism' in changed):
     head('hand-off')
     r = subprocess.run([sys.executable, f'{HERE}/tests/ownertest.py'], capture_output=True, text=True)
     lines = [l for l in r.stdout.splitlines() if l.strip()]
@@ -609,7 +620,7 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or owner_tool o
 # ------------------------------------------------------------------ opened media
 # tools/tests/mediatest.py: Molten for Discord's lava around opened media, Looking-Glass's badge under viewers
 mt_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/mediatest.py').returncode != 0
-if '--ci' in args or ('--quick' not in args and ('--all' in args or mt_tool or 'desktop/molten-for-discord' in changed or 'desktop/looking-glass' in changed)):
+if wants(mt_tool, 'desktop/molten-for-discord' in changed, 'desktop/looking-glass' in changed):
     head('opened media')
     r = subprocess.run([sys.executable, f'{HERE}/tests/mediatest.py'], capture_output=True, text=True)
     lines = [l for l in r.stdout.splitlines() if l.strip()]
@@ -621,7 +632,7 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or mt_tool or '
 # ------------------------------------------------------------------ your data
 # tools/tests/discorddata.py: Molten for Discord's export, import (an untrusted file) and erase-with-OK
 dd_tool = git('diff', '--quiet', 'origin/main', '--', 'tools/tests/discorddata.py').returncode != 0
-if '--ci' in args or ('--quick' not in args and ('--all' in args or dd_tool or 'desktop/molten-for-discord' in changed)):
+if wants(dd_tool, 'desktop/molten-for-discord' in changed):
     head('your data')
     r = subprocess.run([sys.executable, f'{HERE}/tests/discorddata.py'], capture_output=True, text=True)
     lines = [l for l in r.stdout.splitlines() if l.strip()]
@@ -633,7 +644,7 @@ if '--ci' in args or ('--quick' not in args and ('--all' in args or dd_tool or '
 # ------------------------------------------------------------------ logging
 # tools/tests/logtest.py: with every logging switch on, Molten Tools' account paths never print an account's
 # name, handle, email or id (and giving up on a missing account doesn't bounce between pages)
-if '--ci' in args or ('--quick' not in args and ('--all' in args or 'desktop/molten-tools' in changed)):
+if wants('desktop/molten-tools' in changed):
     head('logging')
     r = subprocess.run([sys.executable, f'{HERE}/tests/logtest.py'], capture_output=True, text=True)
     seen = 0
@@ -676,7 +687,7 @@ if '--quick' not in args:
 # only reported, with the differing strip and the fonts used printed to the log. Locally every one fails.
 ON_GITHUB = '--ci' in args and bool(os.environ.get('GITHUB_ACTIONS'))
 SHOT_REPORT_ONLY = {'desktop/kaleidoscope', 'mobile/kaleidoscope-mobile'}
-if FULL:
+if FULL or LOCAL:
     head('screenshots')
     # Recapture each panel in a scratch folder and compare with the committed image. Captures repeat
     # exactly (fixed clock, demo data, animations stopped), so any difference means the panel changed
@@ -684,7 +695,8 @@ if FULL:
     # changes (the fonts, the capture tools), every script's screenshots are compared.
     shot_tools = git('diff', '--quiet', 'origin/main', '--', 'tools/lib/fonts.conf', 'tools/lib/shot.js', 'tools/screens.py').returncode != 0
     targets = [p for p in (list(RUNS) if '--all' in args or shot_tools else changed)]
-    if not targets: print('  ✓ no script differs from GitHub')
+    if LOCAL: targets = [p for p in targets if p in SHOT_REPORT_ONLY]   # GitHub only reports these, so they're compared here
+    if not targets: print('  ✓ no script differs from GitHub' if not LOCAL else '  ✓ GitHub compares the rest')
     else:
         import tempfile, screens
         from PIL import Image, ImageChops
